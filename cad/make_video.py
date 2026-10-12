@@ -51,7 +51,9 @@ def duration(path):
 
 
 def main():
+    global ORDER
     root = sys.argv[1]
+    ORDER = [(k, s) for k, s in ORDER if (HERE / k).exists()]      # only the kits on this branch
     MEDIA.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -59,8 +61,9 @@ def main():
             names = [s for k, s in ORDER if k == kit]
             subprocess.run([sys.executable, "animate.py", root, str(tmp), *names], cwd=HERE / kit, check=True)
         clips = [tmp / "title.mp4"]
+        kits = {"insta360_x5": "Insta360 X5", "d405": "RealSense D405 + Quest 3S"}
         card(clips[0], "PG Chopstick", ["handheld grippers and wrist cameras for robot data collection",
-                                        "Insta360 X5  ·  RealSense D405 + Quest 3S"], 3.0)
+                                        "  ·  ".join(v for k, v in kits.items() if (HERE / k).exists())], 3.0)
         clips += [tmp / f"{s}.mp4" for _, s in ORDER]
         end = tmp / "end.mp4"
         card(end, "Chopstick · Parallel · Hand", ["one interface for every gripper and every robot",
