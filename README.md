@@ -4,6 +4,10 @@
   <img src="docs/img/hero.png" alt="The UMI no one wants: hand-worn gripper with an Intel RealSense D405 wrist camera" width="900">
 </p>
 
+> **Chopstick branch:** [`chopstick/`](chopstick/README.md) adds a KIWI-style chopstick gripper, built around an
+> Insta360 X5 360° camera. It includes a handheld data gripper and its servo twin on OpenArm, per-part STEP/STL, an
+> OpenArm flange adapter, URDFs, and a retargeting package that maps demos onto OpenArm.
+
 A hand-worn gripper for collecting bimanual manipulation data without a robot in the loop. It has an
 **Intel RealSense D405** depth camera on the wrist, an on-board **IMU and Raspberry Pi Pico 2**, a **record button** under
 your index finger, and a single USB cable to your laptop.

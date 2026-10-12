@@ -1,0 +1,22 @@
+[project]
+name = "chopstick-retarget"
+version = "0.1.0"
+description = "Chopstick gripper kinematics and retargeting onto OpenArm"
+requires-python = ">=3.9"
+dependencies = ["numpy", "scipy"]
+
+[project.optional-dependencies]
+test = ["pytest", "yourdfpy"]
+
+[project.scripts]
+chopstick-retarget = "chopstick_retarget.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["chopstick_retarget"]
+
+[tool.setuptools.package-data]
+chopstick_retarget = ["chopstick_kinematics.json"]

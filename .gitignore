@@ -4,3 +4,4 @@ __pycache__/
 *.FCStd1
 *~
 .DS_Store
+chopstick/assembly/_openarm_chopstick.urdf
