@@ -1,12 +1,25 @@
 # The UMI no one wants
 
+## Chopstick (this branch)
+
 <p align="center">
-  <img src="docs/img/hero.png" alt="The UMI no one wants: hand-worn gripper with an Intel RealSense D405 wrist camera" width="900">
+  <img src="chopstick/docs/img/kit.png" alt="Chopstick data gripper and its OpenArm robot twin" width="860">
+</p>
+<p align="center">
+  <img src="chopstick/docs/img/openarm_bimanual.png" alt="OpenArm with the chopstick robot gripper on both arms" width="420">
+  <img src="chopstick/docs/img/opening.png" alt="Jaw opening at 0, 15, 30 and 45 degrees" width="440">
 </p>
 
-> **Chopstick branch:** [`chopstick/`](chopstick/README.md) adds a KIWI-style chopstick gripper, built around an
-> Insta360 X5 360° camera. It includes a handheld data gripper and its servo twin on OpenArm, per-part STEP/STL, an
-> OpenArm flange adapter, URDFs, and a retargeting package that maps demos onto OpenArm.
+A KIWI-style chopstick gripper with an Insta360 X5 360° camera. It comes in two builds: a passive handheld data gripper
+and its servo twin on OpenArm. Both have the same jaws and the same camera position, so demos retarget exactly. The
+branch includes per-part STEP/STL, an OpenArm flange adapter, measured kinematics, URDFs, and a retargeting package. See
+**[chopstick/README.md](chopstick/README.md)**.
+
+## HandUMI + D405 gripper
+
+<p align="center">
+  <img src="docs/img/hero.png" alt="The UMI no one wants: hand-worn gripper with an Intel RealSense D405 wrist camera" width="700">
+</p>
 
 A hand-worn gripper for collecting bimanual manipulation data without a robot in the loop. It has an
 **Intel RealSense D405** depth camera on the wrist, an on-board **IMU and Raspberry Pi Pico 2**, a **record button** under

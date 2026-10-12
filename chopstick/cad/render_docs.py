@@ -56,6 +56,20 @@ def hero(parts):
     shot(p, IMG / "hero.png", (300, -330, 260), (110, 0, 10), zoom=1.3)
 
 
+def kit(parts):
+    """The handheld data gripper and the OpenArm robot gripper side by side."""
+    p = plotter((2000, 1000))
+    for m in gripper("data", 18, parts).values():
+        add(p, m)
+    view = np.array([320.0, -490.0, 330.0])
+    side = np.array([-view[1], view[0], 0.0]) / np.hypot(view[0], view[1])   # across the view, to the right
+    off = trimesh.transformations.translation_matrix(side * 300)
+    for m in gripper("openarm", 25, parts).values():
+        add(p, m.copy().apply_transform(off))
+    c = np.array([100.0, 0, 0]) + side * 150
+    shot(p, IMG / "kit.png", tuple(c + view), tuple(c), zoom=1.5)
+
+
 def opening(parts):
     p = plotter((2000, 700))
     for i, deg in enumerate((0, 15, 30, 45)):
@@ -141,6 +155,7 @@ def main():
     IMG.mkdir(parents=True, exist_ok=True)
     parts = load_parts()
     hero(parts)
+    kit(parts)
     opening(parts)
     exploded(parts)
     robot_gripper(parts, a.openarm)

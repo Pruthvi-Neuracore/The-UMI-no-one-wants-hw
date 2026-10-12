@@ -10,6 +10,12 @@ Apache-2.0). The jaws are passive and finger-driven. An Insta360 X5 360° camera
 handheld tool are the camera itself: no encoder and no wiring. Jaw opening is read from the camera image using red dots
 printed on the jaws.
 
+<p align="center">
+  <img src="docs/img/kit.png" alt="Handheld data gripper (left) and its OpenArm robot twin with the adapter plate and servo (right)" width="860">
+  <br><em>Left: the handheld data gripper. Right: the robot twin, with the OpenArm adapter plate and the SM40BL servo
+  under the driver jaw. Both have the same jaws and the same camera position.</em>
+</p>
+
 This folder adds what KIWI's release leaves to you:
 
 - **Per-part CAD** (STEP and STL), split out of KIWI's assemblies into one gripper frame. Jaws are stored closed, so every
