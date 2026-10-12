@@ -10,9 +10,9 @@ Quantities are **per gripper**. A bimanual kit is two of each.
 | **White** | PLA | jaws (`jaw_left_dc`, `jaw_right_dc` with the finger sleeves; `jaw_left_sa`, `jaw_right`), `pg_pod`, `pg_pod_lid` |
 | **Red** | PLA, second filament | the dots on the jaws: add `hardware/STL/<jaw>_dots.stl` as a part or modifier on the jaw and give it red. Red on white is what the vision tracks |
 | **White** | TPU 95A | `tip_tpu_left`, `tip_tpu_right` |
-| **Blue** | TPU 95A | `sleeve_button_cover_left`, `sleeve_button_cover_right`, `pg_pod_button` |
+| **Blue** | TPU 95A | the button cover `sleeve_button_cover_left` or `_right` |
 
-## Handheld, Insta360 X5 (`data`)
+## Handheld, Insta360 X5 (`data_right` / `data_left`)
 
 | Item | Qty | Notes |
 |---|---|---|
@@ -25,7 +25,8 @@ Quantities are **per gripper**. A bimanual kit is two of each.
 | Socket cap screw M2 × 4 | 3 | Locating screws, camera button |
 | **Button head screw 1/4"-20 × 5/8"** | **1** | **Pod + frame + camera (replaces the 3/8" countersunk)** |
 | Rubber band | 1 | Reopens the jaws |
-| Tactile switch 6 × 6 mm, stiff (250–320 gf), 4.3 mm tall | 1 | In the index-finger sleeve: right jaw on the right-hand gripper (start/stop), left jaw on the left-hand gripper (cancel) |
+| Elastic hook-and-loop strap, 16 mm wide (e.g. blue, double-sided "one-wrap" style) | 2 × ~12 cm | Finger straps through the fins' slots, one per jaw |
+| Tactile switch 6 × 6 mm, stiff (250–320 gf), 4.3 mm tall | 1 | In the index-finger pad: `jaw_right_dc_button` on `data_right` (start/stop), `jaw_left_dc_button` on `data_left` (cancel) |
 | Thin 2-core silicone wire, about 25 cm | 1 | Sleeve button to the pod, with slack for the jaw's swing |
 | Wrist strap, foam pad, grip tape | – | To taste |
 | ArUco tag, DICT_4X4_50, 14 mm | 1 | `hardware/tags/pg_tags_4x4_50_14mm.pdf`, one id per gripper |
@@ -39,7 +40,6 @@ Quantities are **per gripper**. A bimanual kit is two of each.
 | IMU breakout (ICM-42688-P, LSM6DSOX or BNO085 class) | 1 | Up to about 26 × 18 mm, I²C. Tape or epoxy it to the pod's top wall |
 | 1S LiPo, 402535 (300 mAh, 4 × 25 × 35 mm) with protection | 1 | JST-PH or soldered to the XIAO's BAT pads |
 | Slide switch SS12D00 (or similar 8.5 × 3.6 mm) | 1 | In the battery lead |
-| Tactile switch 6 × 6 mm, about 160–250 gf | 1 | Spare button on the pod's front, on the post behind its cap |
 | M2 × 6 self-tapping screw | 4 | Lid |
 | Thin silicone wire, double-sided foam tape | – | |
 

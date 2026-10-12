@@ -70,7 +70,7 @@ def test_servo_map():
     assert abs(s.theta(s.steps(0.4)) - 0.4) < 2 * np.pi / 4096
 
 
-BUILDS = {"data": ("x5", None), "data_d405": ("d405", None), "openarm": ("x5", "openarm"),
+BUILDS = {"data_right": ("x5", None), "data_left": ("x5", None), "data_d405": ("d405", None), "openarm": ("x5", "openarm"),
           "openarm_d405": ("d405", "openarm"), "iso50": ("x5", "iso50"), "iso50_d405": ("d405", "iso50")}
 
 

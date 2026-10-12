@@ -105,6 +105,8 @@ def build(kind, parts, kin):
             return ("mass", X5_MASS_G)
         if n == "d405_envelope":
             return ("mass", D405_MASS_G)
+        if n.startswith("sleeve_strap"):
+            return ("mass", 3.0)                         # elastic hook-and-loop strap
         if n == "servo_envelope":
             return ("mass", SERVO_MASS_G)
         return ("density", DENSITY["tpu" if n.startswith("tip_tpu") else "pla"])

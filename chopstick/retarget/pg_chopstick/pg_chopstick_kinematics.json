@@ -998,7 +998,8 @@
   "data_gripper": 72.0,
   "robot_gripper": 72.0,
   "per_build": {
-   "data": 72.0,
+   "data_right": 72.0,
+   "data_left": 72.0,
    "data_d405": 72.0,
    "openarm": 72.0,
    "openarm_d405": 72.0,

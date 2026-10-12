@@ -25,8 +25,8 @@ from OCP.BRepAdaptor import BRepAdaptor_Surface
 from scipy.sparse.csgraph import connected_components
 
 from extract_parts import THREEMF, threemf_meshes
-from parts import (GEAR_MODULE, GEAR_TEETH, HW, PIVOT_L, PIVOT_R, ROOT, SA_MODEL_OPEN_DEG, jaw_matrix, load_parts,
-                   load_raw)
+from parts import (BUILDS, GEAR_MODULE, GEAR_TEETH, HW, PIVOT_L, PIVOT_R, ROOT, SA_MODEL_OPEN_DEG, jaw_matrix,
+                   load_parts, load_raw, side_of)
 from iso_flange_plate import T_FLANGE
 from openarm_adapter import T_LINK7
 
@@ -37,6 +37,8 @@ JAW_3MF = {"jaw_left_dc": "spur_bearing_test_7_datacollection parts - Left Finge
 
 
 def to_mesh(shape, tol=0.05):
+    if isinstance(shape, trimesh.Trimesh):          # mesh-only parts (the D405 cup from the HandUMI build)
+        return shape.copy()
     v, f = shape.tessellate(tol, 0.2)
     return trimesh.Trimesh(np.array([(q.X, q.Y, q.Z) for q in v]), np.array(f), process=True)
 
@@ -193,7 +195,9 @@ def main(check):
         dots[name] = d
         print(f"{name}: {len(d)} red dots, registration rms {rms:.3f} mm")
         write_dot_inlays(name, d)
-    write_dot_inlays("jaw_right_dc", dots["jaw_right"])     # same jaw, same dots
+    for v in ("jaw_right_dc", "jaw_right_dc_button"):        # the handheld variants: same jaw, same dots
+        write_dot_inlays(v, dots["jaw_right"])
+    write_dot_inlays("jaw_left_dc_button", dots["jaw_left_dc"])
 
     table = gap_table(tl, tr)
     data = {
@@ -237,21 +241,13 @@ def main(check):
         },
     }
     if check:
-        jaws_dc = {"left": ["jaw_left_dc", "tip_tpu_left", "sleeve_button_cover_left"],
-                   "right": ["jaw_right_dc", "tip_tpu_right", "sleeve_button_cover_right"]}
-        jaws_sa = {"left": ["jaw_left_sa", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]}
         lims = {}
-        for build, fixed, jaws in (
-                ("data", ["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "pg_pod"], jaws_dc),
-                ("data_d405", ["chopstick_base_dc", "chopstick_clip_dc", "d405_frame"], jaws_dc),
-                ("openarm", ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b"], jaws_sa),
-                ("openarm_d405", ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame"], jaws_sa),
-                ("iso50", ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "iso_flange_plate"],
-                 jaws_sa),
-                ("iso50_d405", ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame", "iso_flange_plate"], jaws_sa)):
+        for build, names in BUILDS.items():
+            fixed = [n for n in names if side_of(n) is None]
+            jaws = {sd: [n for n in names if side_of(n) == sd] for sd in ("left", "right")}
             lims[build], rest = clash_sweep(parts, fixed, jaws)
             print(f"{build:13s} closed-pose overlap {rest:.3f} cm3, clash-free opening per jaw {lims[build]:.0f} deg")
-        data["theta_max_deg"] = {"data_gripper": min(lims["data"], lims["data_d405"]),
+        data["theta_max_deg"] = {"data_gripper": min(v for k, v in lims.items() if k.startswith("data")),
                                  "robot_gripper": min(v for k, v in lims.items() if not k.startswith("data")),
                                  "per_build": lims, "note": "first clash between a jaw and the fixed parts, 2 deg steps"}
     elif OUT.exists() and "theta_max_deg" in json.loads(OUT.read_text()):

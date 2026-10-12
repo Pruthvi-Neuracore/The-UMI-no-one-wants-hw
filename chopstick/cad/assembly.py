@@ -2,7 +2,8 @@
 
     python assembly.py [--theta-deg 20] [--check] [--openarm /path/to/openarm_description]
 
-Builds (parts.BUILDS): data (handheld, Insta360 X5 + PG pod), data_d405 (handheld, RealSense D405),
+Builds (parts.BUILDS): data_right / data_left (handheld, Insta360 X5 + PG pod, button under that hand's index
+finger), data_d405 (handheld, RealSense D405),
 openarm / openarm_d405 (OpenArm adapter) and iso50 / iso50_d405 (ISO 9409-1-50-4-M6 flange plate).
 --check: every moving part against every fixed part at the given angle, and every pair of fixed parts; with
 --openarm, also the OpenArm builds against the link7 mesh and the adapter's holes against link7's PCD-50 holes.
@@ -26,7 +27,8 @@ OUT = ROOT / "assembly"
 # PG blue and white: structure blue, moving and hand-touched parts white, red dots for the vision
 COLOURS = {"blue": "#1f5fae", "white": "#f4f6f8", "tpu": "#dfe5ec", "camera": "#1d1f22", "servo": "#2a2d33",
            "dot": "#d62828", "button": "#1f5fae"}
-WHITE_PARTS = {"jaw_left_dc", "jaw_left_sa", "jaw_right", "jaw_right_dc", "pg_pod", "pg_pod_lid"}
+WHITE_PARTS = {"jaw_left_dc", "jaw_left_dc_button", "jaw_left_sa", "jaw_right", "jaw_right_dc", "jaw_right_dc_button",
+               "pg_pod", "pg_pod_lid"}
 UP_Y = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])   # Z up -> Y up (glTF)
 
 
@@ -37,7 +39,7 @@ def colour_of(name):
         return COLOURS["camera"]
     if name == "servo_envelope":
         return COLOURS["servo"]
-    if name == "pg_pod_button" or name.startswith("sleeve_button_cover"):
+    if name.startswith("sleeve_"):                       # TPU button covers and the elastic finger straps
         return COLOURS["button"]
     return COLOURS["white"] if name in WHITE_PARTS else COLOURS["blue"]
 

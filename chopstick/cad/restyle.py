@@ -1,6 +1,7 @@
 """PG Chopstick restyle: the PG look on the printed parts, without touching any mating feature.
 
-  * Handheld jaws: a finger sleeve with a record-button pocket and a TPU cover (sleeve.py).
+  * Handheld jaws: a finger-sleeve pad with two strap fins for an elastic hook-and-loop strap, and a variant with the
+    record button (sleeve.py).
   * PG badge: the PG logo engraved 0.3 mm deep with three slanted "speed" grooves beside it (0.6 mm deep, at the camera's
     10° tilt), on the best-placed flat face of each visible part (base top, camera-frame side, outer jaw face, ...).
 
@@ -28,7 +29,7 @@ BADGE = {
     "chopstick_base_dc": (0, 0, 1), "chopstick_base_sa": (0, -1, 0),
     "x5_lite_frame": (0, -1, 0), "x5_frame": (0, -1, 0),
     "jaw_left_dc": (0, 0, -1), "jaw_left_sa": (0.19, 0.98, 0), "jaw_right": (0.19, -0.98, 0),
-    "jaw_right_dc": (0, 0, -1),
+    "jaw_right_dc": (0, 0, -1), "jaw_left_dc_button": (0, 0, -1), "jaw_right_dc_button": (0, 0, -1),
     # new PG parts (badged by their own scripts through restyle())
     "pg_pod": (0, -1, 0), "d405_frame": (-1, 0, 0), "openarm_adapter": (1, 0, 0), "iso_flange_plate": (1, 0, 0),
 }
@@ -114,14 +115,29 @@ def safe_cut(part, cutter, name, what):
 SLEEVED = {"jaw_left_dc": "left", "jaw_right_dc": "right"}
 
 
+def save(name, shape, tol=0.02):
+    export_step(shape, str(HW / "STEP" / f"{name}.step"))
+    export_stl(shape, str(HW / "STL" / f"{name}.stl"), tolerance=tol, angular_tolerance=0.15)
+
+
+def sleeved(name, part):
+    """The two variants of a handheld jaw (plain pad, and pad with the button), plus its strap and button cover."""
+    side = SLEEVED[name]
+    out = {}
+    for button in (False, True):
+        jaw, pl = sleeve.add_sleeve(part, side, button)
+        out[name + ("_button" if button else "")] = jaw
+    print(f"  {name}: finger-sleeve pad + strap fins, plain and with the button")
+    save(f"sleeve_button_cover_{side}", sleeve.cover(pl), 0.01)
+    ref = HW / "reference"                                                # bought parts, drawn for assemblies only
+    ref.mkdir(exist_ok=True)
+    export_step(sleeve.strap(pl), str(ref / f"sleeve_strap_{side}.step"))
+    for old in list(HW.glob("*/sleeve_cuff_*")):                          # the earlier TPU cuffs
+        old.unlink()
+    return out
+
+
 def restyle(name, part):
-    if name in SLEEVED:                      # handheld jaws: finger sleeve with the record button (sleeve.py)
-        part, pl = sleeve.add_sleeve(part, SLEEVED[name])
-        print(f"  {name}: finger sleeve + button pocket")
-        side = SLEEVED[name]
-        cover = sleeve.cover(pl)
-        export_step(cover, str(HW / "STEP" / f"sleeve_button_cover_{side}.step"))
-        export_stl(cover, str(HW / "STL" / f"sleeve_button_cover_{side}.stl"), tolerance=0.01, angular_tolerance=0.1)
     if name in BADGE:
         for grooves in (True, False):
             pl = find_spot(part, BADGE[name], grooves)
@@ -137,9 +153,9 @@ def main():
     for name, part in load_raw().items():
         if name.endswith("_envelope"):
             continue
-        part = restyle(name, part)
-        export_step(part, str(HW / "STEP" / f"{name}.step"))
-        export_stl(part, str(HW / "STL" / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
+        variants = sleeved(name, part) if name in SLEEVED else {name: part}
+        for vname, v in variants.items():
+            save(vname, restyle(vname, v))
 
 
 if __name__ == "__main__":

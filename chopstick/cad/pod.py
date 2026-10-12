@@ -1,17 +1,17 @@
 """PG pod: a small sealed electronics pod under the handheld gripper's camera frame.
 
 It holds a Seeed XIAO ESP32-S3 (LiPo charger, Wi-Fi/BLE, USB-C), an IMU breakout, a 300 mAh 1S LiPo (402535),
-a slide power switch and a record button, so the handheld gripper stays wireless. The IMU is screwed rigidly to the
+and a slide power switch, so the handheld gripper stays wireless. The IMU is screwed rigidly to the
 camera, so its gyro can be cross-correlated with the X5's own IMU to put both on one clock.
 
 Mounting: the pod's top has a 3 mm deep pocket that takes the bottom of the X5 frame (it can't rotate), and the
 camera's 1/4"-20 screw is replaced by a longer one (1/4"-20 x 5/8" button head) that goes up from inside the pod,
 through the pod's top wall and the frame, into the camera. Same 10° axis as the original screw.
 
-The record buttons in the jaws' finger sleeves (sleeve.py) are wired in through two Ø3.5 holes in the front wall.
+The record button sits in the index-finger sleeve on the jaw (sleeve.py); its wire comes in through one of the two
+Ø3.5 holes in the front wall (one per side, so the same pod serves either hand).
 
-Parts: pg_pod (body), pg_pod_lid (bottom lid, 4 x M2 x 6 self-tapping), pg_pod_button (TPU cap over a 6 x 6 mm
-tactile switch, front face, under the palm's heel / ring finger).
+Parts: pg_pod (body) and pg_pod_lid (bottom lid, 4 x M2 x 6 self-tapping).
 
     python pod.py
 """
@@ -36,7 +36,6 @@ Z_TOP = FRAME_BOTTOM_Z + POCKET_D             # top of the pocket's lip
 Z_BOT = FRAME_BOTTOM_Z - TOP - H              # bottom of the body, where the lid goes
 LID = 2.0
 CORNER_R = 6.0
-BUTTON = dict(y=0.0, z=FRAME_BOTTOM_Z - TOP - 8.0, d=11.0)
 USB = dict(y=-6.0, z=Z_BOT + 5.0, w=10.0, h=4.6)       # XIAO USB-C, back wall
 SWITCH = dict(x=14.0, z=Z_BOT + 6.0, w=9.0, h=4.0)     # slide switch, -y wall
 BOSS_IN = 4.5                                          # lid screw bosses, inset from the inner corners
@@ -69,14 +68,6 @@ def build_pod():
             hgt = FRAME_BOTTOM_Z - TOP - Z_BOT
             body += Pos(bx, by, Z_BOT + hgt / 2) * Cylinder(3.0, hgt)
             body -= Pos(bx, by, Z_BOT + 5) * Cylinder(0.9, 10.5)
-    # record button: Ø11 through the front wall, and a post behind it that carries the 6 x 6 switch
-    b = BUTTON
-    body -= Pos(X1 - WALL / 2, b["y"], b["z"]) * Rot(0, 90, 0) * Cylinder(b["d"] / 2, WALL + 2)
-    post_x1 = X1 - WALL - 1.4 - 4.3                      # flange 1.4 + switch height 4.3 (incl. plunger)
-    post = Pos(post_x1 - 3.0, b["y"], (b["z"] + FRAME_BOTTOM_Z - TOP) / 2 - 2.0) * Box(
-        6.0, 9.0, FRAME_BOTTOM_Z - TOP - b["z"] + 6.0)
-    body += post
-    body -= Pos(post_x1 - 0.5, b["y"], b["z"]) * Box(1.2, 6.4, 6.4)   # switch seat
     # front wall: wire entries for the sleeve buttons on the jaws (one per side, so either hand works)
     for sy in (-1, 1):
         body -= Pos(X1 - WALL / 2, sy * CABLE["y"], CABLE["z"]) * Rot(0, 90, 0) * Cylinder(CABLE["d"] / 2, WALL + 2)
@@ -109,21 +100,12 @@ def build_lid():
     return lid + rim
 
 
-def build_button():
-    """TPU cap: a dome that stands 1 mm proud of the front wall, a flange inside, and a nub for the switch."""
-    b = BUTTON
-    d = b["d"] - 0.4
-    cap = Pos(X1 - WALL / 2 + 0.5, b["y"], b["z"]) * Rot(0, 90, 0) * Cylinder(d / 2, WALL + 1.0)
-    cap = fillet(cap.edges().group_by(Axis.X)[-1], 1.2)
-    cap += Pos(X1 - WALL - 0.7, b["y"], b["z"]) * Rot(0, 90, 0) * Cylinder(d / 2 + 1.6, 1.4)
-    cap += Pos(X1 - WALL - 1.4 - 0.5, b["y"], b["z"]) * Rot(0, 90, 0) * Cylinder(1.6, 1.0)
-    return cap
-
-
 def main():
     from restyle import restyle
-    for name, part in (("pg_pod", restyle("pg_pod", build_pod())), ("pg_pod_lid", build_lid()),
-                       ("pg_pod_button", build_button())):
+    for old in ("pg_pod_button.step", "pg_pod_button.stl"):          # the pod no longer has its own button
+        for d in (HW / "STEP", HW / "STL"):
+            (d / old).unlink(missing_ok=True)
+    for name, part in (("pg_pod", restyle("pg_pod", build_pod())), ("pg_pod_lid", build_lid())):
         export_step(part, str(HW / "STEP" / f"{name}.step"))
         export_stl(part, str(HW / "STL" / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
         bb = part.bounding_box()

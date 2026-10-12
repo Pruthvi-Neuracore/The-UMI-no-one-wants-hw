@@ -45,8 +45,10 @@ SA_PARTS = {
     "Left_Finger_SA_Spur_Gear_24_teeth_1%": "jaw_left_sa",
 }
 # Parts that move with each jaw, by side.
-LEFT_MOVING = {"jaw_left_dc", "jaw_left_sa", "tip_tpu_left", "sleeve_button_cover_left"}
-RIGHT_MOVING = {"jaw_right", "jaw_right_dc", "tip_tpu_right", "sleeve_button_cover_right"}
+LEFT_MOVING = {"jaw_left_dc", "jaw_left_dc_button", "jaw_left_sa", "tip_tpu_left", "sleeve_button_cover_left",
+               "sleeve_strap_left"}
+RIGHT_MOVING = {"jaw_right", "jaw_right_dc", "jaw_right_dc_button", "tip_tpu_right", "sleeve_button_cover_right",
+                "sleeve_strap_right"}
 
 # Reference bodies that are not printed and are not redistributed as parts.
 X5_LABEL = "Insta360_X5"
@@ -110,9 +112,11 @@ def load_raw():
 
 
 def load_parts():
-    """The finished parts from hardware/STEP (restyled, plus the new PG parts) and the reference envelopes."""
+    """The finished parts from hardware/STEP (restyled, plus the new PG parts), the bought parts drawn in
+    hardware/reference (finger straps) and the reference envelopes."""
     raw = load_raw()
-    parts = {p.stem: plain(import_step(str(p))) for p in sorted((HW / "STEP").glob("*.step"))}
+    files = sorted((HW / "STEP").glob("*.step")) + sorted((HW / "reference").glob("*.step"))
+    parts = {p.stem: plain(import_step(str(p))) for p in files}
     for k in ("insta360_x5_envelope", "servo_envelope"):
         parts[k] = raw[k]
     parts.update(envelopes())
@@ -122,28 +126,32 @@ def load_parts():
 def envelopes():
     """Simple bodies for the bought parts the new PG parts carry (not printed)."""
     import d405_frame
-    return {"d405_envelope": d405_frame.camera_envelope()}
+    return {"d405_envelope": d405_frame.camera_envelope(),
+            "d405_cup": d405_frame.cup()}            # the HandUMI cup (mesh), on the hinge at the default tilt
 
 
 # Which parts make each build. Moving parts are listed under the side they turn with.
-JAWS_DC = ["jaw_left_dc", "jaw_right_dc", "tip_tpu_left", "tip_tpu_right",
-           "sleeve_button_cover_left", "sleeve_button_cover_right"]
-JAWS_SA = ["jaw_left_sa", "jaw_right", "tip_tpu_left", "tip_tpu_right"]
-POD = ["pg_pod", "pg_pod_lid", "pg_pod_button"]
+TIPS = ["tip_tpu_left", "tip_tpu_right"]
+STRAPS = ["sleeve_strap_left", "sleeve_strap_right"]       # elastic straps (bought; reference bodies)
+JAWS_SA = ["jaw_left_sa", "jaw_right"] + TIPS
+HANDHELD_X5 = ["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "pg_pod", "pg_pod_lid"] + TIPS + STRAPS
 BUILDS = {
-    # handheld, Insta360 X5, with the PG pod under the camera
-    "data": ["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame"] + JAWS_DC + POD,
-    # handheld, RealSense D405 instead of the X5
-    "data_d405": ["chopstick_base_dc", "chopstick_clip_dc", "d405_frame"] + JAWS_DC,
+    # handheld, Insta360 X5 + PG pod. The record button is in the index-finger sleeve only:
+    # right hand -> right jaw (start / stop), left hand -> left jaw (cancel)
+    "data_right": HANDHELD_X5 + ["jaw_left_dc", "jaw_right_dc_button", "sleeve_button_cover_right"],
+    "data_left": HANDHELD_X5 + ["jaw_left_dc_button", "jaw_right_dc", "sleeve_button_cover_left"],
+    # handheld, RealSense D405 (no pod, so no button)
+    "data_d405": ["chopstick_base_dc", "chopstick_clip_dc", "d405_frame", "d405_cup", "jaw_left_dc", "jaw_right_dc"] + TIPS
+                 + STRAPS,
     # OpenArm, Insta360 X5
     "openarm": ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "openarm_adapter"] + JAWS_SA,
     # OpenArm, RealSense D405 (same d405_frame; its back takes the adapter directly)
-    "openarm_d405": ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame", "openarm_adapter"] + JAWS_SA,
+    "openarm_d405": ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame", "d405_cup", "openarm_adapter"] + JAWS_SA,
     # any cobot with an ISO 9409-1-50-4-M6 tool flange (UR e-series, ABB GoFa, FANUC CRX, ...)
     "iso50": ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "iso_flange_plate"] + JAWS_SA,
-    "iso50_d405": ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame", "iso_flange_plate"] + JAWS_SA,
+    "iso50_d405": ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame", "d405_cup", "iso_flange_plate"] + JAWS_SA,
 }
 CAMERA = {b: ("d405_envelope" if b.endswith("_d405") else "insta360_x5_envelope") for b in BUILDS}
 MOUNT = {"openarm": "openarm_adapter", "openarm_d405": "openarm_adapter",
          "iso50": "iso_flange_plate", "iso50_d405": "iso_flange_plate"}
-DATA_GRIPPER, ROBOT_GRIPPER = BUILDS["data"], BUILDS["openarm"]
+DATA_GRIPPER, ROBOT_GRIPPER = BUILDS["data_right"], BUILDS["openarm"]

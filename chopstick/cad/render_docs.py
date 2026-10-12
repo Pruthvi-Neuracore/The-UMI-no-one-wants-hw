@@ -67,14 +67,14 @@ def side_by_side(parts, builds, path, degs, view=(320.0, -490.0, 330.0), gap=300
 
 def hero(parts):
     p = plotter()
-    place(p, gripper("data", 18, parts))
+    place(p, gripper("data_right", 18, parts))
     shot(p, IMG / "hero.png", (300, -330, 260), (110, 0, -10), zoom=1.3)
 
 
 def opening(parts):
     p = plotter((2000, 760))
     for i, deg in enumerate((0, 15, 30, 45)):
-        place(p, gripper("data", deg, parts), trimesh.transformations.translation_matrix([0, -i * 330, 0]))
+        place(p, gripper("data_right", deg, parts), trimesh.transformations.translation_matrix([0, -i * 330, 0]))
         p.add_point_labels([[235, -i * 330, 0]], [f"{deg}°"], font_size=36, shape=None, text_color="#1f5fae",
                            show_points=False, always_visible=True)
     shot(p, IMG / "opening.png", (110, -495, 1300), (110, -495, 0), up=(1, 0, 0), zoom=2.1)
@@ -83,20 +83,20 @@ def opening(parts):
 def pod(parts):
     """The PG pod from below and behind: USB-C, switch, button, lid."""
     p = plotter((1400, 1000))
-    place(p, gripper("data", 10, parts))
+    place(p, gripper("data_right", 10, parts))
     shot(p, IMG / "pod.png", (-260, -380, -260), (40, 0, -30), zoom=1.25)
 
 
 def sleeve_closeup(parts):
-    """Right handheld jaw, looking down the finger sleeve from behind (the way the finger goes in): the button cover
-    sits on the pad, the wall the finger pushes."""
+    """Right handheld jaw, looking down the finger sleeve from behind (the way the finger goes in): the strap fins and
+    the elastic strap, and the button cover on the pad, the wall the finger pushes."""
     import sleeve
     from parts import load_raw
     pl = sleeve.frame(load_raw()["jaw_right"], "right")
     o, d, n = (np.array(tuple(v)) for v in (pl.origin, pl.x_dir, pl.z_dir))
-    axis = o + n * (sleeve.PAD + sleeve.R_IN)
+    axis = o + n * (sleeve.PAD + sleeve.HALF_W)
     p = plotter((1400, 1000))
-    for name in ("jaw_right_dc", "tip_tpu_right", "sleeve_button_cover_right"):
+    for name in ("jaw_right_dc_button", "tip_tpu_right", "sleeve_button_cover_right", "sleeve_strap_right"):
         add(p, to_mesh(parts[name], 0.03), colour_of(name))
     shot(p, IMG / "sleeve.png", tuple(axis - 90 * d + 32 * n - np.array([0, 0, 8.0])), tuple(axis + 6 * d - 5 * n),
          zoom=1.5)
@@ -116,10 +116,10 @@ def plates(parts):
 
 def exploded(parts):
     """Printed parts: handheld row, robot row, new PG parts row."""
-    rows = [["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "jaw_left_dc", "jaw_right_dc", "tip_tpu_left",
-             "tip_tpu_right", "sleeve_button_cover_left"],
+    rows = [["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "jaw_left_dc", "jaw_right_dc_button",
+             "tip_tpu_left", "tip_tpu_right", "sleeve_button_cover_right"],
             ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "jaw_left_sa", "jaw_right"],
-            ["pg_pod", "pg_pod_lid", "pg_pod_button", "d405_frame", "openarm_adapter", "iso_flange_plate"]]
+            ["pg_pod", "pg_pod_lid", "d405_frame", "openarm_adapter", "iso_flange_plate"]]
     p = plotter((2000, 1200))
     for r, group in enumerate(rows):
         x = 0.0
@@ -196,7 +196,8 @@ def main():
             old.unlink()
     parts = load_parts()
     hero(parts)
-    side_by_side(parts, ["data", "openarm"], IMG / "kit.png", (18, 25))
+    side_by_side(parts, ["data_left", "data_right"], IMG / "pair.png", (18, 18), gap=320.0)
+    side_by_side(parts, ["data_right", "openarm"], IMG / "kit.png", (18, 25))
     side_by_side(parts, ["data_d405", "iso50_d405"], IMG / "d405.png", (18, 25))
     opening(parts)
     pod(parts)

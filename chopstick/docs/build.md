@@ -10,7 +10,8 @@ Print every part from `hardware/STL/` at 0.2 mm layers with a 0.4 mm nozzle, in 
 - **Robot plates** (`openarm_adapter`, `iso_flange_plate`): back face down, 4 walls, PETG, 100 % infill around the
   holes.
 - **Pod:** `pg_pod` top-down, so the pocket is on the bed with light supports in the pocket. `pg_pod_lid` flat.
-  `pg_pod_button` in TPU, flange down.
+  Print the TPU button cover flat. The handheld jaws print with the strap fins standing up; no supports are needed in
+  the slots (17 mm bridges).
 - **D405 frame:** on its back plate, with tree supports under the cup.
 
 ## Handheld gripper
@@ -18,12 +19,14 @@ Print every part from `hardware/STL/` at 0.2 mm layers with a 0.4 mm nozzle, in 
 1. **Inserts:** two M2 × 4 heat-set inserts in the back of the base, with M2 × 4 screws in them for positioning, and two
    M3 × 4 inserts from the underside.
 2. **Jaws:** glue on the TPU tips and press two 624 bearings into each jaw.
-3. **Sleeve button:** the button goes in the index-finger sleeve. That is the **right jaw (`jaw_right_dc`) on the
-   right-hand gripper (start/stop)** and the **left jaw (`jaw_left_dc`) on the left-hand gripper (cancel)**. Solder the
-   2-core wire to a 6 × 6 switch. Lay the wire in the channel
+3. **Sleeve button:** print the jaw pair for the hand. The **right-hand gripper** uses `jaw_right_dc_button` (start/stop)
+   with a plain `jaw_left_dc`; the **left-hand gripper** uses `jaw_left_dc_button` (cancel) with a plain
+   `jaw_right_dc`. Solder the 2-core wire to a 6 × 6 switch. Lay the wire in the channel
    at the bottom of the pad's pocket and out of the sleeve's back end, then press the switch into the pocket with its
    plunger up. Press the TPU cover into the oval recess so its nub sits on the plunger; a drop of flexible glue on the
-   rim holds it. Put a cover without a switch on the thumb jaw's pocket. Run the wire along the jaw's
+   rim holds it. Then fit the finger straps: on each jaw, loop one end of a 12 cm elastic hook-and-loop strap through one fin's slot and
+   stitch or hook it closed. With your finger on the pad, wrap the strap over it, thread it through the other fin's
+   slot and fold it back onto itself, snug but not tight. Run the wire along the jaw's
    underside to the pivot, leaving a loop of slack there for the jaw's swing.
 4. **Join:** hook the rubber band through the centre cavity onto both jaws. Mesh the gears **with the tips touching**,
    then fit the two M3 shoulder screws. The jaws must swing freely; if they bind, check your printer's tolerances.

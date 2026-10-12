@@ -1,10 +1,12 @@
 """Render bimanual cobots in their own colours with the PG Chopstick ISO 50 build on both flanges.
 
-    python robots.py /path/to/Neuracore_Robots
+    python robots.py /path/to/Neuracore_Robots [ur5 abb_gofa fanuc_crx]
 
-Uses the dual-arm descriptions in the Neuracore robots repository (not redistributed here): UR5, ABB GoFa CRB 15000
-and FANUC CRX-10iA. Their stock grippers (Robotiq Hand-E / 2F) are left out, and the PG Chopstick goes on each
-`<side>_flange`. The approach axis is taken from the flange towards the stock tool0, and the camera is kept on top.
+Uses robot descriptions from the Neuracore robots repository (not redistributed here):
+  * UR5 and ABB GoFa CRB 15000: their dual-arm descriptions, with the stock grippers (Robotiq Hand-E / 2F) left out,
+  * FANUC CRX-5iA: the clean single-arm description (crx5ia/arm.urdf), placed twice side by side.
+The PG Chopstick goes on each arm's flange: the approach axis runs from the flange towards the arm's tool0, and the
+camera is kept on top. Both arms are posed by a small IK so their tips meet in front of the robot.
 Writes docs/img/robot_<name>.png.
 """
 import math
@@ -13,42 +15,57 @@ from pathlib import Path
 
 import numpy as np
 import pyvista as pv
+import trimesh
 
 from assembly import assemble
 from parts import load_parts
 from render_docs import IMG, plotter, shot
 
-# targets for the left / right TCP (base frame, m), approach direction, and a seed for the IK
 ROBOTS = {
-    "ur5": dict(elbow="forearm_link", urdf="example_ur/descriptions/ur5_dual_description/robot.urdf",
+    "ur5": dict(urdf="example_ur/descriptions/ur5_dual_description/robot.urdf", dual=True, elbow="forearm_link",
                 tcp={"left": (0.60, -0.17, 0.22), "right": (0.60, 0.17, 0.22)}, approach=(0.6, 0.0, -0.8),
                 seed={"shoulder_lift_joint": -1.6, "elbow_joint": 1.6, "wrist_1_joint": -1.6, "wrist_2_joint": -1.57},
                 view=(1.6, -0.75, 0.8)),
-    "abb_gofa": dict(elbow="link_3", mirror=(-1, 1, 1, -1, 1, -1), urdf="example_abb/descriptions/crb15000_dual_description/robot.urdf",
+    "abb_gofa": dict(urdf="example_abb/descriptions/crb15000_dual_description/robot.urdf", dual=True, elbow="link_3",
+                     mirror=(-1, 1, 1, -1, 1, -1),
                      tcp={"left": (0.62, -0.17, 0.30), "right": (0.62, 0.17, 0.30)}, approach=(0.6, 0.0, -0.8),
                      seed={"joint_2": 0.4, "joint_3": 0.4, "joint_5": 0.9},
                      view=(1.6, -0.75, 0.8)),
-    "fanuc_crx": dict(elbow=None, mirror=(-1, 1, 1, -1, 1, -1), urdf="assets/fanuc_crx10ia_dual/robot.urdf",
-                      tcp={"left": (0.55, -0.17, -0.55), "right": (0.55, 0.17, -0.55)}, approach=(0.6, 0.0, -0.8),
-                      seed={"J2": 0.6, "J3": -0.4, "J5": -1.0},
-                      view=(1.6, -0.75, 0.5)),
+    "fanuc_crx": dict(urdf="example_fanuc/fanuc_decription/crx5ia/arm.urdf", dual=False, elbow="J3_link",
+                      bases={"left": (0.0, -0.45, 0.0), "right": (0.0, 0.45, 0.0)}, mirror=(-1, 1, 1, -1, 1, -1),
+                      tcp={"left": (0.58, -0.17, 0.22), "right": (0.58, 0.17, 0.22)}, approach=(0.6, 0.0, -0.8),
+                      seed={"J2": 0.3, "J3": -0.3, "J5": -1.2},
+                      view=(1.6, -0.75, 0.8)),
 }
 TCP_FROM_FLANGE = 0.016 + 0.2047          # ISO plate thickness + gripper-frame TCP x (m)
 STOCK_GRIPPER = ("robotiq", "hande", "finger", "knuckle", "coupler", "eef", "pad", "arg2f")
 
 
-def link_meshes(r, root_dir):
-    """[(trimesh in the base frame, rgb 0-1)] for every visual of every link, keeping each material's colour.
+class Arm:
+    """One arm: a yourdfpy model, the pose of its base in the scene, and the prefix its links carry."""
 
-    COLLADA files carry one sub-mesh per material (UR's blue ring, FANUC's accents); STL visuals take the URDF
+    def __init__(self, r, prefix="", T_base=np.eye(4)):
+        self.r, self.prefix, self.T = r, prefix, np.asarray(T_base, float)
+
+    def link(self, name):
+        return self.T @ self.r.get_transform(self.prefix + name, self.r.base_link)
+
+    def joints(self):
+        return [j for j in self.r.actuated_joint_names if j.startswith(self.prefix)
+                and self.r.joint_map[j].type == "revolute" and not any(s in j for s in STOCK_GRIPPER)]
+
+
+def link_meshes(r, root_dir, T_scene=np.eye(4)):
+    """[(trimesh in the scene frame, rgb 0-1)] for every visual of every link, keeping each material's colour.
+
+    COLLADA files carry one sub-mesh per material (UR's blue ring, FANUC's green bands); STL visuals take the URDF
     <material> colour. Links of the stock grippers are left out.
     """
-    import trimesh
     out = []
     for name, link in r.link_map.items():
         if any(s in name.lower() for s in STOCK_GRIPPER):
             continue
-        T_link = r.get_transform(name, r.base_link)
+        T_link = T_scene @ r.get_transform(name, r.base_link)
         for v in link.visuals:
             if v.geometry is None or v.geometry.mesh is None:
                 continue
@@ -63,8 +80,9 @@ def link_meshes(r, root_dir):
                 urdf_rgb = np.array(v.material.color.rgba[:3])
             loaded = trimesh.load(str(fn))
             if isinstance(loaded, trimesh.Scene):
-                for gname, T_node in ((n, loaded.graph[n][0]) for n in loaded.graph.nodes_geometry):
-                    g = loaded.geometry[loaded.graph[gname][1]].copy()
+                for node in loaded.graph.nodes_geometry:
+                    T_node, gname = loaded.graph[node]
+                    g = loaded.geometry[gname].copy()
                     rgb = urdf_rgb
                     try:
                         rgb = np.array(g.visual.material.main_color[:3]) / 255.0
@@ -76,17 +94,18 @@ def link_meshes(r, root_dir):
     return out
 
 
-def mount_frame(r, side):
-    """Flange pose with +X along the approach (flange -> stock tool0) and +Z as close to world up as possible."""
-    F = r.get_transform(f"{side}_flange", r.base_link)
-    tool = r.get_transform(f"{side}_tool0", r.base_link)
-    x = (tool[:3, 3] - F[:3, 3]).copy()
-    if np.linalg.norm(x) < 1e-6:                     # tool0 at the flange: use the flange's own z
-        x = F[:3, 2].copy()
-    x /= np.linalg.norm(x)
+def approach_in_flange(arm):
+    F, t = arm.link("flange"), arm.link("tool0")
+    a = t[:3, 3] - F[:3, 3]
+    a = F[:3, 2].copy() if np.linalg.norm(a) < 1e-6 else a / np.linalg.norm(a)
+    return F[:3, :3].T @ a
+
+
+def mount_frame(arm, a_f):
+    """Flange pose with +X along the approach and +Z as close to world up as possible (camera on top)."""
+    F = arm.link("flange")
+    x = F[:3, :3] @ a_f
     up = np.array([0, 0, 1.0]) - x * x[2]
-    if np.linalg.norm(up) < 1e-3:
-        up = np.cross(x, [0, 1.0, 0])
     z = up / np.linalg.norm(up)
     T = np.eye(4)
     T[:3, :3] = np.column_stack([x, np.cross(z, x), z])
@@ -94,34 +113,23 @@ def mount_frame(r, side):
     return T
 
 
-def approach_in_flange(r, side):
-    F = r.get_transform(f"{side}_flange", r.base_link)
-    t = r.get_transform(f"{side}_tool0", r.base_link)
-    a = t[:3, 3] - F[:3, 3]
-    a = F[:3, 2] if np.linalg.norm(a) < 1e-6 else a / np.linalg.norm(a)
-    return F[:3, :3].T @ a
-
-
-def solve(r, side, tcp, approach, seed, elbow, start_q=None):
-    """Joint values for one arm putting its TCP at `tcp` with the gripper approach along `approach`."""
+def solve(arm, tcp, approach, seed, elbow, start_q=None):
+    """Joint values for one arm putting its TCP at `tcp` (scene frame) with the gripper approach along `approach`."""
     from scipy.optimize import minimize
-    joints = [j for j in r.actuated_joint_names if j.startswith(side) and r.joint_map[j].type == "revolute"
-              and not any(s in j for s in STOCK_GRIPPER)]
-    a_f = approach_in_flange(r, side)
+    joints = arm.joints()
+    a_f = approach_in_flange(arm)
     want_a = np.asarray(approach, float) / np.linalg.norm(approach)
-    lims = [(r.joint_map[j].limit.lower, r.joint_map[j].limit.upper) for j in joints]
+    lims = [(arm.r.joint_map[j].limit.lower, arm.r.joint_map[j].limit.upper) for j in joints]
     x0 = np.array([next((v for k, v in seed.items() if j.endswith(k)), 0.0) for j in joints])
-    if side == "right":
-        x0 = np.array([-v if j.endswith(("shoulder_pan_joint", "joint_1", "J1")) else v for j, v in zip(joints, x0)])
     if start_q is not None:
         x0 = np.asarray(start_q, float)
 
     def cost(q):
-        r.update_cfg(dict(zip(joints, q)))
-        F = r.get_transform(f"{side}_flange", r.base_link)
+        arm.r.update_cfg(dict(zip(joints, q)))
+        F = arm.link("flange")
         a = F[:3, :3] @ a_f
         p = F[:3, 3] + a * TCP_FROM_FLANGE
-        z_elbow = r.get_transform(f"{side}_{elbow}", r.base_link)[2, 3] if elbow else 0.0
+        z_elbow = arm.link(elbow)[2, 3] if elbow else 0.0
         return (np.sum((p - tcp) ** 2) * 100 + np.sum((a - want_a) ** 2) + 1e-4 * np.sum((q - x0) ** 2)
                 - 0.02 * z_elbow)                  # prefer elbow-up solutions
 
@@ -136,33 +144,36 @@ def solve(r, side, tcp, approach, seed, elbow, start_q=None):
         res = minimize(cost, start, bounds=lims, method="L-BFGS-B")
         if best is None or res.fun < best.fun:
             best = res
-    cfg = dict(zip(joints, best.x))
-    r.update_cfg(cfg)
-    return cfg, best.fun
+    arm.r.update_cfg(dict(zip(joints, best.x)))
+    return best.x, best.fun, a_f
 
 
 def render(root, name, spec, parts):
     import yourdfpy
     path = Path(root) / spec["urdf"]
-    r = yourdfpy.URDF.load(str(path), build_scene_graph=True, load_meshes=False)
-    cfg = {}
-    left_q = None
+    if spec["dual"]:
+        r = yourdfpy.URDF.load(str(path), build_scene_graph=True, load_meshes=False)
+        arms = {s: Arm(r, f"{s}_") for s in ("left", "right")}
+        models = [(r, np.eye(4))]
+    else:
+        arms = {s: Arm(yourdfpy.URDF.load(str(path), build_scene_graph=True, load_meshes=False), "",
+                       trimesh.transformations.translation_matrix(spec["bases"][s])) for s in ("left", "right")}
+        models = [(a.r, a.T) for a in arms.values()]
+    q_left, a_f = None, {}
     for side in ("left", "right"):
-        start = None
-        if side == "right" and spec.get("mirror") is not None:
-            start = np.array(spec["mirror"]) * left_q          # mirror image of the left arm's solution
-        c, err = solve(r, side, np.array(spec["tcp"][side]), spec["approach"], spec["seed"], spec["elbow"], start)
-        left_q = np.array(list(c.values())) if side == "left" else left_q
-        cfg.update(c)
-        print(f"  {name} {side}: IK residual {err:.2e}")
-    r.update_cfg(cfg)
+        start = np.array(spec["mirror"]) * q_left if side == "right" and spec.get("mirror") else None
+        q, err, a_f[side] = solve(arms[side], np.array(spec["tcp"][side]), spec["approach"], spec["seed"],
+                                  spec["elbow"], start)
+        q_left = q if side == "left" else q_left
+        print(f"  {name} {side}: IK cost {err:.2e}")
     p = plotter((1600, 1200))
     lo, hi = np.full(3, np.inf), np.full(3, -np.inf)
-    for m, rgb in link_meshes(r, path.parent):
-        p.add_mesh(pv.wrap(m), color=rgb, smooth_shading=True, specular=0.35, specular_power=30)
-        lo, hi = np.minimum(lo, m.bounds[0]), np.maximum(hi, m.bounds[1])
+    for r, T in models:
+        for m, rgb in link_meshes(r, path.parent, T):
+            p.add_mesh(pv.wrap(m), color=rgb, smooth_shading=True, specular=0.35, specular_power=30)
+            lo, hi = np.minimum(lo, m.bounds[0]), np.maximum(hi, m.bounds[1])
     for side, deg in (("left", 22), ("right", 35)):
-        T = mount_frame(r, side) @ np.diag([1e-3, 1e-3, 1e-3, 1.0])
+        T = mount_frame(arms[side], a_f[side]) @ np.diag([1e-3, 1e-3, 1e-3, 1.0])
         for m in assemble("iso50", math.radians(deg), parts).values():
             mm = m.copy().apply_transform(T)
             p.add_mesh(pv.wrap(mm), color=mm.visual.face_colors[0, :3] / 255.0, smooth_shading=True,

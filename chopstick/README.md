@@ -9,8 +9,9 @@ transfers straight onto a robot.
 
 - **Pinch to grasp:** two printed jaws are geared together, and you pinch them with your thumb and index finger.
 - **Camera on top:** a 360° camera rides above the jaws, and red dots on the jaws let it read how far they're open.
-- **Buttons under your fingers:** finger sleeves hold your fingers in place and carry the recording buttons. The right
-  hand's index finger starts and stops a take; the left hand's index finger cancels it.
+- **One button under your index finger:** elastic hook-and-loop straps hold your fingers in place and fit any finger
+  size. Each gripper has one record button, in the index-finger sleeve: the right hand's starts and stops a take, the
+  left hand's cancels it.
 - **The robot sees what you saw:** the robot twin carries the same jaws and the same camera position, so the
   demonstration is reproduced exactly. It mounts on OpenArm, or on any cobot with the standard ISO 50 tool flange
   (UR, ABB GoFa, FANUC CRX).
@@ -23,7 +24,7 @@ transfers straight onto a robot.
 <table>
 <tr>
 <td align="center"><img src="docs/img/robot_abb_gofa.png" alt="Two ABB GoFa CRB 15000 arms with PG Chopsticks" width="420"><br><em>ABB GoFa CRB 15000, ISO 50 plate</em></td>
-<td align="center"><img src="docs/img/robot_fanuc_crx.png" alt="FANUC CRX-10iA dual-arm torso with PG Chopsticks" width="420"><br><em>FANUC CRX-10iA dual, ISO 50 plate</em></td>
+<td align="center"><img src="docs/img/robot_fanuc_crx.png" alt="Two FANUC CRX-5iA arms with PG Chopsticks" width="420"><br><em>FANUC CRX-5iA ×2, ISO 50 plate</em></td>
 </tr>
 <tr>
 <td align="center"><img src="docs/img/openarm_bimanual.png" alt="OpenArm with PG Chopsticks on both arms" width="420"><br><em>OpenArm, link7 adapter</em></td>
@@ -49,15 +50,16 @@ transfers straight onto a robot.
 
 | Build | Camera | Mount | Parts |
 |---|---|---|---|
-| `data` | Insta360 X5 | handheld | `chopstick_base_dc`, `chopstick_clip_dc`, `x5_lite_frame`, `jaw_left_dc`, `jaw_right_dc` (sleeved), `tip_tpu_left/right`, `sleeve_button_cover_left/right`, `x5_button_*`, `pg_pod`, `pg_pod_lid`, `pg_pod_button` |
-| `data_d405` | RealSense D405 | handheld | as `data`, with `d405_frame` in place of `x5_lite_frame` (no pod) |
+| `data_right` | Insta360 X5 | right hand | `chopstick_base_dc`, `chopstick_clip_dc`, `x5_lite_frame`, `jaw_left_dc`, **`jaw_right_dc_button`**, `tip_tpu_left/right`, `sleeve_button_cover_right`, `x5_button_*`, `pg_pod`, `pg_pod_lid`, + 2 elastic finger straps |
+| `data_left` | Insta360 X5 | left hand | as `data_right`, with **`jaw_left_dc_button`** + `jaw_right_dc` and `sleeve_button_cover_left` |
+| `data_d405` | RealSense D405 | handheld | `jaw_left_dc` + `jaw_right_dc` (no button, no pod), `d405_frame` in place of `x5_lite_frame` |
 | `openarm` | Insta360 X5 | OpenArm link7 | `chopstick_base_sa`, `chopstick_clip_sa`, `x5_frame`, `x5_clip_b`, `jaw_left_sa`, `jaw_right`, tips, `openarm_adapter` |
 | `openarm_d405` | RealSense D405 | OpenArm link7 | as `openarm`, with `d405_frame` (no clip B) |
 | `iso50` | Insta360 X5 | ISO 9409-1-50-4-M6 | as `openarm`, with `iso_flange_plate` |
 | `iso50_d405` | RealSense D405 | ISO 9409-1-50-4-M6 | as `openarm_d405`, with `iso_flange_plate` |
 
-A bimanual kit is two handheld grippers (one per hand; they are identical parts) and two robot grippers with the same
-camera. In every build each jaw opens 72° before anything touches; this is checked for every pair of parts.
+A bimanual kit is a `data_right` and a `data_left` gripper, which differ only in which jaw carries the button, plus
+two robot grippers with the same camera. In every build each jaw opens 72° before anything touches; this is checked for every pair of parts.
 
 <p align="center"><img src="docs/img/parts.png" alt="Printed parts: handheld row (sleeved jaws, button cover), robot row, and the PG parts (pod, lid, button, D405 frame, OpenArm adapter, ISO plate)" width="860"></p>
 
@@ -91,31 +93,35 @@ camera. In every build each jaw opens 72° before anything touches; this is chec
 
 ## Finger sleeves and the recording buttons
 
-<p align="center"><img src="docs/img/sleeve.png" alt="Handheld jaw from below: the finger sleeve under the dotted shelf, with the blue TPU button cover inside" width="620"></p>
+<p align="center">
+  <img src="docs/img/sleeve.png" alt="Handheld jaw seen down the finger sleeve: the two strap fins, the blue elastic strap, and the blue button cover the finger rests on" width="560">
+  <img src="docs/img/pair.png" alt="Left-hand and right-hand grippers side by side" width="300">
+</p>
 
 You hold the handheld gripper like chopsticks: thumb in the sleeve on one jaw, index finger in the sleeve on the other.
-Each finger sits under the jaw's dotted shelf, pressing the jaw's outer wall. Each sleeve has:
+Each finger sits under the jaw's dotted shelf and presses the jaw's outer wall.
 
-- **A ring around the finger:** Ø20 bore, 26 mm long, open at both ends, merged into the jaw. It stays below the shelf,
-  so the camera still sees the dots.
-- **A 5.5 mm pad on the jaw's outer wall:** this is what your finger pad rests on and pushes to close the jaws.
-- **A button in the pad:** a 6 × 6 mm tactile switch in a pocket, under a soft, domed TPU cover set flush in a
-  12 × 9 mm oval recess.
-- **A wire channel** out of the back of the sleeve, to the pod.
+- **The pad:** each handheld jaw has a 5.5 mm pad on its outer wall. This is what your finger pad rests on and pushes
+  to close the jaws.
+- **Strap fins:** two fins run along the pad's long sides, 2.4 mm thick and 8 mm tall. They cradle the sides of your
+  finger, and each has a 17 × 2.5 mm slot.
+- **The elastic strap:** a 16 mm hook-and-loop strap, about 12 cm per finger (bought, not printed). Loop one end
+  through one fin's slot, wrap it over your finger, thread it through the other fin's slot and fold it back onto
+  itself. It stretches, adjusts to any finger size and is soft against the skin. It stays under the shelf, so the
+  camera still sees the dots.
+- **The button (index-finger jaw only):** a 6 × 6 mm tactile switch in a pocket in the pad, under a domed TPU cover set
+  flush in a 12 × 9 mm oval recess. A wire channel runs out of the back of the pad to the pod. The thumb jaw's pad is
+  plain.
 
-**Which button does what.** The index finger always lands on the jaw on the outer side of the hand: the right jaw for
-the right hand, the left jaw for the left hand. So the role is set by the jaw, and both grippers are identical:
-
-| Hand | Index-finger sleeve | Role | Thumb sleeve |
+| Gripper | Index finger on | Button | Role |
 |---|---|---|---|
-| Right | right jaw (`jaw_right_dc`) | **start / stop recording** | cover, no switch |
-| Left | left jaw (`jaw_left_dc`) | **cancel recording** (discard the current take) | cover, no switch |
+| `data_right` (right hand) | right jaw | `jaw_right_dc_button` | **start / stop recording** |
+| `data_left` (left hand) | left jaw | `jaw_left_dc_button` | **cancel recording** (discard the current take) |
 
-Fit a switch in each gripper's index sleeve. Both pods run the same firmware: a press on the right-jaw button toggles
-recording, and a press on the left-jaw button cancels it. Both pods report to the same host, so the cancel from the
-left hand discards the take the right hand started.
+Both pods run the same firmware: the right-jaw button input toggles recording and the left-jaw input cancels. Both
+pods report to one host, so the left hand's cancel discards the take the right hand started.
 
-The same wall that holds the button is the one you push to grasp, so:
+The wall that holds the button is also the one you push to grasp, so:
 
 - **Use a stiff switch** (250–320 gf).
 - **Firmware filters grasps:** a short, deliberate press counts; a grasp holds the wall much longer.
@@ -131,8 +137,7 @@ that keys it to the frame. It contains:
 - an **IMU breakout** on the top wall,
 - a **300 mAh LiPo**,
 - a **slide switch**,
-- a **spare button** on the front,
-- **two wire entries** for the sleeve buttons.
+- **two wire entries** in the front, one per side, so the same pod serves either hand.
 
 Because the IMU is clamped to the camera, cross-correlating its gyro with the X5's own IMU puts the pod's events (button
 presses, IMU) on the video's clock. A sharp tap at the start of a take makes that easy. Wiring and firmware notes are
@@ -175,8 +180,8 @@ frame's back plate), with 4 × M3 heat-set inserts at (±9, ±26.9) mm. The came
 
 Two handheld grippers record the demo; two UR5s (or UR5e) with the `iso50` build replay it.
 
-1. **Build** two `data` grippers, one per hand. Fit the start/stop switch in the right-hand gripper's right-jaw
-   sleeve, and the cancel switch in the left-hand gripper's left-jaw sleeve.
+1. **Build** a `data_right` gripper (start/stop button) and a `data_left` gripper (cancel button), and fit the elastic
+   straps.
 2. **Build** two `iso50` robot grippers with X5 cameras, and bolt an `iso_flange_plate` to each UR tool flange.
 3. **Add the gripper to the robot model:** for each arm, put `urdf/pg_chopstick_iso50.urdf` under the arm's `tool0`
    with an identity fixed joint (`<side>_tool0` → `chopstick_flange`). Use the arm's own tool0, not a tool0 placed after
@@ -226,6 +231,7 @@ opening. [docs/retargeting.md](docs/retargeting.md) covers the frames, the formu
 |---|---|
 | `hardware/STEP/`, `hardware/STL/` | One file per part, in mm, in the gripper frame, jaws closed |
 | `hardware/STL/*_dots.stl` | The red dots as separate bodies, for multi-material slicers |
+| `hardware/reference/` | Bought parts drawn for the assemblies (the elastic finger straps) |
 | `hardware/tags/` | ArUco tag sheet (DICT_4X4_50, 14 mm), one tag per gripper |
 | `assembly/pg_chopstick_<build>.{glb,stl}` | Full assemblies at 20° open. The GLB has coloured nodes, in metres, Y up; the STL is one mesh in mm, Z up |
 | `urdf/pg_chopstick_<build>.urdf` | One URDF per build; robot builds have a `chopstick_flange` root |
@@ -245,7 +251,7 @@ python kinematics.py --check                                   # kinematics JSON
 python urdf.py                                                 # urdf/
 python assembly.py --check --openarm /path/to/openarm_description
 python render_docs.py --openarm /path/to/openarm_description   # gripper renders
-python robots.py /path/to/Neuracore_Robots                     # UR5 / ABB GoFa / FANUC CRX dual-arm renders
+python robots.py /path/to/Neuracore_Robots                     # UR5 / ABB GoFa / FANUC CRX-5iA bimanual renders
 python make_tags.py
 python sync_readme.py                                          # copy this README to the repo root
 cd ../retarget && pip install -e .[test] && pytest
@@ -254,8 +260,8 @@ cd ../retarget && pip install -e .[test] && pytest
 ## What is and isn't verified
 
 - **Verified in CAD and code:**
-  - jaw kinematics, and every part against every other at 20° and across the full opening, in all six builds (sleeves
-    and pod included);
+  - jaw kinematics, and every part against every other at 20° and across the full opening, in all seven builds
+    (pads, strap fins, straps and pod included);
   - the OpenArm adapter against the link7 mesh;
   - URDF ↔ kinematics consistency for every build;
   - retargeting for both cameras and both mounts (23 tests).
