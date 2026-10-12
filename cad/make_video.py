@@ -59,6 +59,8 @@ def main():
         tmp = Path(tmp)
         for kit in ("insta360_x5", "d405"):
             names = [s for k, s in ORDER if k == kit]
+            if not names:
+                continue
             subprocess.run([sys.executable, "animate.py", root, str(tmp), *names], cwd=HERE / kit, check=True)
         clips = [tmp / "title.mp4"]
         kits = {"insta360_x5": "Insta360 X5", "d405": "RealSense D405 + Quest 3S"}
