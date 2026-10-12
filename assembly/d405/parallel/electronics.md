@@ -1,34 +1,33 @@
 # Electronics: D405 + Quest · Parallel
 
-One USB-C cable from the electronics box to the laptop carries the D405 and the Pico. The Quest 3S controller is
-self-powered (AA cell) and is tracked by the headset; it has no wires and its buttons are not used.
+This is HandUMI's electronics, unchanged. Everything on the device goes through a small USB 3 hub in the electronics
+box, so one USB-C cable runs to the laptop. The Quest controller in the controller support is self-powered and is used
+for tracking only: it has no wires, and its buttons are not used.
 
 ```
- D405 depth camera ──USB 3 (out of the cup's top window, into the box's top slot)──┐
-                                                                                   ├── USB 3 hub ══ USB-C ══ laptop
- Raspberry Pi Pico 2 ──USB─────────────────────────────────────────────────────────┘
-   ├── I²C GP4 SDA / GP5 SCL ── IMU breakout (BNO085 class), flat under the box's top wall
-   ├── GP15 ── index-finger sleeve button ── GND   (internal pull-up, pressed = low)
-   │           right-hand gripper: START / STOP;  left-hand gripper: CANCEL
-   └── (GP14 free: a second button if you want one)
-
- Meta Quest 3S controller in the cradle ── tracked by the headset (pose only; buttons unused)
+ D405 depth camera ──USB 3──┐
+                            ├── USB 3 hub (in the box) ══ one USB-C cable ══ laptop
+ Raspberry Pi Pico 2 ──USB──┘
+   ├── I2C ── IMU (BNO085-class, in the box floor, rigid to the frame)
+   ├── GPIO ── index-sleeve button: start / stop (right hand) or cancel (left hand)
+   └── UART (half-duplex) ── STS3215 servo bus (gripper width encoder)
 ```
 
-| Part | Notes |
+The Pico can't relay the camera: its USB port is full speed (12 Mbit/s), and the D405 needs USB 3 for depth plus colour.
+So the camera goes straight to the hub, and the Pico streams the IMU, the button and the gripper width.
+
+## Wiring
+
+| From | To |
 |---|---|
-| USB 3 hub board, USB-C upstream (VL817-type, 4 port) | Stands against the box's front wall (bay 42 × 38 mm, ≤ 14 mm thick). The upstream USB-C leaves through the slot low in the back wall. **Check your board's size** |
-| Raspberry Pi Pico 2 | On the box's back wall (M2 standoffs or foam tape), micro-USB to the hub with a short right-angle cable |
-| IMU breakout, BNO085 class | Flat under the top wall, rigid to the head |
-| D405 cable, USB-C to USB-A, USB 3, about 15 cm | From the cup's top window down into the box's top slot |
-| Tactile switch 6 × 6 mm, 250–320 gf + 2-core wire | From the index finger's pad channel, along the finger and carriage (with a slack loop for the travel), into the box through the side hole on that side |
+| IMU SDA / SCL | Pico GP4 / GP5 (I2C0) |
+| IMU VIN / GND | Pico 3V3(OUT) / GND |
+| Servo bus data | Pico GP0 (TX) through a 74LVC1G125 buffer or 1 kΩ, and GP1 (RX) direct |
+| Servo V+ / GND | Hub 5 V / GND (read as an encoder, torque off) |
+| Button | Pico GP15 and GND (internal pull-up; pressed = low) |
+| Pico USB, D405 USB | Hub downstream ports (the D405 on USB 3) |
 
-**Buttons.** A gripper has one button, under its index finger. Tell the host which hand each box is on: the right
-hand's starts and stops a take, and the left hand's discards it. The wall that holds the button is the one you push to
-grasp, so count only short presses (under about 0.6 s).
+**Power.** Everything runs from the laptop port. A USB 3 port gives 900 mA, which covers the D405, the Pico, the IMU and
+an idle servo. If the camera drops out, use a port that supplies more current, or a powered hub.
 
-**Power.** Everything runs from the laptop's USB 3 port (900 mA covers the D405, the Pico and the IMU). If the camera
-drops out, use a port that gives more current or a powered hub.
-
-**Robot twin.** The D405 plugs straight into the robot PC (USB 3). The Feetech SM40BL runs on its bus through a USB
-adapter at 12 V. Its rotor plate is on `parallel_pinion_servo` (4096 steps per turn; 1 mm of finger travel is 1/15 rad), and its zero is read with the pads touching.
+**Button.** The button wall is the one you push to grasp, so count only short presses (under about 0.6 s).

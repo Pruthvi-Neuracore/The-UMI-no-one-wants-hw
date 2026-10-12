@@ -1,81 +1,87 @@
 # D405 + Quest · Parallel
 
-<p align="center"><img src="img/parallel.png" alt="Parallel gripper with the D405 head: handheld (left) and the robot twin on the ISO 50 plate (right)" width="820"></p>
+<p align="center"><img src="img/parallel.png" alt="The HandUMI T-plate gripper with its D405 cup on the camera post, AgileX Piper tips, half open" width="760"></p>
 
-The rack-and-pinion parallel jaws on the D405 head. The handheld version also has the electronics box and the Quest
-3S controller (tracking only). Two fingers slide straight together and stay parallel: you pinch them shut and springs
-open them. On the robot, a servo turns the pinion.
+This is the HandUMI parallel gripper from [The-UMI-no-one-wants](https://github.com/Pruthvi-Neuracore/The-UMI-no-one-wants),
+**exactly as it is**. It has everything HandUMI has:
 
-| Build | Use | Files |
-|---|---|---|
-| `parallel_right` | handheld, right hand: the index-finger button **starts and stops** recording | `assembly/parallel_right.*` |
-| `parallel_left` | handheld, left hand: the index-finger button **cancels** the take | `assembly/parallel_left.*` |
-| `parallel_openarm` | robot twin on OpenArm | `assembly/parallel_openarm.*` |
-| `parallel_iso50` | robot twin on any ISO 9409-1-50-4-M6 flange | `assembly/parallel_iso50.*` |
+- the T-plate main support and end cover;
+- finger links with sleeves and the universal tip flange;
+- the record button in the index sleeve;
+- crank and connecting links, rods, and the STS3215 width encoder;
+- the electronics box and the controller support.
+
+The D405 sits in HandUMI's cup (`d405_wrist_mount`) on the Ø12 / M4 hinge, looking forward and down at the fingers.
+This is the same cup the D405 chopstick and hand builds use. The Insta360 X5 kit's parallel gripper is this same device
+with an X5 cradle on the hinge instead.
+
+<p align="center">
+  <img src="img/parallel_back.png" alt="The same gripper from behind: electronics box, controller support, servo and the D405 cup on the hinge" width="420">
+  <img src="img/camera_mount.png" alt="Close-up: the D405 cup's two lugs straddling the main support's hinge knuckle" width="420">
+</p>
 
 ## How it works
 
-<p align="center"><img src="img/parallel_opening.png" alt="Fingers 0, 20, 40 and 60 mm apart" width="820"></p>
+<p align="center"><img src="img/parallel_opening.png" alt="Closed, half open and fully open, seen from the front" width="880"></p>
 
-- **Rails:** two Ø6 mm steel rods run across the housing at (x, z) = (118, ±12) mm. Each carriage rides on two LM6UU
-  bushings.
-- **Synchronising:** a 24-tooth, module 1.25 pinion at (82, 0) mm meshes with one rack on each carriage: the left rack
-  in front of it, the right rack behind it. So the fingers always move by the same amount in opposite directions.
-- **Stroke:** 30 mm per finger, so the TPU pads open 0 to 60 mm. The tool tip is at (206, 0, 0) mm.
-- **Opening it:** handheld, two compression springs on the rods push the fingers apart. On the robot, a Feetech SM40BL
-  under the housing turns the pinion.
-- **Tracking:** four blue dots on each finger's top, seen up close by the D405.
+- **Linkage (HandUMI):** your fingers sit in the two finger links, which slide on two Ø4 rods (LM4UU bearings). A crank
+  on the STS3215 servo axis and two connecting links tie the links together, so they always move the same amount in
+  opposite directions.
+- **Width:** the servo runs with its torque off and works only as the width encoder. The links travel about 87 mm
+  from closed to fully open.
+- **Record button:** a 6 × 6 mm switch sits in the index sleeve under a TPU cover.
+  - **Right-hand gripper:** green cover. A press starts and stops recording.
+  - **Left-hand gripper:** red cover. A press cancels the take.
 
-## The head
+  The parts are HandUMI's; only the cover colour and the firmware role differ.
+- **Camera:** the D405 records depth and colour over USB 3, through the hub in the electronics box, so one USB-C cable
+  goes to the laptop. Its cable leaves from the cup's top window. The hinge sets the view; HandUMI's default is 65°
+  below horizontal, with the fingers about 9 to 10 cm away.
+- **Tracking:** HandUMI's controller support holds the Quest controller for live pose (tracking only).
 
-<p align="center"><img src="img/pod.png" alt="The head from behind: electronics box, Quest 3S controller in its cradle, D405 on its tilt hinge" width="520"></p>
+## Swappable tips
 
-The same head as the D405 chopstick ([../chopstick/README.md](../chopstick/README.md#the-head)):
+Each finger link ends in HandUMI's universal 20 × 30 mm flange, with these hole patterns:
 
-- **`d405_frame`:** carries the HandUMI D405 cup on a tilt hinge (15° to 65°, M4 bolt), with the cable out of the
-  cup's top window.
-- **`ebox`:** the Pico 2, IMU and USB 3 hub, with one USB-C to the laptop. It bolts to the frame's back plate.
-- **`quest_cradle`:** holds the Quest 3S controller upright for tracking.
+- M2: 8 × 12 mm;
+- M3: 12 × 24 mm, plus a centre pair;
+- M4: a 12 mm pair.
 
-## Finger sleeves and the record button
+Swap the tips to match the gripper of the robot you'll deploy on, so the jaws you record with are the jaws the robot has.
 
-- **Sleeve:** each handheld finger has a pad on its outer face, two slotted fins and an elastic hook-and-loop strap.
-- **Button:** the index finger's pad carries the only button, wired to the Pico.
-  - Right-hand gripper: green cover, start / stop.
-  - Left-hand gripper: red cover, cancel.
+| Tips on the device | For |
+|---|---|
+| <img src="img/tips_agilex-piper.png" width="300"><br>**AgileX Piper** jaw + pad | <img src="img/tips_robot_piper.png" width="300"><br>AgileX Piper |
+| <img src="img/tips_open-enpire.png" width="300"><br>**Open-ENPIRE** compliant finger (TPU insert) | <img src="img/tips_robot_openarm_enpire.png" width="300"><br>OpenArm with Open-ENPIRE fingers |
+| <img src="img/tips_robotiq-hand-e.png" width="300"><br>**Robotiq Hand-E** finger (print two; the index one is turned 180°) | <img src="img/tips_robot_ur5.png" width="300"><br>UR5, ABB GoFa, FANUC CRX with Hand-E |
 
-## On the robot
+<p align="center">
+  <img src="img/tips_robot_abb_gofa.png" alt="ABB GoFa pair with Hand-E" width="400">
+  <img src="img/tips_robot_fanuc_crx5ia.png" alt="FANUC CRX-5iA pair with Hand-E" width="400">
+</p>
 
-<p align="center"><img src="img/robot_abb_gofa.png" alt="Two ABB GoFa arms with parallel grippers" width="620"></p>
-
-- **Robot head:** `d405_frame` and the cup only (no box or controller).
-- **Mounting:** the back plate takes `openarm_adapter` or `iso_flange_plate`.
-- **Servo:** `parallel_base_sa` carries the SM40BL, which turns `parallel_pinion_servo`.
-
-<p align="center"><img src="img/plates.png" alt="OpenArm adapter and ISO 50 plate" width="620"></p>
+The robot renders are HandUMI's: the robot carries its own gripper with the same finger shape, so they're the same for both
+camera kits.
 
 ## Files
 
 | Folder | Contents |
 |---|---|
-| `STEP/`, `STL/` | Every printed part for the four builds (gripper frame, closed); `*_dots.stl` are the blue inlays |
-| `assembly/` | `<build>.glb` / `.stl`, rods, servo, camera and controller included |
-| `urdf/` | `pg_<build>.urdf`: prismatic `pg_finger` (m) with its −1 mimic, `pg_pinion` following, plus `pg_camera` (D405 at 35°) and `pg_tcp`; robot builds have `pg_flange` |
+| `STEP/right/`, `STL/right/` | Every printed part for a right hand (HandUMI's, including `d405_wrist_mount`) |
+| `STEP/left/`, `STL/left/` | The same for a left hand (mirror parts) |
+| `STEP/gripper_tips/`, `STL/gripper_tips/` | The three tip sets |
+| `assembly/` | `d405_parallel_right_<tips>.glb` (coloured, one node per part, metres, Y up) and `.stl` (mm, Z up), half open, once per tip set |
 | `img/` | Renders |
 
-<p align="center"><img src="img/parts.png" alt="The printed parts" width="760"></p>
+<p align="center"><img src="img/parallel_parts.png" alt="The printed parts of a right hand: D405 cup, main support, end cover, finger links, button cover, crank, connecting links, hand support base, controller support, electronics box and lid" width="820"></p>
 
 - **Bill of materials:** [bom.md](bom.md).
 - **Wiring:** [electronics.md](electronics.md).
+- **Generator:** `cad/d405/t_gripper.py`. It uses HandUMI's own assembly code and parts, vendored in
+  `cad/d405/handumi/`.
 
 ## Build
 
-1. **Carriages:** press two LM6UU bushings into each carriage, and two M3 inserts into its front face.
-2. **Rods and springs:** slide the rods through the end walls and the carriages, with springs between the carriages
-   (handheld).
-3. **Pinion:** drop it in through the top window with the carriages centred, and fit the M4 axle.
-4. **Fingers:** screw them on (2 × M3 × 14 each) and glue the TPU pads on. Fit the index button and the straps.
-5. **Head:** build the head as for the D405 chopstick, then join the frame to the parallel base with the clip and two
-   M3 × 55 screws.
-6. **Robot twin:** fit the servo into the cradle with its shaft in the pinion, bolt the plate to the robot and screw
-   the frame to the plate.
+Follow HandUMI's guide: print `STL/right/` or `STL/left/` and a pair of tips, and fix the D405 in its cup with
+2× M3 × 5. Then hang the cup on the hinge with an M4 × 30 bolt and nyloc nut, and run the camera cable out of the top
+window into the box. For the button covers, use green TPU on the right hand (record) and red on the left (cancel).

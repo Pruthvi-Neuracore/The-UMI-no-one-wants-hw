@@ -2,7 +2,7 @@
 
     python assembly.py [--open 0.45] [--check] [--openarm /path/to/openarm_description]
 
-Builds (parts.BUILDS): chopstick_{right,left,openarm,iso50}, parallel_{right,left,openarm,iso50} and hand.
+Builds (parts.BUILDS): chopstick_{right,left,openarm,iso50} and hand (the parallel gripper: t_gripper.py).
 --open: how far the jaws / fingers are open in the exported assemblies (fraction of a typical working opening).
 --check: every moving part against every fixed part at that opening, and every pair of fixed parts; with --openarm,
 also the OpenArm builds against the link7 mesh and the adapter's holes against link7's PCD-50 holes.
@@ -26,13 +26,13 @@ OUT = ROOT / "assemblies"
 COLOURS = {"blue": "#1f5fae", "white": "#f4f6f8", "tpu": "#dfe5ec", "camera": "#1d1f22", "servo": "#2a2d33",
            "dot": "#1e88ff", "steel": "#b9bec5",
            "record": "#2e9e44", "cancel": "#d62828", "strap": "#2c5aa0"}
-WHITE = ("jaw_", "ebox", "parallel_finger_", "parallel_carriage_")
-BUTTON_COVERS = ("sleeve_button_cover_", "parallel_button_cover_")
-STRAPS = ("sleeve_strap_", "parallel_strap_")
+WHITE = ("jaw_", "ebox")
+BUTTON_COVERS = ("sleeve_button_cover_",)
+STRAPS = ("sleeve_strap_",)
 
 
 def colour_of(name):
-    if name.startswith(("tip_tpu", "parallel_pad_")):
+    if name.startswith("tip_tpu"):
         return COLOURS["tpu"]
     if name == "d405_envelope":
         return COLOURS["camera"]
@@ -40,8 +40,6 @@ def colour_of(name):
         return "#3b3f45"
     if name.startswith("servo"):
         return COLOURS["servo"]
-    if name.startswith("parallel_rod"):
-        return COLOURS["steel"]
     if name.startswith(BUTTON_COVERS):              # green: record (right hand), red: cancel (left hand)
         return COLOURS["record"] if name.endswith("_right") else COLOURS["cancel"]
     if name.startswith(STRAPS):
@@ -69,38 +67,24 @@ def dot_meshes(build, q):
                 R[:3, 3] = np.array(d["centre_mm"]) + n * 0.1
                 c.apply_transform(motion(build, f"tip_tpu_{side}", q) @ R)
                 out[f"dot_{side}_{i}"] = paint(c, COLOURS["dot"])
-    elif family(build) == "parallel":
-        import parallel
-        for side in ("left", "right"):
-            for i, p in enumerate(parallel.dots(side)):
-                c = trimesh.creation.cylinder(radius=1.75, height=0.3)
-                c.apply_translation(np.array(p) + [0, 0, 0.1])
-                c.apply_transform(motion(build, f"parallel_finger_{side}", q))
-                out[f"dot_{side}_{i}"] = paint(c, COLOURS["dot"])
     return out
 
 
 def servo(build, parts):
-    """The robot's servo envelope: on the chopstick driver jaw's pivot, or under the parallel pinion."""
+    """The robot's servo envelope, on the chopstick driver jaw's pivot."""
     m = to_mesh(parts["servo_envelope"], 0.1)
-    if family(build) == "parallel":
-        import parallel
-        m.apply_translation(parallel.SERVO_SHIFT)
     return m
 
 
 def assemble(build, frac=0.45, parts=None, dots=True, q=None):
     """{name: coloured trimesh in the gripper frame (mm)} for one build, opened `frac` of a working opening
-    (or exactly q: rad for chopstick, mm per finger for parallel)."""
+    (or exactly q, rad per jaw)."""
     parts = parts or load_parts()
     q = q_display(build, frac) if q is None else q
     out = {}
     for n in BUILDS[build] + [CAMERA[build]]:
         m = to_mesh(parts[n], 0.05).apply_transform(motion(build, n, q))
         out[n] = paint(m, colour_of(n))
-    if family(build) == "parallel":
-        for n in ("parallel_rod_top", "parallel_rod_bottom"):
-            out[n] = paint(to_mesh(parts[n], 0.05), colour_of(n))
     if build in ROBOT_BUILDS:
         out["servo_envelope"] = paint(servo(build, parts), COLOURS["servo"])
     if dots:
@@ -116,9 +100,8 @@ def link7_in_gripper(openarm_dir):
     return m.apply_transform(T)
 
 
-# pairs that touch by design: the servo in its pocket, the rods in the carriages' bushing bores and the end walls,
-# the pinion on its axle between the plates and in mesh with the racks
-EXPECTED = [({"chopstick_base_sa", "servo_envelope"}), ({"parallel_base_sa", "servo_envelope"}),
+# pairs that touch by design: the servo in its pocket
+EXPECTED = [({"chopstick_base_sa", "servo_envelope"}),
             ({"quest_cradle", "quest_controller_envelope"}),
             ({"d405_cup", "d405_envelope"})]   # the camera's stand-in body in the HandUMI cup (made for the real D405)
 
@@ -126,12 +109,6 @@ EXPECTED = [({"chopstick_base_sa", "servo_envelope"}), ({"parallel_base_sa", "se
 def expected(p, q):
     if {p, q} in EXPECTED:
         return True
-    pair = (p, q)
-    if any(n.startswith("parallel_rod") for n in pair) and any(
-            n.startswith(("parallel_carriage", "parallel_base")) for n in pair):
-        return True
-    if any(n.startswith("parallel_pinion") for n in pair) and any(n.startswith("parallel_carriage") for n in pair):
-        return True                                       # gear mesh: teeth interleave, checked by the tooth layout
     return False
 
 

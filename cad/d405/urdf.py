@@ -1,6 +1,6 @@
 """Write the URDFs for every PG Chopstick D405 build (parts.BUILDS) from the CAD and hardware/kinematics.json.
 
-  urdf/pg_<build>.urdf   e.g. pg_chopstick_right, pg_parallel_iso50, pg_hand
+  urdf/pg_<build>.urdf   e.g. pg_chopstick_right, pg_chopstick_iso50, pg_hand
   urdf/meshes/*.stl      simplified meshes in each link's frame (mm, scaled by 0.001 in the URDF)
 
 Frames: pg_base (gripper frame), pg_camera (D405: front-face centre at the default tilt, +X along the view, +Z up),
@@ -94,17 +94,11 @@ def material_of(n):
 def build(kind, parts, kin):
     """links, joints for one build. Frames: pg_base (gripper frame), pg_camera (X5, between its lens domes),
     pg_tcp, and per family: chopstick -> pg_jaw (revolute, rad, one jaw) with pg_jaw_right as its -1 mimic;
-    parallel -> pg_finger (prismatic, m, one finger) with pg_finger_right as its -1 mimic and pg_pinion following;
     hand -> no joints. Robot builds hang from pg_flange (the robot's flange frame)."""
-    import parallel
     fam = family(kind)
     robot = kind in ROBOT_BUILDS
     names = list(BUILDS[kind]) + [CAMERA[kind]]
     meshes = {n: to_mesh(parts[n], 0.1) for n in names}
-    if fam == "parallel":
-        for n in ("parallel_rod_top", "parallel_rod_bottom"):
-            names.append(n)
-            meshes[n] = to_mesh(parts[n], 0.1)
     if robot:
         from assembly import servo
         names.append("servo_envelope")
@@ -115,14 +109,12 @@ def build(kind, parts, kin):
         if n == "d405_envelope":
             return ("mass", 60.0)                         # RealSense D405
         if n == "quest_controller_envelope":
-            return ("mass", 126.0)                        # Quest 3S Touch Plus with its AA cell
-        if n.startswith(("sleeve_strap", "parallel_strap")):
+            return ("mass", 164.0)                        # Quest Touch Pro controller
+        if n.startswith("sleeve_strap"):
             return ("mass", 3.0)                         # elastic hook-and-loop strap
-        if n.startswith("parallel_rod"):
-            return ("density", 7.85e-3)                  # steel
         if n == "servo_envelope":
             return ("mass", SERVO_MASS_G)
-        return ("density", DENSITY["tpu" if n.startswith(("tip_tpu", "parallel_pad")) else "pla"])
+        return ("density", DENSITY["tpu" if n.startswith("tip_tpu") else "pla"])
 
     def link(name, part_names, T=np.eye(4), suffix=""):
         ms = {n: meshes[n].copy().apply_transform(T) for n in part_names}
@@ -151,28 +143,6 @@ def build(kind, parts, kin):
             tip = np.array(kin[f"tip_end_{side}_mm"]) - [pivot[0], pivot[1], 0]
             fixed_frame(f"pg_tip_{side}", f"pg_jaw_{side}", trimesh.transformations.translation_matrix(tip * 1e-3))
         tcp = np.array(kin["tcp_mm"])
-    elif fam == "parallel":
-        stroke = parallel.STROKE * 1e-3
-        for side in ("left", "right"):
-            jn = [n for n in names if side_of(n) == side]
-            link(f"pg_finger_{side}", jn)
-            mimic = '\n    <mimic joint="pg_finger" multiplier="-1" offset="0"/>' if side == "right" else ""
-            jname = "pg_finger" if side == "left" else "pg_finger_right"
-            lo, hi = (0.0, stroke) if side == "left" else (-stroke, 0.0)
-            joints.append(f'  <joint name="{jname}" type="prismatic">\n    <parent link="pg_base"/>'
-                          f'<child link="pg_finger_{side}"/>\n    {origin(np.eye(4))}<axis xyz="0 1 0"/>\n'
-                          f'    <limit lower="{lo:.5f}" upper="{hi:.5f}" effort="60" velocity="0.2"/>{mimic}\n  </joint>')
-            sy = 1 if side == "left" else -1
-            fixed_frame(f"pg_tip_{side}", f"pg_finger_{side}",
-                        trimesh.transformations.translation_matrix([parallel.PAD_X[1] * 1e-3, 0, 0]))
-        pin = [n for n in names if side_of(n) == "pinion"]
-        link("pg_pinion", pin, trimesh.transformations.translation_matrix([-parallel.X_PIN, 0, 0]), "_pinionframe")
-        joints.append(f'  <joint name="pg_pinion_joint" type="continuous">\n    <parent link="pg_base"/>'
-                      f'<child link="pg_pinion"/>\n    '
-                      f'{origin(trimesh.transformations.translation_matrix([parallel.X_PIN * 1e-3, 0, 0]))}'
-                      f'<axis xyz="0 0 1"/>\n    <mimic joint="pg_finger" multiplier="{1 / (parallel.R_PITCH * 1e-3):.4f}" '
-                      f'offset="0"/>\n  </joint>')
-        tcp = np.array(parallel.tcp())
     else:
         tcp = None
     Tcam = np.array(kin["cameras"]["d405"]["T_gripper_camera_mm"])
