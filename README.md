@@ -3,6 +3,11 @@
 **Collect robot-manipulation data with your own hands, then replay it on a robot with the same gripper.**
 
 <p align="center">
+  <a href="docs/media/pg_chopstick.mp4"><img src="docs/media/pg_chopstick.gif" alt="PG Chopstick overview: the Insta360 X5 chopstick and parallel grippers, the robot twins docking on UR5e, ABB GoFa, FANUC CRX and OpenArm, the wrist mount, and the D405 + Quest 3S builds" width="880"></a>
+  <br><em>Overview (46 s). Click for the full-quality video.</em>
+</p>
+
+<p align="center">
   <img src="assembly/insta360_x5/chopstick/img/hero.png" alt="PG Chopstick handheld gripper with an Insta360 X5" width="440">
   <img src="assembly/d405/chopstick/img/hero.png" alt="PG Chopstick handheld gripper with a RealSense D405 and a Quest 3S controller" width="440">
 </p>
@@ -74,6 +79,8 @@ assembly/
   tags/                                     ArUco tag sheet, one tag per device
 cad/
   insta360_x5/   d405/                      the generators for each kit (Python, build123d)
+  make_video.py                             the overview video and GIF (docs/media/)
+docs/media/                                 pg_chopstick.mp4, pg_chopstick.gif
 ```
 
 Each variant folder holds everything you need to print and build it: every part as STEP and STL, the assemblies

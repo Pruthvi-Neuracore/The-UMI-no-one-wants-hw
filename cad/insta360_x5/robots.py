@@ -95,9 +95,11 @@ def link_meshes(r, root_dir, T_scene=np.eye(4)):
 
 
 def approach_in_flange(arm):
+    """The tool approach direction in the flange frame: from the flange towards tool0, or, where tool0 sits on the
+    flange, tool0's own +Z (the ROS-Industrial tool0 convention)."""
     F, t = arm.link("flange"), arm.link("tool0")
     a = t[:3, 3] - F[:3, 3]
-    a = F[:3, 2].copy() if np.linalg.norm(a) < 1e-6 else a / np.linalg.norm(a)
+    a = t[:3, 2].copy() if np.linalg.norm(a) < 1e-6 else a / np.linalg.norm(a)
     return F[:3, :3].T @ a
 
 
@@ -106,6 +108,8 @@ def mount_frame(arm, a_f):
     F = arm.link("flange")
     x = F[:3, :3] @ a_f
     up = np.array([0, 0, 1.0]) - x * x[2]
+    if np.linalg.norm(up) < 1e-3:                    # tool pointing straight up or down: keep the camera towards -X
+        up = np.array([-1.0, 0, 0]) - x * x[0]
     z = up / np.linalg.norm(up)
     T = np.eye(4)
     T[:3, :3] = np.column_stack([x, np.cross(z, x), z])
