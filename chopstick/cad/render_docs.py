@@ -87,6 +87,21 @@ def pod(parts):
     shot(p, IMG / "pod.png", (-260, -380, -260), (40, 0, -30), zoom=1.25)
 
 
+def sleeve_closeup(parts):
+    """Right handheld jaw, looking down the finger sleeve from behind (the way the finger goes in): the button cover
+    sits on the pad, the wall the finger pushes."""
+    import sleeve
+    from parts import load_raw
+    pl = sleeve.frame(load_raw()["jaw_right"], "right")
+    o, d, n = (np.array(tuple(v)) for v in (pl.origin, pl.x_dir, pl.z_dir))
+    axis = o + n * (sleeve.PAD + sleeve.R_IN)
+    p = plotter((1400, 1000))
+    for name in ("jaw_right_dc", "tip_tpu_right", "sleeve_button_cover_right"):
+        add(p, to_mesh(parts[name], 0.03), colour_of(name))
+    shot(p, IMG / "sleeve.png", tuple(axis - 90 * d + 32 * n - np.array([0, 0, 8.0])), tuple(axis + 6 * d - 5 * n),
+         zoom=1.5)
+
+
 def plates(parts):
     """OpenArm adapter and ISO 50 plate, front and back."""
     p = plotter((2000, 900))
@@ -101,9 +116,9 @@ def plates(parts):
 
 def exploded(parts):
     """Printed parts: handheld row, robot row, new PG parts row."""
-    rows = [["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "jaw_left_dc", "jaw_right", "tip_tpu_left",
-             "tip_tpu_right"],
-            ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "jaw_left_sa"],
+    rows = [["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "jaw_left_dc", "jaw_right_dc", "tip_tpu_left",
+             "tip_tpu_right", "sleeve_button_cover_left"],
+            ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "jaw_left_sa", "jaw_right"],
             ["pg_pod", "pg_pod_lid", "pg_pod_button", "d405_frame", "openarm_adapter", "iso_flange_plate"]]
     p = plotter((2000, 1200))
     for r, group in enumerate(rows):
@@ -173,23 +188,26 @@ def fanuc(urdf_path, parts):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--openarm", help="path to openarm_description")
-    ap.add_argument("--fanuc", help="path to a FANUC CRX URDF with a tool0 frame (e.g. crx5ia/arm.urdf)")
+    ap.add_argument("--fanuc", help="optional: single FANUC CRX URDF with tool0 (crx5ia/arm.urdf) for a close-up")
     a = ap.parse_args()
     IMG.mkdir(parents=True, exist_ok=True)
     for old in IMG.glob("*.png"):
-        old.unlink()
+        if not old.name.startswith("robot_"):            # robot_*.png come from robots.py
+            old.unlink()
     parts = load_parts()
     hero(parts)
     side_by_side(parts, ["data", "openarm"], IMG / "kit.png", (18, 25))
     side_by_side(parts, ["data_d405", "iso50_d405"], IMG / "d405.png", (18, 25))
     opening(parts)
     pod(parts)
+    sleeve_closeup(parts)
     plates(parts)
     exploded(parts)
     if a.openarm:
         bimanual(a.openarm)
     if a.fanuc:
         fanuc(a.fanuc, parts)
+    # the dual-arm UR / ABB / FANUC renders: robots.py
 
 
 if __name__ == "__main__":

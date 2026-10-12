@@ -9,9 +9,11 @@
                   the D405 frame's back plate) with 4 x M3 heat-set inserts at (y, z) = (±9, ±26.9); frame screwed on
                   from inside with M3 x 10.
 
-Orientation (T_FLANGE below): gripper +X along the flange +Z (tool approach), +Y along flange -Y, +Z along flange +X.
-The bolt pattern repeats every 90°, so the plate can be fitted in four rolls; the dowel picks one. If your tool frame
-differs, change T_FLANGE (that is the only robot-specific transform the retargeting needs).
+Orientation (T_FLANGE below): gripper +X along the flange +Z (tool approach), +Y along flange +Y, +Z (camera up) along
+flange -X. With the usual tool0 convention (UR, FANUC, ABB descriptions), flange +X points down when the arm reaches
+forward, so this puts the camera on top. The bolt pattern repeats every 90°, so the plate can be fitted in four rolls;
+the dowel picks one. If your tool frame differs, change T_FLANGE (it is the only robot-specific transform the
+retargeting needs).
 
     python iso_flange_plate.py
 """
@@ -32,8 +34,8 @@ SPIGOT_D, SPIGOT_H = 31.45, 3.0
 DOWEL = (PCD / 2, 0.0)              # on the PCD, on the +Y axis (between two bolts)
 DOWEL_D, DOWEL_DEPTH = 6.1, 6.0
 
-T_FLANGE = np.array([[0.0, 0.0, 1.0, 0.0],
-                     [0.0, -1.0, 0.0, 0.0],
+T_FLANGE = np.array([[0.0, 0.0, -1.0, 0.0],
+                     [0.0, 1.0, 0.0, 0.0],
                      [1.0, 0.0, 0.0, T / 1000.0],
                      [0.0, 0.0, 0.0, 1.0]])
 

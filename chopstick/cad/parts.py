@@ -45,8 +45,8 @@ SA_PARTS = {
     "Left_Finger_SA_Spur_Gear_24_teeth_1%": "jaw_left_sa",
 }
 # Parts that move with each jaw, by side.
-LEFT_MOVING = {"jaw_left_dc", "jaw_left_sa", "tip_tpu_left"}
-RIGHT_MOVING = {"jaw_right", "tip_tpu_right"}
+LEFT_MOVING = {"jaw_left_dc", "jaw_left_sa", "tip_tpu_left", "sleeve_button_cover_left"}
+RIGHT_MOVING = {"jaw_right", "jaw_right_dc", "tip_tpu_right", "sleeve_button_cover_right"}
 
 # Reference bodies that are not printed and are not redistributed as parts.
 X5_LABEL = "Insta360_X5"
@@ -103,6 +103,7 @@ def load_raw():
         if name == "jaw_left_sa":
             shape = shape.moved(jaw_loc("left", -math.radians(SA_MODEL_OPEN_DEG)))
         parts[name] = shape
+    parts["jaw_right_dc"] = parts["jaw_right"]          # the handheld right jaw gets a sleeve; the robot's doesn't
     parts["insta360_x5_envelope"] = dc[X5_LABEL]
     parts["servo_envelope"] = sa[SERVO_LABEL]
     return parts
@@ -125,7 +126,8 @@ def envelopes():
 
 
 # Which parts make each build. Moving parts are listed under the side they turn with.
-JAWS_DC = ["jaw_left_dc", "jaw_right", "tip_tpu_left", "tip_tpu_right"]
+JAWS_DC = ["jaw_left_dc", "jaw_right_dc", "tip_tpu_left", "tip_tpu_right",
+           "sleeve_button_cover_left", "sleeve_button_cover_right"]
 JAWS_SA = ["jaw_left_sa", "jaw_right", "tip_tpu_left", "tip_tpu_right"]
 POD = ["pg_pod", "pg_pod_lid", "pg_pod_button"]
 BUILDS = {

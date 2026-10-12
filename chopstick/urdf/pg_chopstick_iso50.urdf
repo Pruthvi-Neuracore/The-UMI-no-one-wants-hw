@@ -41,7 +41,7 @@
   <link name="chopstick_tip_right"/>
   <link name="chopstick_camera"/>
   <link name="chopstick_tcp"/>
-  <joint name="chopstick_mount_joint" type="fixed"><parent link="chopstick_flange"/><child link="chopstick_base"/><origin xyz="0 0 0.016" rpy="3.14159265 -1.57079633 0"/></joint>
+  <joint name="chopstick_mount_joint" type="fixed"><parent link="chopstick_flange"/><child link="chopstick_base"/><origin xyz="0 0 0.016" rpy="0 -1.57079633 0"/></joint>
   <joint name="chopstick_jaw" type="revolute">
     <parent link="chopstick_base"/><child link="chopstick_jaw_left"/>
     <origin xyz="0.06733 0.015 0" rpy="0 0 0"/><axis xyz="0 0 1"/>

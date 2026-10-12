@@ -25,7 +25,8 @@ from OCP.BRepAdaptor import BRepAdaptor_Surface
 from scipy.sparse.csgraph import connected_components
 
 from extract_parts import THREEMF, threemf_meshes
-from parts import (GEAR_MODULE, GEAR_TEETH, HW, PIVOT_L, PIVOT_R, ROOT, SA_MODEL_OPEN_DEG, jaw_matrix, load_parts)
+from parts import (GEAR_MODULE, GEAR_TEETH, HW, PIVOT_L, PIVOT_R, ROOT, SA_MODEL_OPEN_DEG, jaw_matrix, load_parts,
+                   load_raw)
 from iso_flange_plate import T_FLANGE
 from openarm_adapter import T_LINK7
 
@@ -185,12 +186,14 @@ def main(check):
     T_d405 = d405_camera_frame()
 
     painted = threemf_meshes(THREEMF, painted=True)
+    raw = load_raw()                    # register against the unmodified jaws (no sleeve, no badge)
     dots = {}
     for name, src in JAW_3MF.items():
-        d, rms = dot_centres(to_mesh(parts[name], 0.1), painted[src])
+        d, rms = dot_centres(to_mesh(raw[name], 0.1), painted[src])
         dots[name] = d
         print(f"{name}: {len(d)} red dots, registration rms {rms:.3f} mm")
         write_dot_inlays(name, d)
+    write_dot_inlays("jaw_right_dc", dots["jaw_right"])     # same jaw, same dots
 
     table = gap_table(tl, tr)
     data = {
@@ -234,7 +237,8 @@ def main(check):
         },
     }
     if check:
-        jaws_dc = {"left": ["jaw_left_dc", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]}
+        jaws_dc = {"left": ["jaw_left_dc", "tip_tpu_left", "sleeve_button_cover_left"],
+                   "right": ["jaw_right_dc", "tip_tpu_right", "sleeve_button_cover_right"]}
         jaws_sa = {"left": ["jaw_left_sa", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]}
         lims = {}
         for build, fixed, jaws in (

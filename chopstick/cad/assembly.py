@@ -26,7 +26,7 @@ OUT = ROOT / "assembly"
 # PG blue and white: structure blue, moving and hand-touched parts white, red dots for the vision
 COLOURS = {"blue": "#1f5fae", "white": "#f4f6f8", "tpu": "#dfe5ec", "camera": "#1d1f22", "servo": "#2a2d33",
            "dot": "#d62828", "button": "#1f5fae"}
-WHITE_PARTS = {"jaw_left_dc", "jaw_left_sa", "jaw_right", "pg_pod", "pg_pod_lid"}
+WHITE_PARTS = {"jaw_left_dc", "jaw_left_sa", "jaw_right", "jaw_right_dc", "pg_pod", "pg_pod_lid"}
 UP_Y = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])   # Z up -> Y up (glTF)
 
 
@@ -37,7 +37,7 @@ def colour_of(name):
         return COLOURS["camera"]
     if name == "servo_envelope":
         return COLOURS["servo"]
-    if name == "pg_pod_button":
+    if name == "pg_pod_button" or name.startswith("sleeve_button_cover"):
         return COLOURS["button"]
     return COLOURS["white"] if name in WHITE_PARTS else COLOURS["blue"]
 

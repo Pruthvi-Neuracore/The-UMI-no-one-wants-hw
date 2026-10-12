@@ -17,19 +17,27 @@ Print every part from `hardware/STL/` at 0.2 mm layers with a 0.4 mm nozzle, in 
 
 1. **Inserts:** two M2 × 4 heat-set inserts in the back of the base, with M2 × 4 screws in them for positioning, and two
    M3 × 4 inserts from the underside.
-2. **Jaws:** thread a finger strap through each jaw. Glue on the TPU tips and press two 624 bearings into each jaw.
-3. **Join:** hook the rubber band through the centre cavity onto both jaws. Mesh the gears **with the tips touching**,
+2. **Jaws:** glue on the TPU tips and press two 624 bearings into each jaw.
+3. **Sleeve button:** the button goes in the index-finger sleeve. That is the **right jaw (`jaw_right_dc`) on the
+   right-hand gripper (start/stop)** and the **left jaw (`jaw_left_dc`) on the left-hand gripper (cancel)**. Solder the
+   2-core wire to a 6 × 6 switch. Lay the wire in the channel
+   at the bottom of the pad's pocket and out of the sleeve's back end, then press the switch into the pocket with its
+   plunger up. Press the TPU cover into the oval recess so its nub sits on the plunger; a drop of flexible glue on the
+   rim holds it. Put a cover without a switch on the thumb jaw's pocket. Run the wire along the jaw's
+   underside to the pivot, leaving a loop of slack there for the jaw's swing.
+4. **Join:** hook the rubber band through the centre cavity onto both jaws. Mesh the gears **with the tips touching**,
    then fit the two M3 shoulder screws. The jaws must swing freely; if they bind, check your printer's tolerances.
-4. **Strap and foam:** pin the wrist strap under the base, then add foam and grip tape to taste.
-5. **Camera frame:**
+5. **Strap and foam:** pin the wrist strap under the base, then add foam and grip tape to taste.
+6. **Camera frame:**
    - **X5:** build the button into `x5_lite_frame` (M2 × 4) and set the X5 in it. Then join the frame to the base with
      the clip, the M3 × 55 screws and nuts.
    - **D405:** screw the camera into `d405_frame`'s cup (2 × M3 × 6), feed the cable out of a side window, then join the
      frame to the base the same way.
-6. **PG pod (X5 build):** follow [pod.md](pod.md) to wire it and close the lid. Seat the pod's pocket on the bottom
+7. **PG pod (X5 build):** follow [pod.md](pod.md) to wire it and close the lid. Seat the pod's pocket on the bottom
    of the X5 frame, then screw the 1/4"-20 × 5/8" button-head up from inside the pod, through the frame, into the
-   camera. Do this before fitting the lid.
-7. **Tag:** stick one ArUco tag on the base.
+   camera. Feed the sleeve-button wire in through the front-wall hole on its side, and wire it to the XIAO. Do all of
+   this before fitting the lid.
+8. **Tag:** stick one ArUco tag on the base.
 
 ## Robot gripper
 

@@ -8,6 +8,8 @@ Mounting: the pod's top has a 3 mm deep pocket that takes the bottom of the X5 f
 camera's 1/4"-20 screw is replaced by a longer one (1/4"-20 x 5/8" button head) that goes up from inside the pod,
 through the pod's top wall and the frame, into the camera. Same 10° axis as the original screw.
 
+The record buttons in the jaws' finger sleeves (sleeve.py) are wired in through two Ø3.5 holes in the front wall.
+
 Parts: pg_pod (body), pg_pod_lid (bottom lid, 4 x M2 x 6 self-tapping), pg_pod_button (TPU cap over a 6 x 6 mm
 tactile switch, front face, under the palm's heel / ring finger).
 
@@ -38,6 +40,7 @@ BUTTON = dict(y=0.0, z=FRAME_BOTTOM_Z - TOP - 8.0, d=11.0)
 USB = dict(y=-6.0, z=Z_BOT + 5.0, w=10.0, h=4.6)       # XIAO USB-C, back wall
 SWITCH = dict(x=14.0, z=Z_BOT + 6.0, w=9.0, h=4.0)     # slide switch, -y wall
 BOSS_IN = 4.5                                          # lid screw bosses, inset from the inner corners
+CABLE = dict(y=17.0, z=FRAME_BOTTOM_Z - TOP - 4.0, d=3.5)  # sleeve-button wires, front wall, one hole per side
 
 
 def shell():
@@ -74,6 +77,9 @@ def build_pod():
         6.0, 9.0, FRAME_BOTTOM_Z - TOP - b["z"] + 6.0)
     body += post
     body -= Pos(post_x1 - 0.5, b["y"], b["z"]) * Box(1.2, 6.4, 6.4)   # switch seat
+    # front wall: wire entries for the sleeve buttons on the jaws (one per side, so either hand works)
+    for sy in (-1, 1):
+        body -= Pos(X1 - WALL / 2, sy * CABLE["y"], CABLE["z"]) * Rot(0, 90, 0) * Cylinder(CABLE["d"] / 2, WALL + 2)
     # back wall: USB-C for the XIAO, and a Ø2 light pipe for its charge LED
     u = USB
     usb = Pos(X0 + WALL / 2, u["y"], u["z"]) * Box(WALL + 2, u["w"], u["h"])
