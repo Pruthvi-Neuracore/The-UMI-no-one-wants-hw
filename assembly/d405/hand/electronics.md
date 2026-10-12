@@ -1,7 +1,7 @@
 # Electronics: D405 + Quest · Hand
 
-One USB-C cable from the electronics box to the laptop carries the D405 and the Pico. The Quest 3S controller is
-self-powered (AA cell) and is tracked by the headset; it has no wires and its buttons are not used.
+One USB-C cable from the electronics box to the laptop carries the D405 and the Pico. The Quest Touch Pro controller is
+self-powered (built-in battery) and tracks itself with its own cameras; it has no wires and its buttons are not used.
 
 ```
  D405 depth camera ──USB 3 (out of the cup's top window, into the box's top slot)──┐
@@ -10,7 +10,7 @@ self-powered (AA cell) and is tracked by the headset; it has no wires and its bu
    ├── I²C GP4 SDA / GP5 SCL ── IMU breakout (BNO085 class), flat under the box's top wall
    └── GP15 / GP14 free (no finger sleeve on the hand build; add a fingertip button here if you want one)
 
- Meta Quest 3S controller in the cradle ── tracked by the headset (pose only; buttons unused)
+ Meta Quest Touch Pro controller in the cradle ── self-tracked by its own cameras (pose only; buttons unused)
 ```
 
 | Part | Notes |

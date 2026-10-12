@@ -25,7 +25,7 @@ Per gripper. A bimanual kit is one `chopstick_right` and one `chopstick_left`, p
 | Intel RealSense D405 | 1 | 1 | |
 | M3 × 6 socket screw | 2 | 2 | D405 into the cup |
 | M4 × 30 bolt + M4 nyloc nut | 1 | 1 | Tilt hinge |
-| Meta Quest 3S Touch Plus controller (and the headset) | 1 | | Tracking only |
+| Meta Quest Touch Pro controller (paired to a Quest 3S or 3 headset) | 1 | | Tracking only |
 | Hook-and-loop strap, 20 mm, + 2 mm foam | 2 × 20 cm | | Controller in the cradle |
 | M3 × 8 + M3 heat-set inserts | 4 + 4 | | Cradle to the box |
 | M3 × 10 + M3 heat-set inserts | 4 + 4 | 4 + 4 | Box (or mount plate) to the frame's back plate |

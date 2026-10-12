@@ -1,6 +1,6 @@
 # Insta360 X5 · Hand
 
-<p align="center"><img src="img/hand.png" alt="The Insta360 X5 on the wrist saddle, strapped to a forearm, looking forward over the hand" width="700"></p>
+<p align="center"><img src="img/hand.png" alt="The Insta360 X5 on the wrist saddle, strapped behind the wrist with the blue strap, looking forward over a relaxed hand" width="700"></p>
 
 For bare-hand demonstrations, the X5 rides on the back of your forearm, just behind the wrist, and looks forward over
 your hand at what it grasps. There are no jaws: your own hand is the end effector. It uses the same camera frame and
@@ -23,11 +23,23 @@ PG pod as the handheld grippers; only the pod's lid changes.
 
 <p align="center"><img src="img/pod.png" alt="The PG pod: the saddle replaces its lid" width="460"></p>
 
+## On a robot hand
+
+<p align="center"><img src="img/hand_robot.png" alt="The same X5 strapped to the forearm of a Shadow Hand on a UR5e, looking over the robot's fingers" width="760"></p>
+
+For a dexterous robot hand, the same X5 goes on the robot's forearm, in the same place relative to the hand as on
+your wrist. The robot then sees what you saw.
+
+- **`pg_wrist_saddle_robot`** is `pg_wrist_saddle` with a wider saddle (R 68.5 mm) for round robot forearms up to Ø137 mm.
+- **Fixing:** the same 25 mm strap goes round the forearm through the wings.
+- **Shown:** a Shadow Hand (MuJoCo Menagerie model) on a UR5e, with the saddle's front edge about 30 mm behind the
+  wrist.
+
 ## Files
 
 | Folder | Contents |
 |---|---|
-| `STEP/`, `STL/` | `x5_lite_frame`, `pg_pod` and `pg_wrist_saddle` |
+| `STEP/`, `STL/` | `x5_lite_frame`, `pg_pod`, `pg_wrist_saddle` and `pg_wrist_saddle_robot` |
 | `assembly/` | `hand.glb` / `hand.stl` |
 | `urdf/` | `pg_hand.urdf` (no joints; `pg_camera` on `pg_base`) |
 

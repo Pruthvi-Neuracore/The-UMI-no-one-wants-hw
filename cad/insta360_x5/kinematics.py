@@ -3,7 +3,7 @@
 Writes chopstick/retarget/pg_chopstick/pg_chopstick_kinematics.json with:
   - the pivot axes and gear coupling,
   - the tool-tip (TCP) point where the TPU tips meet when closed,
-  - the Insta360 X5 camera frame (between its lens domes) and camera -> TCP for the chopstick and parallel jaws,
+  - the Insta360 X5 camera frame (between its lens domes) and camera -> TCP for the chopstick jaws,
   - the red-dot centres on each jaw, in that jaw's closed pose (from the painted slicer project), also written as
     hardware/STL/<jaw>_dots.stl inlay bodies,
   - a table of jaw angle -> tip gap (distance between the TPU tip ends) and the angle limits,
@@ -138,7 +138,7 @@ def gap_table(tl, tr, theta_max_deg=70.0, step_deg=0.5):
 
 
 def clash_sweep(parts, build, steps=36):
-    """First opening (rad for chopstick, mm for parallel) at which a moving part overlaps a fixed part by more than
+    """First opening (rad per jaw) at which a moving part overlaps a fixed part by more than
     0.05 cm3, sweeping from closed to q_max(build); also the overlap at the closed pose."""
     names = BUILDS[build]
     fixed = [n for n in names if side_of(n) is None]
@@ -228,28 +228,16 @@ def main(check):
                       "plate": "iso_flange_plate (ISO 9409-1-50-4-M6)"},
         },
     }
-    import parallel
-    data["parallel"] = {
-        "stroke_per_finger_mm": parallel.STROKE,
-        "pinion": {"teeth": parallel.TEETH, "module": parallel.MODULE, "pitch_radius_mm": parallel.R_PITCH,
-                   "axis_mm": [parallel.X_PIN, 0.0, 0.0], "axis": [0, 0, 1]},
-        "pad_inner_closed_y_mm": 0.0,
-        "tcp_mm": list(parallel.tcp()),
-        "red_dots_mm": {s: [list(c) for c in parallel.dots(s)] for s in ("left", "right")},
-        "note": "left finger moves +q along Y, right -q; pad gap = 2 q; pinion turns q / pitch_radius rad",
-    }
     if check:
         lims = {}
         for build in BUILDS:
             if family(build) == "hand":
                 continue
             lims[build], rest = clash_sweep(parts, build)
-            unit = "mm" if family(build) == "parallel" else "deg"
-            val = lims[build] if unit == "mm" else math.degrees(lims[build])
-            print(f"{build:18s} closed-pose overlap {rest:.3f} cm3, clash-free opening per side {val:.1f} {unit}")
-        data["opening_limits"] = {b: (round(math.degrees(v), 1) if family(b) == "chopstick" else round(v, 2))
-                                  for b, v in lims.items()}
-        data["opening_limits"]["note"] = "chopstick: deg per jaw; parallel: mm per finger (first clash, or full range)"
+            print(f"{build:18s} closed-pose overlap {rest:.3f} cm3, clash-free opening per jaw "
+                  f"{math.degrees(lims[build]):.1f} deg")
+        data["opening_limits"] = {b: round(math.degrees(v), 1) for b, v in lims.items()}
+        data["opening_limits"]["note"] = "deg per jaw (first clash, or full range)"
     elif OUT.exists() and "opening_limits" in json.loads(OUT.read_text()):
         data["opening_limits"] = json.loads(OUT.read_text())["opening_limits"]   # keep the last measured limits
     OUT.parent.mkdir(parents=True, exist_ok=True)

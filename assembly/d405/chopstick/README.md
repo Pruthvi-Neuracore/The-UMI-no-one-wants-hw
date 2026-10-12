@@ -1,14 +1,14 @@
 # D405 + Quest · Chopstick
 
-<p align="center"><img src="img/hero.png" alt="Handheld chopstick gripper with the D405 tilt mount, the electronics box and the Quest 3S controller behind it" width="760"></p>
+<p align="center"><img src="img/hero.png" alt="Handheld chopstick gripper with the D405 tilt mount, the electronics box and the Quest Touch Pro controller behind it" width="760"></p>
 
 The same geared chopstick jaws as the Insta360 kit, with a different sensing head:
 
 - **Intel RealSense D405:** a close-range depth camera on the HandUMI tilting mount, looking at the jaws.
 - **Electronics box:** a Raspberry Pi Pico 2, an IMU and a USB 3 hub, so one USB-C cable carries everything to the
   laptop.
-- **Meta Quest 3S controller:** clamped upright behind the head, used only for tracking. The headset tracks it, which
-  gives the gripper's pose live. Its buttons do nothing.
+- **Meta Quest Touch Pro controller:** clamped upright behind the head, used only for tracking. Its own cameras track it
+  (paired to a Quest 3S or 3 headset), which gives the gripper's pose live. Its buttons do nothing.
 
 The robot twin carries the same jaws and the same D405 at the same tilt.
 
@@ -26,7 +26,7 @@ The robot twin carries the same jaws and the same D405 at the same tilt.
 
 ## The head
 
-<p align="center"><img src="img/pod.png" alt="The head from behind: the electronics box on the frame's back plate, the Quest 3S controller in its cradle, the D405 cup on the hinge" width="560"></p>
+<p align="center"><img src="img/pod.png" alt="The head from behind: the electronics box on the frame's back plate, the Quest Touch Pro controller in its cradle, the D405 cup on the hinge" width="560"></p>
 
 - **`d405_frame`:** the base interface at the front (the same tongue and two M3 × 55 screws as every end effector), a
   back plate, and a Ø12 × 10 mm hinge knuckle on top.
@@ -38,7 +38,7 @@ The robot twin carries the same jaws and the same D405 at the same tilt.
 - **`ebox`:** bolts to the back plate with the same four M3 inserts the robot plates use. It holds the Pico 2, the IMU
   and the USB 3 hub. See [electronics.md](electronics.md).
 - **`quest_cradle`:** a 90° V-cradle on the box's back wall. The controller's handle stands upright in it on 2 mm foam,
-  held by two 20 mm straps, so its head and tracking face stay above the gripper where the headset can see them.
+  held by two 20 mm straps, so its head and tracking face stay above the gripper clear of your hand.
 
 ## How it works
 
@@ -73,6 +73,7 @@ box.
   <img src="img/openarm_bimanual.png" alt="OpenArm with chopstick grippers" width="380">
   <img src="img/robot_fanuc_crx.png" alt="Two FANUC CRX-5iA arms with chopstick grippers" width="380">
 </p>
+<p align="center"><img src="img/robot_abb_gofa.png" alt="Two ABB GoFa CRB 15000 arms with chopstick grippers" width="560"></p>
 
 - **Robot head:** the robot twin uses `d405_frame` and the cup without the box or controller, since the robot knows
   its own pose. The D405 plugs straight into the robot PC.

@@ -1,4 +1,4 @@
-"""Electronics box, lid, wrist saddle and Quest 3S controller cradle for the D405 head.
+"""Electronics box, lid, wrist saddle and Quest Touch Pro controller cradle for the D405 head.
 
 ebox: bolts to the back of `d405_frame`'s back plate with the same interface as the robot mount plates (four M3
 heat-set inserts in its front wall at (y, z) = (±9, ±26.9) mm, M3 x 10 from the front through the back plate). It
@@ -10,14 +10,15 @@ laptop (the HandUMI electronics):
     wall for the cable to the laptop, and two Ø3.5 holes low in the side walls for the record button's wire (one per
     side, so the same box serves either hand),
   * open at the bottom for `ebox_lid` (4 x M2 x 6 self-tapping) or, on the wrist, `ebox_wrist_saddle`.
-quest_cradle: a padded V-cradle for a Meta Quest 3S Touch Plus controller's handle, bolted to the box's back wall
-(4 x M3 x 8 into heat-set inserts). The handle stands upright in a 90° V-groove (fits handles about 30-42 mm across,
+quest_cradle: a padded V-cradle for a Meta Quest Touch Pro controller's handle, bolted to the box's back wall
+(4 x M3 x 8 into heat-set inserts). The handle stands upright in a 90° V-groove (fits handles about 30-42 mm across, e.g. the Touch Pro,
 with 2 mm foam), held by two 20 mm hook-and-loop straps through the cradle's slots; the controller's head and tracking
-face stay above the box, clear for the headset. The controller is used for tracking only.
+face stay above the box, clear of the hand. The controller is used for tracking only.
 
     python ebox.py
 """
 import math
+from pathlib import Path
 
 from build123d import Axis, Box, Cylinder, Pos, Rot, fillet
 
@@ -35,6 +36,7 @@ CRADLE = dict(x=(-62.0, -38.0), y=24.0, z=(-24.0, 22.0))
 CRADLE_INSERTS = [(12.0, 14.0), (-12.0, 14.0), (12.0, -16.0), (-12.0, -16.0)]
 STRAP = (21.0, 3.0)                 # 20 mm strap slots
 R_ARM, PITCH, SADDLE_L, WING, MIN_T = 38.0, 15.0, 60.0, 7.0, 3.0
+R_ROBOT = 68.5                      # ebox_wrist_saddle_robot: round robot forearms up to Ø137 (Shadow Hand)
 
 
 def _box(x, y, z):
@@ -87,7 +89,7 @@ def build_lid():
     return lid
 
 
-def build_wrist_saddle():
+def build_wrist_saddle(r_arm=R_ARM):
     """The lid with a saddle under it: concave across the forearm (R 38), pitched 15° so the D405 looks forward-down
     over the hand, with slotted wings for a 25 mm strap and access holes for the lid screws."""
     lid = build_lid()
@@ -97,7 +99,7 @@ def build_wrist_saddle():
     half_w = Y + WING
     depth = 45.0
     body = Pos(xc, 0, z_top - depth / 2) * Box(SADDLE_L, 2 * half_w, depth)
-    arm = Pos(x1, 0, z_top - MIN_T - R_ARM) * Rot(0, 90 - PITCH, 0) * Pos(0, 0, -SADDLE_L) * Cylinder(R_ARM, 4 * SADDLE_L)
+    arm = Pos(x1, 0, z_top - MIN_T - r_arm) * Rot(0, 90 - PITCH, 0) * Pos(0, 0, -SADDLE_L) * Cylinder(r_arm, 4 * SADDLE_L)
     body -= arm
     for sy in (-1, 1):
         body -= Pos(xc, sy * (Y + WING / 2), z_top - depth / 2) * Box(27.0, 3.5, depth + 2)
@@ -125,9 +127,48 @@ def build_cradle():
     return c
 
 
+QUEST_STL = Path(__file__).resolve().parent / "source" / "quest" / "MetaQuestTouchPro_Right.stl"
+QUEST_FOAM, QUEST_END_UP = 2.0, 0.0
+
+
 def controller_envelope():
-    """A stand-in for the Quest 3S Touch Plus controller, for renders: a capsule handle standing in the cradle's V and
-    a rounded head on top, tilted forward. Not to scale in every detail; the cradle doesn't depend on it."""
+    """The Meta Quest Touch Pro controller (right) standing in the cradle, for renders and the assembly: the handle
+    upright in the V on 2 mm of foam, the ring-less head above the cradle, overhanging backwards so its tracking
+    cameras and face stay clear. Uses Meta's model in source/quest/ (not redistributed here, see source/quest/README.md);
+    without it, a capsule-and-block stand-in of the same size."""
+    import numpy as np
+    import trimesh
+    if not QUEST_STL.exists():
+        return _controller_standin()
+    m = trimesh.load(QUEST_STL)
+    v = m.vertices
+    h = v[v[:, 1] > 15.0] - v[v[:, 1] > 15.0].mean(0)          # the handle (the head disc sits at -y)
+    a = np.linalg.eigh(h.T @ h)[1][:, -1]
+    a = a if a[2] > 0 else -a                                  # handle axis, towards the head
+    back = -np.array([0.0, 1.0, 0.0])                          # the head overhangs towards -y
+    back = back - back.dot(a) * a
+    back /= np.linalg.norm(back)
+    R = np.eye(4)
+    R[:3, :3] = np.column_stack([-back, np.cross(a, -back), a]).T   # rows: gripper x, y, z in controller axes
+    m.apply_transform(R)
+    x0 = CRADLE["x"][0]
+    z0, z1 = CRADLE["z"]
+    apex = x0 + 14.0                                          # the V's apex (depth 14)
+    v = m.vertices
+    # the handle's end level with the cradle's bottom, so the straps grip its full length
+    m.apply_translation([0, 0, z0 + QUEST_END_UP - v[:, 2].min()])
+    # centre the handle across y and push it into the V until it sits on the foam
+    v = m.vertices
+    band = v[(v[:, 2] > z0) & (v[:, 2] < z1)]
+    m.apply_translation([0, -(band[:, 1].min() + band[:, 1].max()) / 2, 0])
+    band = m.vertices[(m.vertices[:, 2] > z0) & (m.vertices[:, 2] < z1)]
+    gap = ((apex - band[:, 0] - np.abs(band[:, 1])) / np.sqrt(2)).min()
+    m.apply_translation([(gap - QUEST_FOAM) * np.sqrt(2), 0, 0])            # moving +x by d closes the gap by d/√2
+    return m
+
+
+def _controller_standin():
+    """A stand-in for the controller when Meta's model isn't in source/quest/."""
     import trimesh
     from shapely.geometry import box as rect
     x0 = CRADLE["x"][0]
@@ -147,6 +188,7 @@ def main():
     from restyle import restyle
     for name, shape in (("ebox", restyle("ebox", build_box())), ("ebox_lid", build_lid()),
                         ("ebox_wrist_saddle", restyle("ebox_wrist_saddle", build_wrist_saddle())),
+                        ("ebox_wrist_saddle_robot", restyle("ebox_wrist_saddle", build_wrist_saddle(R_ROBOT))),
                         ("quest_cradle", restyle("quest_cradle", build_cradle()))):
         save_part(name, shape)
         bb = shape.bounding_box()

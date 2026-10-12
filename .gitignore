@@ -4,3 +4,6 @@ __pycache__/
 .venv/
 *~
 .DS_Store
+# Meta-owned reference models used only for renders (see each source/*/README.md)
+cad/*/source/hand/*.glb
+cad/*/source/quest/*.stl

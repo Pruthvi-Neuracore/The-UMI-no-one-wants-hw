@@ -278,7 +278,7 @@ def hand(out, parts, seconds=4.5):
         hi = np.max([m.bounds[1] for m in meshes.values()], axis=0)
         c = (lo + hi) / 2
         dist = 1.9 * np.linalg.norm(hi - lo)
-        sc.label("D405 + Quest · Hand", "the depth camera and the Quest 3S controller on your wrist")
+        sc.label("D405 + Quest · Hand", "the depth camera and the Quest Touch Pro controller on your wrist")
         nf = int(seconds * FPS)
         for i in range(nf):
             t = i / (nf - 1)
@@ -287,11 +287,50 @@ def hand(out, parts, seconds=4.5):
         sc.encode(out)
 
 
+def t_parallel(out, title, sub, seconds=4.5, keys=12):
+    """The HandUMI T-plate gripper with the X5 (t_gripper.py): turn from a three-quarter view to the side while the
+    fingers open and close. The linkage is solved at `keys` openings; moving parts swap between them."""
+    import t_gripper as TG
+    ops = np.linspace(0.0, 0.85, keys)
+    poses = [{n: m.copy().apply_transform(TG.UP_Z) for n, (m, _) in TG.build(o).items()} for o in ops]
+    colours = {n: c for n, (_, c) in TG.build(0.0).items()}
+    moving = {n for n in poses[0] if not np.allclose(poses[0][n].bounds, poses[-1][n].bounds, atol=1e-3)}
+    with tempfile.TemporaryDirectory() as tmp:
+        sc = Scene(tmp)
+        for n, m in poses[0].items():
+            if n not in moving:
+                sc.add(n, m, colours[n])
+        for k, ps in enumerate(poses):
+            for n in moving:
+                sc.add(f"{n}#{k}", ps[n], colours[n])
+                sc.show(f"{n}#{k}", k == 0)
+        allm = list(poses[0].values()) + list(poses[-1].values())
+        lo = np.min([m.bounds[0] for m in allm], axis=0)
+        hi = np.max([m.bounds[1] for m in allm], axis=0)
+        c = (lo + hi) / 2 + [0, 0, 25.0]                         # keep the X5's top clear of the title
+        dist = 1.75 * np.linalg.norm(hi - lo)
+        sc.label(title, sub)
+        nf = int(seconds * FPS)
+        shown = 0
+        for i in range(nf):
+            t = i / (nf - 1)
+            sc.camera(c, orbit_dir(-135 + 45 * ease(t), 26 - 12 * ease(t)), dist)   # fingers point to -X: end on the front
+            f = 0.5 - 0.5 * math.cos(2 * math.pi * min(t * 1.4, 1.0))
+            k = int(round(f * (keys - 1)))
+            if k != shown:
+                for n in moving:
+                    sc.show(f"{n}#{shown}", False)
+                    sc.show(f"{n}#{k}", True)
+                shown = k
+            sc.frame()
+        sc.encode(out)
+
+
 SEGMENTS = {
     "d405_chopstick": lambda root, out, P: head(out, "chopstick_right", "D405 + Quest · Chopstick",
-                                                "depth camera on a tilting mount, Quest 3S controller for tracking", P),
-    "d405_parallel": lambda root, out, P: head(out, "parallel_right", "D405 + Quest · Parallel",
-                                               "one USB-C cable: Pico 2, IMU and USB 3 hub in the box", P, 4.5),
+                                                "depth camera on a tilting mount, Quest Touch Pro controller for tracking", P),
+    "d405_parallel": lambda root, out, P: t_parallel(out, "D405 + Quest · Parallel",
+                                                     "the HandUMI T-plate gripper with swappable tips and its D405 cup"),
     "d405_hand": lambda root, out, P: hand(out, P),
 }
 

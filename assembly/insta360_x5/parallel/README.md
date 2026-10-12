@@ -1,87 +1,93 @@
 # Insta360 X5 · Parallel
 
-<p align="center"><img src="img/parallel.png" alt="Parallel gripper: handheld with the PG pod (left) and the robot twin on the ISO 50 plate (right)" width="820"></p>
+<p align="center"><img src="img/parallel.png" alt="The HandUMI T-plate gripper with an Insta360 X5 standing on its camera post, AgileX Piper tips, half open" width="760"></p>
 
-Two fingers that slide straight together and stay parallel. It is the same X5 camera, frame and pod as the chopstick,
-with a rack-and-pinion jaw module in front.
+This is the HandUMI parallel gripper from [The-UMI-no-one-wants](https://github.com/Pruthvi-Neuracore/The-UMI-no-one-wants),
+**unchanged**, with an Insta360 X5 in place of the D405. It keeps everything HandUMI has:
 
-- **Handheld:** you pinch the fingers shut and springs open them.
-- **Robot twin:** a servo turns the pinion.
-- **Fit:** both bolt to the same frame interface as the chopstick base, so a frame can carry either end effector.
+- the T-plate main support and end cover;
+- finger links with sleeves and the universal tip flange;
+- the record button in the index sleeve;
+- crank and connecting links, rods, and the STS3215 width encoder;
+- the electronics box and the controller support.
 
-| Build | Use | Files |
-|---|---|---|
-| `parallel_right` | handheld, right hand: the index-finger button **starts and stops** recording | `assembly/parallel_right.*` |
-| `parallel_left` | handheld, left hand: the index-finger button **cancels** the take | `assembly/parallel_left.*` |
-| `parallel_openarm` | robot twin on OpenArm | `assembly/parallel_openarm.*` |
-| `parallel_iso50` | robot twin on any ISO 9409-1-50-4-M6 flange | `assembly/parallel_iso50.*` |
+Only one part is new: **`x5_wrist_mount`**. It hangs on the same Ø12 / M4 hinge as HandUMI's D405 cup and holds the X5
+upright, so its two lenses sit clear above the gripper.
+
+<p align="center">
+  <img src="img/parallel_back.png" alt="The same gripper from behind: electronics box, controller support, servo and the X5 cradle on the hinge" width="420">
+  <img src="img/camera_mount.png" alt="Close-up: the X5 cradle's two lugs straddling the main support's hinge knuckle" width="420">
+</p>
 
 ## How it works
 
-<p align="center"><img src="img/parallel_opening.png" alt="Fingers 0, 20, 40 and 60 mm apart" width="820"></p>
+<p align="center"><img src="img/parallel_opening.png" alt="Closed, half open and fully open, seen from the front" width="880"></p>
 
-- **Rails:** two Ø6 mm steel rods run across the housing (along Y) at (x, z) = (118, ±12) mm. Each finger's carriage
-  rides on two LM6UU linear bushings.
-- **Synchronising:** a 24-tooth, module 1.25 pinion on a vertical axle at (82, 0) mm sits between two racks, one on
-  each carriage.
-  - The left carriage's rack runs in front of the pinion, in the top half of its 12 mm face.
-  - The right carriage's rack runs behind it, in the bottom half. An arm over the pinion ties it to its carriage.
+- **Linkage (HandUMI):** your fingers sit in the two finger links, which slide on two Ø4 rods (LM4UU bearings). A crank
+  on the STS3215 servo axis and two connecting links tie the links together, so they always move the same amount in
+  opposite directions.
+- **Width:** the servo runs with its torque off and works only as the width encoder. The links travel about 87 mm
+  from closed to fully open.
+- **Record button:** a 6 × 6 mm switch sits in the index sleeve under a TPU cover.
+  - **Right-hand gripper:** green cover. A press starts and stops recording.
+  - **Left-hand gripper:** red cover. A press cancels the take.
 
-  When one finger moves, the pinion turns and moves the other the same amount the other way. The pinion's tooth
-  phase is set so it meshes cleanly with both racks.
-- **Stroke:** 30 mm per finger, so the TPU pads open 0 to 60 mm. The tool tip is at (206, 0, 0) mm, between the pads
-  near their ends.
-- **Opening it:** handheld, two compression springs on the rods sit between the carriages and push the fingers apart.
-  On the robot, a Feetech SM40BL under the housing turns the pinion: 1 mm of finger travel is 1/15 rad of pinion.
-- **Tracking:** four blue dots on each finger's top let the video show how far the fingers are open.
+  The parts are HandUMI's; only the cover colour and the firmware role differ.
+- **Camera:** the X5 records 360° video and its own IMU, and its pose comes from mapping that video.
+  - **Tilt:** loosen the M4 hinge bolt to tilt the camera, from about 63° back to fully forward, then tighten the nyloc
+    nut. Upright, its weight sits over the pivot.
+  - **Clash check:** the cradle and camera don't touch any HandUMI part, closed, half open or fully open, with every
+    tip set.
 
-## Finger sleeves and the record button
+## Swappable tips
 
-Each handheld finger has the same sleeve as the chopstick jaws:
+Each finger link ends in HandUMI's universal 20 × 30 mm flange, with these hole patterns:
 
-- **Pad:** a 5.5 mm pad on the finger's outer face, where your finger rests and pushes.
-- **Fins:** two slotted fins along the pad's edges.
-- **Strap:** an elastic hook-and-loop strap wraps your finger through the fins.
+- M2: 8 × 12 mm;
+- M3: 12 × 24 mm, plus a centre pair;
+- M4: a 12 mm pair.
 
-The index finger's pad carries the only button, under a TPU cover (green for record, red for cancel):
+Swap the tips to match the gripper of the robot you'll deploy on, so the jaws you record with are the jaws the robot has.
 
-- **Right-hand gripper:** start / stop.
-- **Left-hand gripper:** cancel.
+| Tips on the device | For |
+|---|---|
+| <img src="img/tips_agilex-piper.png" width="300"><br>**AgileX Piper** jaw + pad | <img src="img/tips_robot_piper.png" width="300"><br>AgileX Piper |
+| <img src="img/tips_open-enpire.png" width="300"><br>**Open-ENPIRE** compliant finger (TPU insert) | <img src="img/tips_robot_openarm_enpire.png" width="300"><br>OpenArm with Open-ENPIRE fingers |
+| <img src="img/tips_robotiq-hand-e.png" width="300"><br>**Robotiq Hand-E** finger (print two; the index one is turned 180°) | <img src="img/tips_robot_ur5.png" width="300"><br>UR5, ABB GoFa, FANUC CRX with Hand-E |
 
-## On the robot
+<p align="center">
+  <img src="img/tips_robot_abb_gofa.png" alt="ABB GoFa pair with Hand-E" width="400">
+  <img src="img/tips_robot_fanuc_crx5ia.png" alt="FANUC CRX-5iA pair with Hand-E" width="400">
+</p>
 
-<p align="center"><img src="img/robot_abb_gofa.png" alt="Two ABB GoFa arms with parallel grippers on ISO 50 plates" width="620"></p>
-
-- **Robot parts:** `parallel_base_sa` adds a cradle under the housing for the SM40BL, whose shaft comes up through the
-  bottom plate into `parallel_pinion_servo`. The robot fingers are plain (no sleeves).
-- **Frame and plates:** the robot X5 frame and the mount plates are the same as for the chopstick.
-
-<p align="center"><img src="img/plates.png" alt="OpenArm adapter and ISO 50 plate" width="620"></p>
+The robot renders are HandUMI's: the robot carries its own gripper with the same finger shape, so nothing about them
+changes with the camera.
 
 ## Files
 
 | Folder | Contents |
 |---|---|
-| `STEP/`, `STL/` | Every printed part for the four builds (gripper frame, closed); `*_dots.stl` are the blue inlays |
-| `assembly/` | `<build>.glb` / `.stl` at a typical opening, rods and servo included |
-| `urdf/` | `pg_<build>.urdf`: `pg_finger` (prismatic, m, one finger) with the right finger as a −1 mimic, `pg_pinion` following, plus `pg_camera`, `pg_tcp` and `pg_tip_*`; robot builds have a `pg_flange` root |
+| `STEP/right/`, `STL/right/` | Every printed part for a right hand: HandUMI's parts plus `x5_wrist_mount` |
+| `STEP/left/`, `STL/left/` | The same for a left hand (mirror parts; `x5_wrist_mount` is shared) |
+| `STEP/gripper_tips/`, `STL/gripper_tips/` | The three tip sets |
+| `assembly/` | `x5_parallel_right_<tips>.glb` (coloured, one node per part, metres, Y up) and `.stl` (mm, Z up), half open, once per tip set |
 | `img/` | Renders |
 
-<p align="center"><img src="img/parts.png" alt="The printed parts" width="760"></p>
+<p align="center"><img src="img/parallel_parts.png" alt="The printed parts of a right hand: X5 mount, main support, end cover, finger links, button cover, crank, connecting links, hand support base, controller support, electronics box and lid" width="820"></p>
 
 - **Bill of materials:** [bom.md](bom.md).
 - **Wiring:** [electronics.md](electronics.md).
+- **Generator:** `cad/insta360_x5/t_gripper.py`. It uses HandUMI's own assembly code and parts, vendored in
+  `cad/insta360_x5/handumi/`; the mount itself is `handumi/cad/x5_wrist_mount.py`.
 
 ## Build
 
-1. **Carriages:** press two LM6UU bushings into each carriage, and two M3 heat-set inserts into its front face.
-2. **Rods and springs:** slide a rod through one end wall and both carriages, with a spring between the carriages
-   (handheld). Repeat with the second rod, then press both into the far end wall.
-3. **Pinion:** with the carriages the same distance from the centre, drop the pinion in through the top window
-   between the racks. Fit the M4 axle through the top and bottom plates.
-4. **Fingers:** screw them to the carriages (2 × M3 × 14 each) and glue the TPU pads on. Then fit the index button and
-   the straps, as for the chopstick.
-5. **Camera and pod:** join the frame to the base with the clip and two M3 × 55 screws. Mount the pod under the frame
-   with the 1/4"-20 × 5/8".
-6. **Robot twin:** screw the rotor plate to `parallel_pinion_servo` and slide the SM40BL into its cradle with its shaft
-   in the pinion. Bolt the plate to the robot and the frame to the plate.
+1. **Build HandUMI:** follow HandUMI's guide for everything except the camera. Print the parts in `STL/right/` or
+   `STL/left/`, plus a pair of tips.
+2. **Print the cradle:** print `x5_wrist_mount` in PETG or PLA, with the base plate down and no supports.
+3. **Fit the cradle:** slide its two lugs over the main support's hinge knuckle and fit the M4 × 30 bolt and nyloc nut.
+   Tighten until the cradle holds its angle.
+4. **Fit the camera:** set the X5 in the cradle and screw a low-head 1/4"-20 × 3/8" camera screw up through the base
+   plate into its socket. The head sits in the counterbore, between the lugs.
+5. **Check the ports:** the side walls have a 24 mm slot for the X5's ports and battery door. Check them against your
+   camera before you print.

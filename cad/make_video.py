@@ -63,7 +63,7 @@ def main():
                 continue
             subprocess.run([sys.executable, "animate.py", root, str(tmp), *names], cwd=HERE / kit, check=True)
         clips = [tmp / "title.mp4"]
-        kits = {"insta360_x5": "Insta360 X5", "d405": "RealSense D405 + Quest 3S"}
+        kits = {"insta360_x5": "Insta360 X5", "d405": "RealSense D405 + Quest Touch Pro"}
         card(clips[0], "PG Chopstick", ["handheld grippers and wrist cameras for robot data collection",
                                         "  ·  ".join(v for k, v in kits.items() if (HERE / k).exists())], 3.0)
         clips += [tmp / f"{s}.mp4" for _, s in ORDER]
