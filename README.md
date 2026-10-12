@@ -12,6 +12,9 @@
   <img src="assembly/d405/chopstick/img/hero.png" alt="PG Chopstick handheld gripper with a RealSense D405 and a Quest 3S controller" width="440">
 </p>
 
+> Each kit also has its own branch: [`pg-chopstick-x5`](../../tree/pg-chopstick-x5) (Insta360 X5) and
+> [`pg-chopstick-d405`](../../tree/pg-chopstick-d405) (D405 + Quest).
+
 PG Chopstick is open hardware for handheld data collection. You hold a printed gripper, or wear a camera on your
 wrist, and do the task. A camera on the device records what you see. Its robot twin carries the same jaws and the same
 camera at the same spot, so a policy trained on your demonstrations sees the same thing on the robot.
