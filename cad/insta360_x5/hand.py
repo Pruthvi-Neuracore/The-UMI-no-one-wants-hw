@@ -10,6 +10,7 @@ the pod's flat lid is swapped for `pg_wrist_saddle`:
     25° down, over the back of the hand at what it grasps,
   * two side wings with 27 x 3.5 mm slots for a 25 mm hook-and-loop strap round the forearm,
   * access holes from below for the lid screws.
+`pg_wrist_saddle_robot` is the same part for a robot hand's round forearm (R 68.5 mm, e.g. the Shadow Hand's).
 
     python hand.py
 """
@@ -26,9 +27,10 @@ LENGTH = 60.0                # along the forearm
 WING = 7.0                   # side wings beyond the pod outline, for the strap slots
 STRAP_SLOT = (27.0, 3.5)     # along the arm, across
 MIN_T = 3.0                  # thinnest saddle under the lid (at the front centre line)
+R_ROBOT = 68.5               # pg_wrist_saddle_robot: round robot forearms up to Ø137 (Shadow Hand: Ø135)
 
 
-def build():
+def build(r_arm=R_ARM):
     lid = pod.build_lid()
     z_top = pod.Z_BOT - pod.LID                       # underside of the lid
     xc = (pod.X0 + pod.X1) / 2
@@ -40,8 +42,8 @@ def build():
     # at the front end
     a = math.radians(PITCH)
     z_front = z_top - MIN_T
-    centre_front = (x1, 0.0, z_front - R_ARM)
-    arm = Cylinder(R_ARM, 4 * LENGTH)                 # along z, then turned to run along the arm
+    centre_front = (x1, 0.0, z_front - r_arm)
+    arm = Cylinder(r_arm, 4 * LENGTH)                 # along z, then turned to run along the arm
     arm = Pos(*centre_front) * Rot(0, 90 - PITCH, 0) * Pos(0, 0, -LENGTH) * arm
     body -= arm
     # strap slots through the wings, top to bottom
@@ -57,11 +59,12 @@ def build():
 
 def main():
     from restyle import restyle
-    s = restyle("pg_wrist_saddle", build())
-    save_part("pg_wrist_saddle", s)
-    bb = s.bounding_box()
-    print(f"pg_wrist_saddle {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, {s.volume / 1e3:.1f} cm3, "
-          f"{len(s.solids())} solid(s)")
+    for name, r in (("pg_wrist_saddle", R_ARM), ("pg_wrist_saddle_robot", R_ROBOT)):
+        s = restyle("pg_wrist_saddle", build(r))
+        save_part(name, s)
+        bb = s.bounding_box()
+        print(f"{name} {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, {s.volume / 1e3:.1f} cm3, "
+              f"{len(s.solids())} solid(s)")
 
 
 if __name__ == "__main__":

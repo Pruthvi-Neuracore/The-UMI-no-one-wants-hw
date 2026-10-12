@@ -43,6 +43,8 @@ def tidy(path, aspect=1.6, margin=0.07):
     centred and framed the same way."""
     from PIL import Image, ImageChops
     im = Image.open(path).convert("RGB")
+    w0, h0 = im.size
+    im = im.crop((3, 3, w0 - 3, h0 - 3))               # the screenshot's own edge can carry an AO seam
     bg = Image.new("RGB", im.size, (255, 255, 255))
     box = ImageChops.difference(im, bg).convert("L").point(lambda v: 255 if v > 8 else 0).getbbox()
     if not box:
@@ -95,7 +97,7 @@ def hero(parts):
 
 def opening(parts, build="chopstick_right", path="opening.png"):
     p = plotter((2000, 760))
-    labels = ("0°", "15°", "30°", "45°") if build.startswith("chopstick") else ("0 mm", "20 mm", "40 mm", "60 mm")
+    labels = ("0°", "15°", "30°", "45°")
     for i, (frac, lab) in enumerate(zip((0, 1 / 3, 2 / 3, 1), labels)):
         place(p, gripper(build, frac, parts), trimesh.transformations.translation_matrix([0, -i * 330, 0]))
         p.add_point_labels([[245, -i * 330, 0]], [lab], font_size=36, shape=None, text_color="#1f5fae",
@@ -125,21 +127,26 @@ def sleeve_closeup(parts):
          zoom=1.5)
 
 
-def hand(parts):
-    """The X5 on the wrist saddle, on a forearm (a simple stand-in), seen from the side and front."""
+def wrist(parts):
+    """The saddle's arm frame and strap geometry for the wrist scenes."""
     import hand as H
     import pod as PD
+    import wrist_scene as W
+    xc = (PD.X0 + PD.X1) / 2
+    T = W.arm_frame(xc + H.LENGTH / 2, PD.Z_BOT - PD.LID, H.MIN_T, H.PITCH)
+    return T, dict(saddle_len=H.LENGTH, slot_y=PD.Y + H.WING / 2, n_top=H.MIN_T)
+
+
+def hand(parts):
+    """The X5 on the wrist saddle, strapped to a forearm, looking over a relaxed hand."""
+    import hand as H
+    import wrist_scene as W
     p = plotter((1600, 1100))
     place(p, assemble("hand", 0.0, parts))
-    xc = (PD.X0 + PD.X1) / 2
-    a = np.radians(H.PITCH)
-    arm = trimesh.creation.cylinder(radius=H.R_ARM - 1.0, height=260, sections=64)
-    arm.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2 - a, [0, 1, 0]))
-    z_top = PD.Z_BOT - PD.LID - H.MIN_T
-    x1 = xc + H.LENGTH / 2
-    arm.apply_translation([x1 - 40 * np.cos(a), 0, z_top - H.R_ARM - 40 * np.sin(a) + 1.0])
-    add(p, arm, "#e8c9b0")
-    shot(p, IMG / "hand.png", (320, -380, 120), (20, 0, -60), zoom=1.3)
+    T, k = wrist(parts)
+    for m, c in W.human(T, r_saddle=H.R_ARM, **k):
+        add(p, m, c)
+    shot(p, IMG / "hand.png", (420, 380, 260), (60, 0, -30), zoom=1.25)
 
 
 def plates(parts):
@@ -159,8 +166,6 @@ def exploded(parts):
     rows = [["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "jaw_left_dc", "jaw_right_dc_button",
              "tip_tpu_left", "tip_tpu_right", "sleeve_button_cover_right"],
             ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "jaw_left_sa", "jaw_right"],
-            ["parallel_base_dc", "parallel_carriage_left", "parallel_carriage_right", "parallel_pinion",
-             "parallel_finger_left_sleeve", "parallel_finger_right_button"],
             ["pg_pod", "pg_pod_lid", "pg_wrist_saddle", "openarm_adapter", "iso_flange_plate"]]
     p = plotter((2000, 1200))
     for r, group in enumerate(rows):
@@ -240,8 +245,6 @@ def main():
     hero(parts)
     side_by_side(parts, ["chopstick_left", "chopstick_right"], IMG / "pair.png", (0.4, 0.4), gap=320.0)
     side_by_side(parts, ["chopstick_right", "chopstick_openarm"], IMG / "kit.png", (0.4, 0.55))
-    side_by_side(parts, ["parallel_right", "parallel_iso50"], IMG / "parallel.png", (0.5, 0.5), gap=360.0)
-    opening(parts, "parallel_right", "parallel_opening.png")
     hand(parts)
     opening(parts)
     pod(parts)

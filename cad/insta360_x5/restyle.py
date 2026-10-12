@@ -32,8 +32,8 @@ BADGE = {
     "jaw_right_dc": (0, 0, -1), "jaw_left_dc_button": (0, 0, -1), "jaw_right_dc_button": (0, 0, -1),
     # new PG parts (badged by their own scripts through restyle())
     "pg_pod": (0, -1, 0), "openarm_adapter": (1, 0, 0), "iso_flange_plate": (1, 0, 0),
-    "pg_wrist_saddle": (0, -1, 0), "parallel_base_dc": (0, 0, 1), "parallel_base_sa": (0, 0, 1),
-    "parallel_carriage_left": (1, 0, 0), "parallel_carriage_right": (1, 0, 0),
+    "pg_wrist_saddle": (0, -1, 0),
+   
 }
 
 

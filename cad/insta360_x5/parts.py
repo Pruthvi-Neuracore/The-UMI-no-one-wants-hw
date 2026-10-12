@@ -6,8 +6,8 @@ along the jaws, +Y to the left jaw, +Z up (camera side).
 End effectors:
   * chopstick: two jaws turning about vertical axes through PIVOT_L / PIVOT_R, tied by 24-tooth spur gears, so they
     open by the same angle in opposite directions. q = one jaw's angle from closed (rad); left turns +q, right -q.
-  * parallel: two fingers on carriages sliding along Y, tied by a rack and pinion. q = one finger's travel from
-    closed (mm); left moves +q, right -q (parallel.py).
+  * parallel: the HandUMI T-plate gripper with this kit's camera on its post. It has its own pipeline
+    (t_gripper.py) in HandUMI's main-support frame, so it is not one of the BUILDS below.
   * hand: no jaws; the X5 rides on a wrist cuff (hand.py).
 """
 import math
@@ -56,7 +56,6 @@ MODULES = [
     ("pod", ("pg_pod",)),
     ("hand", ("pg_wrist",)),
     ("mounts", ("openarm_adapter", "iso_flange_plate")),
-    ("parallel", ("parallel_",)),
     ("chopstick", ("chopstick_base", "jaw_", "tip_tpu", "sleeve_")),
 ]
 
@@ -96,16 +95,11 @@ CHOPSTICK_RIGHT = {"jaw_right", "jaw_right_dc", "jaw_right_dc_button", "tip_tpu_
 
 
 def side_of(name):
-    """'left' / 'right' for a part that moves with a jaw or finger, 'pinion' for the parallel pinion, else None."""
+    """'left' / 'right' for a part that moves with a chopstick jaw, else None."""
     if name in CHOPSTICK_LEFT:
         return "left"
     if name in CHOPSTICK_RIGHT:
         return "right"
-    if name.startswith("parallel_pinion"):
-        return "pinion"
-    if name.startswith(("parallel_carriage_", "parallel_finger_", "parallel_pad_", "parallel_button_cover_",
-                        "parallel_strap_")):
-        return "left" if "_left" in name else "right"
     return None
 
 
@@ -127,43 +121,24 @@ def jaw_matrix(side, theta):
 
 
 def family(build):
-    return build.split("_")[0]          # chopstick / parallel / hand
+    return build.split("_")[0]          # chopstick / hand
 
 
 def q_max(build):
-    """Full opening of one jaw (chopstick, rad) or one finger (parallel, mm)."""
-    if family(build) == "parallel":
-        import parallel
-        return parallel.STROKE
+    """Full opening of one jaw (rad)."""
     return math.radians(72.0)
 
 
 def q_display(build, frac):
-    """The jaw / finger value for a fraction of a typical working opening (renders, assemblies)."""
-    if family(build) == "parallel":
-        import parallel
-        return frac * parallel.STROKE
+    """The jaw angle for a fraction of a typical working opening (renders, assemblies)."""
     return frac * math.radians(45.0)
 
 
 def motion(build, name, q):
-    """4x4 that moves part `name` of `build` from closed to opening q (mm)."""
+    """4x4 that moves part `name` of `build` from closed to jaw angle q (rad)."""
     side = side_of(name)
     if side is None:
         return np.eye(4)
-    if family(build) == "parallel":
-        import parallel
-        if side == "pinion":                 # turns with the racks
-            a = q / parallel.R_PITCH
-            c, s = math.cos(a), math.sin(a)
-            m = np.eye(4)
-            m[:2, :2] = [[c, -s], [s, c]]
-            x0 = parallel.X_PIN
-            m[:2, 3] = [x0 - c * x0, -s * x0]
-            return m
-        m = np.eye(4)
-        m[1, 3] = q if side == "left" else -q
-        return m
     return jaw_matrix(side, q)
 
 
@@ -212,10 +187,6 @@ STRAPS = ["sleeve_strap_left", "sleeve_strap_right"]
 HEAD_HANDHELD = ["x5_lite_frame", "chopstick_clip_dc", "pg_pod", "pg_pod_lid"]
 HEAD_ROBOT = ["x5_frame", "x5_clip_b", "chopstick_clip_sa"]
 CHOP_SA = ["chopstick_base_sa", "jaw_left_sa", "jaw_right"] + TIPS
-PAR_HAND = ["parallel_base_dc", "parallel_pinion", "parallel_carriage_left", "parallel_carriage_right",
-            "parallel_pad_left", "parallel_pad_right", "parallel_strap_left", "parallel_strap_right"]
-PAR_ROBOT = ["parallel_base_sa", "parallel_pinion_servo", "parallel_carriage_left", "parallel_carriage_right",
-             "parallel_finger_left", "parallel_finger_right", "parallel_pad_left", "parallel_pad_right"]
 BUILDS = {
     # chopstick, handheld: the record button is in the index-finger sleeve only
     # (right hand -> right jaw: start / stop; left hand -> left jaw: cancel)
@@ -225,13 +196,6 @@ BUILDS = {
                       + ["jaw_left_dc_button", "jaw_right_dc", "sleeve_button_cover_left"],
     "chopstick_openarm": HEAD_ROBOT + CHOP_SA + ["openarm_adapter"],
     "chopstick_iso50": HEAD_ROBOT + CHOP_SA + ["iso_flange_plate"],
-    # parallel, handheld: same rule for the button (index finger)
-    "parallel_right": HEAD_HANDHELD + PAR_HAND
-                      + ["parallel_finger_left_sleeve", "parallel_finger_right_button", "parallel_button_cover_right"],
-    "parallel_left": HEAD_HANDHELD + PAR_HAND
-                     + ["parallel_finger_left_button", "parallel_finger_right_sleeve", "parallel_button_cover_left"],
-    "parallel_openarm": HEAD_ROBOT + PAR_ROBOT + ["openarm_adapter"],
-    "parallel_iso50": HEAD_ROBOT + PAR_ROBOT + ["iso_flange_plate"],
     # bare hand: the X5 on a wrist cuff (the pod with a saddle in place of its lid)
     "hand": ["x5_lite_frame", "pg_pod", "pg_wrist_saddle"],
 }

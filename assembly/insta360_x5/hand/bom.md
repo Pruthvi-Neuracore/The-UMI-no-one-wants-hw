@@ -10,3 +10,4 @@
 | PG pod electronics (XIAO ESP32-S3, IMU, 300 mAh LiPo, slide switch) | 1 set | [electronics.md](electronics.md) |
 | Hook-and-loop strap, 25 mm wide | about 35 cm | Round the forearm |
 | Thin foam pad | 1 | Under the saddle |
+| `pg_wrist_saddle_robot` (robot hand only, instead of `pg_wrist_saddle`) | 1 | PETG, for round robot forearms up to Ø137 mm |

@@ -26,7 +26,7 @@ ROBOTS = {
                 tcp={"left": (0.60, -0.17, 0.22), "right": (0.60, 0.17, 0.22)}, approach=(0.6, 0.0, -0.8),
                 seed={"shoulder_lift_joint": -1.6, "elbow_joint": 1.6, "wrist_1_joint": -1.6, "wrist_2_joint": -1.57},
                 view=(1.6, -0.75, 0.8)),
-    "abb_gofa": dict(gripper="parallel_iso50", urdf="example_abb/descriptions/crb15000_dual_description/robot.urdf", dual=True, elbow="link_3",
+    "abb_gofa": dict(urdf="example_abb/descriptions/crb15000_dual_description/robot.urdf", dual=True, elbow="link_3",
                      mirror=(-1, 1, 1, -1, 1, -1),
                      tcp={"left": (0.62, -0.17, 0.30), "right": (0.62, 0.17, 0.30)}, approach=(0.6, 0.0, -0.8),
                      seed={"joint_2": 0.4, "joint_3": 0.4, "joint_5": 0.9},
@@ -55,7 +55,7 @@ class Arm:
                 and self.r.joint_map[j].type == "revolute" and not any(s in j for s in STOCK_GRIPPER)]
 
 
-def link_meshes(r, root_dir, T_scene=np.eye(4)):
+def link_meshes(r, root_dir, T_scene=np.eye(4), keep=None):
     """[(trimesh in the scene frame, rgb 0-1)] for every visual of every link, keeping each material's colour.
 
     COLLADA files carry one sub-mesh per material (UR's blue ring, FANUC's green bands); STL visuals take the URDF
@@ -63,7 +63,7 @@ def link_meshes(r, root_dir, T_scene=np.eye(4)):
     """
     out = []
     for name, link in r.link_map.items():
-        if any(s in name.lower() for s in STOCK_GRIPPER):
+        if any(s in name.lower() for s in STOCK_GRIPPER) or (keep and not keep(name)):
             continue
         T_link = T_scene @ r.get_transform(name, r.base_link)
         for v in link.visuals:
@@ -188,12 +188,61 @@ def render(root, name, spec, parts):
     shot(p, IMG / f"robot_{name}.png", tuple(c + d * 3.0 * np.linalg.norm(hi - lo)), tuple(c), zoom=1.3)
 
 
+def robot_hand(root, parts):
+    """The hand variant's robot twin: a Shadow Hand on a UR5e with the same X5 head strapped to its forearm
+    (pg_wrist_saddle_robot), close up. Writes docs/img/hand_robot.png."""
+    import yourdfpy
+    import wrist_scene as W
+    from render_docs import add, wrist
+    from assembly import colour_of, to_mesh
+    global TCP_FROM_FLANGE
+    spec = ROBOTS["ur5"]
+    path = Path(root) / spec["urdf"]
+    r = yourdfpy.URDF.load(str(path), build_scene_graph=True, load_meshes=False)
+    arm = Arm(r, "right_")
+    saved, TCP_FROM_FLANGE = TCP_FROM_FLANGE, 0.33              # flange to the palm
+    solve(arm, np.array([0.70, 0.20, 0.30]), (1.0, 0.0, 0.18), spec["seed"], spec["elbow"])
+    TCP_FROM_FLANGE = saved
+    M = mount_frame(arm, approach_in_flange(arm))                 # x along the approach, z up
+    T_sh = np.eye(4)
+    T_sh[:3, :3] = M[:3, :3] @ np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])   # Shadow: z forward, back of the hand up
+    T_sh[:3, 3] = M[:3, 3]
+    T_arm, k = wrist(parts)
+    scene, T_sh_in_g = W.shadow(T_arm, r_saddle=68.5, **k)
+    T_g = T_sh @ np.diag([1e-3, 1e-3, 1e-3, 1.0]) @ np.linalg.inv(T_sh_in_g)   # gripper frame (mm) -> world (m)
+    p = plotter((1600, 1200), scale=1e-3)
+    lo, hi = np.full(3, np.inf), np.full(3, -np.inf)
+    close = lambda n: n.startswith("right_") and any(k in n for k in ("forearm", "wrist", "flange", "tool"))
+    for m, rgb in link_meshes(r, path.parent, keep=close):          # the arm from the elbow on, for the close-up
+        p.add_mesh(pv.wrap(m), color=rgb, smooth_shading=True, specular=0.35, specular_power=30)
+    meshes = assemble("hand", 0.0, parts)
+    meshes.pop("pg_wrist_saddle", None)
+    sad = to_mesh(parts["pg_wrist_saddle_robot"], 0.05)
+    sad.visual.face_colors = trimesh.visual.color.hex_to_rgba(colour_of("pg_wrist_saddle"))
+    meshes["pg_wrist_saddle_robot"] = sad
+    for m in list(meshes.values()):
+        mm = m.copy().apply_transform(T_g)
+        p.add_mesh(pv.wrap(mm), color=mm.visual.face_colors[0, :3] / 255.0, smooth_shading=True,
+                   split_sharp_edges=True, specular=0.3, specular_power=25)
+        lo, hi = np.minimum(lo, mm.bounds[0]), np.maximum(hi, mm.bounds[1])
+    for m, col in scene:
+        mm = m.copy().apply_transform(T_g)
+        p.add_mesh(pv.wrap(mm), color=col, smooth_shading=True, specular=0.4, specular_power=30)
+        lo, hi = np.minimum(lo, mm.bounds[0]), np.maximum(hi, mm.bounds[1])
+    c = (lo + hi) / 2
+    d = np.array([0.35, 1.0, 0.35])
+    shot(p, IMG / "hand_robot.png", tuple(c + d / np.linalg.norm(d) * 2.5), tuple(c), zoom=1.6)
+
+
 def main():
     root = sys.argv[1]
-    only = sys.argv[2:] or list(ROBOTS)
+    only = sys.argv[2:] or [*ROBOTS, "hand"]
     parts = load_parts()
     for name in only:
-        render(root, name, ROBOTS[name], parts)
+        if name == "hand":
+            robot_hand(root, parts)
+        else:
+            render(root, name, ROBOTS[name], parts)
 
 
 if __name__ == "__main__":

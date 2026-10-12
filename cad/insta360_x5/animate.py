@@ -261,11 +261,50 @@ def hand(out, parts, seconds=4.5):
         sc.encode(out)
 
 
+def t_parallel(out, title, sub, seconds=4.5, keys=12):
+    """The HandUMI T-plate gripper with the X5 (t_gripper.py): turn from a three-quarter view to the side while the
+    fingers open and close. The linkage is solved at `keys` openings; moving parts swap between them."""
+    import t_gripper as TG
+    ops = np.linspace(0.0, 0.85, keys)
+    poses = [{n: m.copy().apply_transform(TG.UP_Z) for n, (m, _) in TG.build(o).items()} for o in ops]
+    colours = {n: c for n, (_, c) in TG.build(0.0).items()}
+    moving = {n for n in poses[0] if not np.allclose(poses[0][n].bounds, poses[-1][n].bounds, atol=1e-3)}
+    with tempfile.TemporaryDirectory() as tmp:
+        sc = Scene(tmp)
+        for n, m in poses[0].items():
+            if n not in moving:
+                sc.add(n, m, colours[n])
+        for k, ps in enumerate(poses):
+            for n in moving:
+                sc.add(f"{n}#{k}", ps[n], colours[n])
+                sc.show(f"{n}#{k}", k == 0)
+        allm = list(poses[0].values()) + list(poses[-1].values())
+        lo = np.min([m.bounds[0] for m in allm], axis=0)
+        hi = np.max([m.bounds[1] for m in allm], axis=0)
+        c = (lo + hi) / 2 + [0, 0, 25.0]                         # keep the X5's top clear of the title
+        dist = 1.75 * np.linalg.norm(hi - lo)
+        sc.label(title, sub)
+        nf = int(seconds * FPS)
+        shown = 0
+        for i in range(nf):
+            t = i / (nf - 1)
+            sc.camera(c, orbit_dir(-135 + 45 * ease(t), 26 - 12 * ease(t)), dist)   # fingers point to -X: end on the front
+            f = 0.5 - 0.5 * math.cos(2 * math.pi * min(t * 1.4, 1.0))
+            k = int(round(f * (keys - 1)))
+            if k != shown:
+                for n in moving:
+                    sc.show(f"{n}#{shown}", False)
+                    sc.show(f"{n}#{k}", True)
+                shown = k
+            sc.frame()
+        sc.encode(out)
+
+
 SEGMENTS = {
     "x5_chopstick": lambda root, out, P: handheld(out, "chopstick_right", "Insta360 X5 · Chopstick",
                                                   "pinch the geared jaws; the 360° camera rides on top", P),
-    "x5_parallel": lambda root, out, P: handheld(out, "parallel_right", "Insta360 X5 · Parallel",
-                                                 "rack-and-pinion fingers, 0 to 60 mm", P),
+    "x5_parallel": lambda root, out, P: t_parallel(out, "Insta360 X5 · Parallel",
+                                                   "the HandUMI T-plate gripper with swappable tips; the X5 on its camera post"),
     "x5_docking": lambda root, out, P: docking(out, root, "chopstick", P),
     "x5_hand": lambda root, out, P: hand(out, P),
 }

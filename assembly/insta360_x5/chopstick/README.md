@@ -77,6 +77,7 @@ on the video's clock.
   <img src="img/openarm_bimanual.png" alt="OpenArm with chopstick grippers on both arms" width="380">
   <img src="img/robot_fanuc_crx.png" alt="Two FANUC CRX-5iA arms with chopstick grippers" width="380">
 </p>
+<p align="center"><img src="img/robot_abb_gofa.png" alt="Two ABB GoFa CRB 15000 arms with chopstick grippers" width="560"></p>
 
 - **Robot gripper:** it uses the robot base (`chopstick_base_sa`) and the robot X5 frame (`x5_frame` + `x5_clip_b`).
   A Feetech SM40BL servo drives the left jaw through its rotor plate, and the gears drive the right.
