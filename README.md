@@ -1,19 +1,20 @@
 # The UMI no one wants
 
-## Chopstick (this branch)
+## PG Chopstick (this branch)
 
 <p align="center">
-  <img src="chopstick/docs/img/kit.png" alt="Chopstick data gripper and its OpenArm robot twin" width="860">
+  <img src="chopstick/docs/img/kit.png" alt="PG Chopstick handheld gripper with the PG pod, and its OpenArm robot twin" width="860">
 </p>
 <p align="center">
-  <img src="chopstick/docs/img/openarm_bimanual.png" alt="OpenArm with the chopstick robot gripper on both arms" width="420">
-  <img src="chopstick/docs/img/opening.png" alt="Jaw opening at 0, 15, 30 and 45 degrees" width="440">
+  <img src="chopstick/docs/img/openarm_bimanual.png" alt="OpenArm with PG Chopstick grippers on both arms" width="420">
+  <img src="chopstick/docs/img/fanuc_crx_iso50.png" alt="FANUC CRX-5iA with the PG Chopstick on the ISO 50 flange plate" width="420">
 </p>
 
-A KIWI-style chopstick gripper with an Insta360 X5 360° camera. It comes in two builds: a passive handheld data gripper
-and its servo twin on OpenArm. Both have the same jaws and the same camera position, so demos retarget exactly. The
-branch includes per-part STEP/STL, an OpenArm flange adapter, measured kinematics, URDFs, and a retargeting package. See
-**[chopstick/README.md](chopstick/README.md)**.
+PG Chopstick is a blue-and-white chopstick gripper for collecting manipulation data in the wild. Two geared, passive
+jaws carry red tracking dots, an Insta360 X5 or RealSense D405 rides on top, and a wireless PG pod holds an IMU and a
+record button. Its robot twin carries the same jaws and camera and mounts on OpenArm or on any ISO 9409-1-50-4-M6
+cobot (UR, ABB GoFa, FANUC CRX), so demos retarget exactly. The branch includes per-part STEP/STL, URDFs and a
+retargeting package. See **[chopstick/README.md](chopstick/README.md)**.
 
 ## HandUMI + D405 gripper
 

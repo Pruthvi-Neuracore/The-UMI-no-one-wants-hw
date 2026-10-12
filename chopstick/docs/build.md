@@ -1,53 +1,54 @@
 # Build
 
-The step-by-step photos are in KIWI's
-[assembly guide](https://github.com/TToTMooN/KIWI_hardware/blob/main/chopsticks/chopsticks_assembly.pdf). This page is
-the short version, plus the OpenArm adapter steps.
-
 ## Print
 
-Open `hardware/print/KIWI-3dprint.3mf` in Bambu Studio. It holds four plates (H2D, 0.4 mm nozzle, 0.20 mm Standard):
+Print every part from `hardware/STL/` at 0.2 mm layers with a 0.4 mm nozzle, in the colours from [bom.md](bom.md).
 
-- **DC** and **SA** plates: the bases, clips, X5 frames and button pieces, in black PLA Matte.
-- **ARM** plate: the jaws, in black PLA Matte with the red dots painted in a second filament. It holds one data-gripper
-  pair and one robot-gripper pair, so print it once per gripper.
-- **Finger** plate: the four TPU tips, in TPU 95A.
+- **Jaws:** print them flat (top face up) with the red dots. Load `jaw_*.stl`, add the matching `jaw_*_dots.stl` as a
+  part (Bambu/Orca) or modifier (Prusa), and set it to red. On a single-extruder printer, mark the dots with a red
+  paint pen instead; the dot STL shows where they go.
+- **Robot plates** (`openarm_adapter`, `iso_flange_plate`): back face down, 4 walls, PETG, 100 % infill around the
+  holes.
+- **Pod:** `pg_pod` top-down, so the pocket is on the bed with light supports in the pocket. `pg_pod_lid` flat.
+  `pg_pod_button` in TPU, flange down.
+- **D405 frame:** on its back plate, with tree supports under the cup.
 
-On a single-extruder printer the jaws print in one colour. Mark the dots by hand with a red paint pen instead; their
-positions are in `chopstick_kinematics.json` and in `docs/img/hero.png`.
-
-Print `hardware/STL/openarm_adapter.stl` on its own: back face down, 4 walls, PETG or PLA.
-
-## Data gripper
+## Handheld gripper
 
 1. **Inserts:** two M2 × 4 heat-set inserts in the back of the base, with M2 × 4 screws in them for positioning, and two
    M3 × 4 inserts from the underside.
-2. **Jaws:** thread a finger strap through each jaw to make a loop. Glue the TPU tip onto the jaw and press two 624
-   bearings into each jaw.
-3. **Strap:** pin the wrist strap under the base.
-4. **Join:** hook the rubber band through the centre cavity onto both jaws. Mesh the gears with the jaws closed (tips
-   touching) and fit the two M3 shoulder screws. The jaws must swing freely. If they bind, the print's preload needs
-   adjusting for your printer.
-5. **Foam:** stick foam under the base and jaws.
-6. **Camera:** assemble the button in the frame (M2 × 4), fix the X5 with the 1/4"-20 screw, then join the frame to the
-   base with the clip, the M3 × 55 screw and a nut.
-7. **Tag and grip:** stick the ArUco tag on, then add grip tape where you hold it.
+2. **Jaws:** thread a finger strap through each jaw. Glue on the TPU tips and press two 624 bearings into each jaw.
+3. **Join:** hook the rubber band through the centre cavity onto both jaws. Mesh the gears **with the tips touching**,
+   then fit the two M3 shoulder screws. The jaws must swing freely; if they bind, check your printer's tolerances.
+4. **Strap and foam:** pin the wrist strap under the base, then add foam and grip tape to taste.
+5. **Camera frame:**
+   - **X5:** build the button into `x5_lite_frame` (M2 × 4) and set the X5 in it. Then join the frame to the base with
+     the clip, the M3 × 55 screws and nuts.
+   - **D405:** screw the camera into `d405_frame`'s cup (2 × M3 × 6), feed the cable out of a side window, then join the
+     frame to the base the same way.
+6. **PG pod (X5 build):** follow [pod.md](pod.md) to wire it and close the lid. Seat the pod's pocket on the bottom
+   of the X5 frame, then screw the 1/4"-20 × 5/8" button-head up from inside the pod, through the frame, into the
+   camera. Do this before fitting the lid.
+7. **Tag:** stick one ArUco tag on the base.
 
-## Robot gripper on OpenArm
+## Robot gripper
 
-1. **Inserts:** four M2 × 4 in the back of the base and one M3 × 4 in the underside.
-2. **Tips:** glue the TPU tips onto both jaws.
-3. **Servo horn:** take the rotor plate off the SM40BL and screw it to `jaw_left_sa` with 4 × M3 × 12.
-4. **Drive side:** push the driver jaw into the base and line up the joint axis. Slide the servo in from below. The M3
-   shoulder screw goes through the body into the servo's coupling plate. Fix the servo with its own screws.
-5. **Driven jaw:** press two 624 bearings into `jaw_right`. Mesh the gears **with both jaws closed**, then fit the second
+1. **Base and tips:** fit four M2 × 4 inserts in the back of the base and one M3 × 4 in its underside, then glue on the
+   TPU tips.
+2. **Servo:** take the rotor plate off the SM40BL and screw it to `jaw_left_sa` (4 × M3 × 12). Push the driver jaw into
+   the base and slide the servo in from below. Fit the shoulder screw through into the servo's coupling plate, then fix
+   the servo with its own screws.
+3. **Driven jaw:** press the bearings into `jaw_right`. Mesh the gears **with both jaws closed**, then fit the second
    shoulder screw.
-6. **Camera frame:** fit the button and the X5 in `x5_frame`. Join the frame to the base with clip A, clip B, the
-   M3 × 55 screws and nuts.
-7. **Adapter:** melt four M3 heat-set inserts into the adapter's front holes. Bolt the adapter to link7 with 6 × M3 × 16
-   through the counterbores. The boss goes in the back pocket. The tongue's long edges run along link7 X, so the jaws
-   will open along link7 Y.
-8. **Frame onto the adapter:** drill the frame's four rear-wall holes out to Ø3.2. With the camera out, fit the tongue
-   between the frame's two rear legs and screw the frame on from inside with 4 × M3 × 10. Put the camera back.
-9. **Calibrate the servo:** close the jaws until the tips just touch and read the servo position. That reading is
-   `ServoMap.zero`. Open the jaws a little: if the reading went down, set `ServoMap.sign = -1`.
+4. **Mount plate:** melt four M3 heat-set inserts into the plate's front, then bolt it to the robot:
+   - **OpenArm:** `openarm_adapter` on link7, with 6 × M3 × 16 through the counterbores and the boss in the back
+     pocket. The tongue's long edges run along link7 X, so the jaws open along link7 Y.
+   - **ISO 50:** `iso_flange_plate` on the tool flange, with the spigot in the flange's centring bore, a Ø6 dowel in the
+     pin hole, and 4 × M6 × 14 through the counterbores.
+5. **Camera frame:**
+   - **X5 frame:** drill its four rear-wall Ø2.8 holes out to Ø3.2. With the camera out, fit the tongue between the
+     frame's rear legs and screw on from inside with 4 × M3 × 10. Fit clip B, then join the frame to the base.
+   - **D405 frame:** its back plate already has Ø3.4 holes. Put it flat on the tongue and screw on with 4 × M3 × 10;
+     reach the heads from the side with a ball-end hex key. Then join it to the base.
+6. **Calibrate the servo:** with the tips just touching, read the servo position and set it as `ServoMap.zero`. Open the
+   jaws a little: if the reading drops, set `ServoMap.sign = -1`.

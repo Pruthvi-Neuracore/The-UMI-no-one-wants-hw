@@ -1,9 +1,7 @@
-"""Split KIWI's chopstick assemblies into one STEP and one STL per printed part, in the gripper frame.
+"""Read the upstream slicer project (source/upstream/print.3mf): the two camera-button pieces, which exist only there,
+and the painted red dots on the jaws (used by kinematics.py).
 
-Jaws and tips are written closed (theta = 0), so every file lines up with the others and with the URDF.
-The Insta360 button pieces exist only in KIWI's slicer project, so they are taken from the 3MF as STL.
-
-    python extract_parts.py
+    python extract_parts.py      # writes hardware/STL/x5_button_cap.stl and x5_button_shaft.stl
 """
 import re
 import zipfile
@@ -11,11 +9,9 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 import trimesh
-from build123d import export_step, export_stl
+from parts import HW, SRC
 
-from kiwi import HW, load_parts
-
-THREEMF = HW / "print" / "KIWI-3dprint.3mf"
+THREEMF = SRC / "print.3mf"
 NS = {"m": "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"}
 # 3MF object names -> part file names, for parts that are not in the STEP assemblies.
 THREEMF_ONLY = {
@@ -58,20 +54,12 @@ def threemf_meshes(path, painted=False):
 
 
 def main():
-    (HW / "STEP").mkdir(parents=True, exist_ok=True)
     (HW / "STL").mkdir(parents=True, exist_ok=True)
-    for name, shape in load_parts().items():
-        if name.endswith("_envelope"):
-            continue
-        export_step(shape, str(HW / "STEP" / f"{name}.step"))
-        export_stl(shape, str(HW / "STL" / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
-        bb = shape.bounding_box()
-        print(f"{name:22s} {bb.size.X:6.1f} x {bb.size.Y:6.1f} x {bb.size.Z:6.1f} mm  {shape.volume / 1e3:6.1f} cm3")
     meshes = threemf_meshes(THREEMF)
     for src, name in THREEMF_ONLY.items():
         m = meshes[src]
         m.export(HW / "STL" / f"{name}.stl")
-        print(f"{name:22s} {' x '.join(f'{e:6.1f}' for e in m.extents)} mm  (from 3MF)")
+        print(f"{name:22s} {' x '.join(f'{e:6.1f}' for e in m.extents)} mm")
 
 
 if __name__ == "__main__":

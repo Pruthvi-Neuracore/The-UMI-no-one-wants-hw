@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
 
-from chopstick_retarget import ChopstickKinematics, OpenArmRetargeter, ServoMap
-from chopstick_retarget.retarget import T_LINK7_STOCK_TCP
+from pg_chopstick import ChopstickKinematics, OpenArmRetargeter, Retargeter, ServoMap
+from pg_chopstick.retarget import T_LINK7_STOCK_TCP
 
 URDF = Path(__file__).resolve().parents[2] / "urdf"
 kin = ChopstickKinematics.load()
@@ -43,7 +43,7 @@ def test_theta_from_dots(frame):
     assert abs(kin.theta_from_dots(left=kin.dots_at(0.3)["left"]) - 0.3) < 1e-9
 
 
-def test_chopstick_retarget_puts_robot_camera_on_demo_camera():
+def test_pg_chopstick_puts_robot_camera_on_demo_camera():
     rng = np.random.default_rng(1)
     T_bw = random_pose(rng)
     rt = OpenArmRetargeter(T_bw)
@@ -70,15 +70,44 @@ def test_servo_map():
     assert abs(s.theta(s.steps(0.4)) - 0.4) < 2 * np.pi / 4096
 
 
-def test_urdf_matches_json():
+BUILDS = {"data": ("x5", None), "data_d405": ("d405", None), "openarm": ("x5", "openarm"),
+          "openarm_d405": ("d405", "openarm"), "iso50": ("x5", "iso50"), "iso50_d405": ("d405", "iso50")}
+
+
+@pytest.mark.parametrize("build", BUILDS)
+def test_urdf_matches_json(build):
     yourdfpy = pytest.importorskip("yourdfpy")
-    for name in ("chopstick_data", "chopstick_openarm"):
-        r = yourdfpy.URDF.load(str(URDF / f"{name}.urdf"), load_meshes=False)
-        np.testing.assert_allclose(r.get_transform("chopstick_tcp", "chopstick_camera"), kin.T_camera_tcp, atol=1e-6)
-        r.update_cfg({"chopstick_jaw": 0.35})
-        tl = r.get_transform("chopstick_tip_left", "chopstick_base")[:3, 3]
-        tr = r.get_transform("chopstick_tip_right", "chopstick_base")[:3, 3]
-        assert abs(np.linalg.norm(tl - tr) - kin.tip_gap(0.35)) < 1e-6
-        if name == "chopstick_openarm":
-            np.testing.assert_allclose(r.get_transform("chopstick_camera", "chopstick_flange"), kin.T_link7_camera,
-                                       atol=1e-6)
+    camera, mount = BUILDS[build]
+    k = ChopstickKinematics.load(camera, mount or "openarm")
+    r = yourdfpy.URDF.load(str(URDF / f"pg_chopstick_{build}.urdf"), load_meshes=False)
+    np.testing.assert_allclose(r.get_transform("chopstick_tcp", "chopstick_camera"), k.T_camera_tcp, atol=1e-6)
+    r.update_cfg({"chopstick_jaw": 0.35})
+    tl = r.get_transform("chopstick_tip_left", "chopstick_base")[:3, 3]
+    tr = r.get_transform("chopstick_tip_right", "chopstick_base")[:3, 3]
+    assert abs(np.linalg.norm(tl - tr) - k.tip_gap(0.35)) < 1e-6
+    if mount:
+        np.testing.assert_allclose(r.get_transform("chopstick_camera", "chopstick_flange"), k.T_flange_camera,
+                                   atol=1e-6)
+
+
+@pytest.mark.parametrize("camera", ["x5", "d405"])
+@pytest.mark.parametrize("mount", ["openarm", "iso50"])
+def test_retarget_any_camera_and_mount(camera, mount):
+    rng = np.random.default_rng(3)
+    k = ChopstickKinematics.load(camera, mount)
+    rt = Retargeter(camera=camera, mount=mount)
+    T_wc = random_pose(rng)
+    out = rt(T_wc, 0.2)
+    np.testing.assert_allclose(out["T_base_link7"] @ k.T_flange_camera, T_wc, atol=1e-12)
+
+
+def test_cameras_share_the_tcp():
+    """Both cameras see the same TCP: their camera -> TCP transforms differ, the TCP in the gripper frame does not."""
+    a, b = ChopstickKinematics.load("x5"), ChopstickKinematics.load("d405")
+    np.testing.assert_allclose(a.T_gripper_camera @ a.T_camera_tcp, b.T_gripper_camera @ b.T_camera_tcp, atol=1e-12)
+    assert not np.allclose(a.T_camera_tcp, b.T_camera_tcp)
+
+
+def test_stock_hand_needs_openarm():
+    with pytest.raises(ValueError):
+        Retargeter(end_effector="stock", mount="iso50")

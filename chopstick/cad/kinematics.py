@@ -1,13 +1,15 @@
-"""Measure the chopstick gripper's kinematics from the CAD and write them for the URDF and the retargeting code.
+"""Measure the PG Chopstick's kinematics from the CAD and write them for the URDF and the retargeting code.
 
-Writes chopstick/retarget/chopstick_retarget/chopstick_kinematics.json with:
+Writes chopstick/retarget/pg_chopstick/pg_chopstick_kinematics.json with:
   - the pivot axes and gear coupling,
   - the tool-tip (TCP) point where the TPU tips meet when closed,
-  - the Insta360 X5 lens centres (front and back dome) and the camera frame between them,
-  - the red-dot centres on each jaw, in that jaw's closed pose (taken from the paint in KIWI's 3MF),
+  - the camera frames: Insta360 X5 (between its lens domes) and RealSense D405 (d405_frame), each with camera -> TCP,
+  - the red-dot centres on each jaw, in that jaw's closed pose (from the painted slicer project), also written as
+    hardware/STL/<jaw>_dots.stl inlay bodies,
   - a table of jaw angle -> tip gap (distance between the TPU tip ends) and the angle limits,
-  - the OpenArm mount: pose of the gripper frame in link7 (the data gripper and robot gripper share the
-    camera -> TCP extrinsics, so this is the only robot-specific transform).
+  - the robot mounts: pose of the gripper frame in the robot's flange frame, for the OpenArm adapter and the ISO 50
+    flange plate (handheld and robot grippers share the camera -> TCP extrinsics, so this is the only robot-specific
+    transform).
 
     python kinematics.py [--check]   (--check also sweeps the jaws for clashes with the base)
 """
@@ -23,10 +25,11 @@ from OCP.BRepAdaptor import BRepAdaptor_Surface
 from scipy.sparse.csgraph import connected_components
 
 from extract_parts import THREEMF, threemf_meshes
-from kiwi import (GEAR_MODULE, GEAR_TEETH, PIVOT_L, PIVOT_R, ROOT, SA_MODEL_OPEN_DEG, jaw_matrix, load_parts)
+from parts import (GEAR_MODULE, GEAR_TEETH, HW, PIVOT_L, PIVOT_R, ROOT, SA_MODEL_OPEN_DEG, jaw_matrix, load_parts)
+from iso_flange_plate import T_FLANGE
 from openarm_adapter import T_LINK7
 
-OUT = ROOT / "retarget" / "chopstick_retarget" / "chopstick_kinematics.json"
+OUT = ROOT / "retarget" / "pg_chopstick" / "pg_chopstick_kinematics.json"
 JAW_3MF = {"jaw_left_dc": "spur_bearing_test_7_datacollection parts - Left Finger DC Spur Gear 24 teeth 1%",
            "jaw_right": "spur_bearing_test_7_datacollection parts - Right Finger DC-SA Spur Gear 24 teeth 1%",
            "jaw_left_sa": "Chopsticks - Left Finger SA Spur Gear 24 teeth 1%"}
@@ -96,6 +99,31 @@ def dot_centres(step_jaw, painted):
     return dots, rms
 
 
+def d405_camera_frame():
+    """D405 camera frame in the gripper frame (mm): front-face centre, +X along the view axis, +Z up."""
+    import d405_frame as D
+    v = D.view_dir()
+    T = np.eye(4)
+    z = np.cross(v, [0, 1, 0])
+    T[:3, :3] = np.column_stack([v, [0, 1, 0], z / np.linalg.norm(z)])
+    T[:3, 3] = np.array(D.CENTRE) + v * D.CAM[2] / 2
+    return T
+
+
+def write_dot_inlays(jaw, dots, depth=0.6):
+    """The red dots as separate bodies (STL), 0.6 mm deep into the jaw's top face, for any multi-material slicer:
+    load the jaw, add this file as a part/modifier and give it the red filament."""
+    discs = []
+    for d in dots:
+        r = math.sqrt(d["area_mm2"] / math.pi)
+        n = np.array(d["normal"])
+        c = trimesh.creation.cylinder(radius=r, height=depth)
+        T = trimesh.geometry.align_vectors([0, 0, 1], n)
+        T[:3, 3] = np.array(d["centre_mm"]) - n * depth / 2
+        discs.append(c.apply_transform(T))
+    trimesh.util.concatenate(discs).export(HW / "STL" / f"{jaw}_dots.stl")
+
+
 def tip_end(tip):
     """Distal end of a TPU tip: the most forward vertex, and the tip's z centre there."""
     v = tip.vertices
@@ -154,7 +182,7 @@ def main(check):
     T_grip_cam[:3, 3] = cam_origin
     T_grip_tcp = np.eye(4)
     T_grip_tcp[:3, 3] = tcp
-    T_cam_tcp = np.linalg.inv(T_grip_cam) @ T_grip_tcp
+    T_d405 = d405_camera_frame()
 
     painted = threemf_meshes(THREEMF, painted=True)
     dots = {}
@@ -162,12 +190,13 @@ def main(check):
         d, rms = dot_centres(to_mesh(parts[name], 0.1), painted[src])
         dots[name] = d
         print(f"{name}: {len(d)} red dots, registration rms {rms:.3f} mm")
+        write_dot_inlays(name, d)
 
     table = gap_table(tl, tr)
     data = {
         "units": "mm, rad unless noted; gripper frame: origin at the plate mounting face, +X along the jaws, "
                  "+Y to the left jaw, +Z up (camera side)",
-        "source": "KIWI_hardware chop_DC.step / chop_SA.step / KIWI-3dprint.3mf (Apache-2.0), measured by cad/kinematics.py",
+        "source": "measured from the PG Chopstick CAD by cad/kinematics.py (see NOTICE.md)",
         "pivot_left_mm": [*PIVOT_L, 0.0],
         "pivot_right_mm": [*PIVOT_R, 0.0],
         "pivot_axis": [0, 0, 1],
@@ -176,37 +205,60 @@ def main(check):
         "tip_end_left_mm": np.round(el, 3).tolist(),
         "tip_end_right_mm": np.round(er, 3).tolist(),
         "tcp_mm": np.round(tcp, 3).tolist(),
-        "camera": {
-            "model": "Insta360 X5",
-            "front_lens_centre_mm": np.round(front, 3).tolist(),
-            "back_lens_centre_mm": np.round(back, 3).tolist(),
-            "lens_dome_radius_mm": round(lenses[0][1], 3),
-            "T_gripper_camera_mm": np.round(T_grip_cam, 6).tolist(),
-            "frame_note": "origin midway between the two lens domes, +X out of the front lens, +Z up",
+        "cameras": {
+            "x5": {
+                "model": "Insta360 X5",
+                "front_lens_centre_mm": np.round(front, 3).tolist(),
+                "back_lens_centre_mm": np.round(back, 3).tolist(),
+                "lens_dome_radius_mm": round(lenses[0][1], 3),
+                "T_gripper_camera_mm": np.round(T_grip_cam, 6).tolist(),
+                "T_camera_tcp_mm": np.round(np.linalg.inv(T_grip_cam) @ T_grip_tcp, 6).tolist(),
+                "frame_note": "origin midway between the two lens domes, +X out of the front lens, +Z up",
+            },
+            "d405": {
+                "model": "Intel RealSense D405 (d405_frame)",
+                "T_gripper_camera_mm": np.round(T_d405, 6).tolist(),
+                "T_camera_tcp_mm": np.round(np.linalg.inv(T_d405) @ T_grip_tcp, 6).tolist(),
+                "frame_note": "origin at the centre of the camera's front face, +X along the view axis (35 deg down), "
+                              "+Z up; refine with the camera's factory extrinsics",
+            },
         },
-        "T_camera_tcp_mm": np.round(T_cam_tcp, 6).tolist(),
         "red_dots": dots,
         "gap_table_deg_mm": table,
         "robot_gripper_model_open_deg": SA_MODEL_OPEN_DEG,
-        "openarm": {
-            "T_link7_gripper_m": T_LINK7.tolist(),
-            "note": "openarm_adapter on the link7 flange (6 x M3, PCD 50); translation in metres",
+        "mounts": {
+            "openarm": {"T_flange_gripper_m": T_LINK7.tolist(), "flange_frame": "openarm_{left,right}_link7",
+                        "plate": "openarm_adapter (6 x M3, PCD 50)"},
+            "iso50": {"T_flange_gripper_m": T_FLANGE.tolist(), "flange_frame": "tool flange (UR tool0, ...)",
+                      "plate": "iso_flange_plate (ISO 9409-1-50-4-M6)"},
         },
     }
     if check:
-        lim_dc, rest_dc = clash_sweep(parts, ["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame"],
-                                      {"left": ["jaw_left_dc", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]})
-        lim_sa, rest_sa = clash_sweep(parts, ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b"],
-                                      {"left": ["jaw_left_sa", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]})
-        print(f"closed-pose overlap with base: data {rest_dc:.3f} cm3, robot {rest_sa:.3f} cm3")
-        print(f"clash-free opening per jaw: data gripper {lim_dc:.0f} deg, robot gripper {lim_sa:.0f} deg")
-        data["theta_max_deg"] = {"data_gripper": lim_dc, "robot_gripper": lim_sa,
-                                 "note": "first clash between a jaw and the base, in 2 deg steps"}
+        jaws_dc = {"left": ["jaw_left_dc", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]}
+        jaws_sa = {"left": ["jaw_left_sa", "tip_tpu_left"], "right": ["jaw_right", "tip_tpu_right"]}
+        lims = {}
+        for build, fixed, jaws in (
+                ("data", ["chopstick_base_dc", "chopstick_clip_dc", "x5_lite_frame", "pg_pod"], jaws_dc),
+                ("data_d405", ["chopstick_base_dc", "chopstick_clip_dc", "d405_frame"], jaws_dc),
+                ("openarm", ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b"], jaws_sa),
+                ("openarm_d405", ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame"], jaws_sa),
+                ("iso50", ["chopstick_base_sa", "chopstick_clip_sa", "x5_frame", "x5_clip_b", "iso_flange_plate"],
+                 jaws_sa),
+                ("iso50_d405", ["chopstick_base_sa", "chopstick_clip_sa", "d405_frame", "iso_flange_plate"], jaws_sa)):
+            lims[build], rest = clash_sweep(parts, fixed, jaws)
+            print(f"{build:13s} closed-pose overlap {rest:.3f} cm3, clash-free opening per jaw {lims[build]:.0f} deg")
+        data["theta_max_deg"] = {"data_gripper": min(lims["data"], lims["data_d405"]),
+                                 "robot_gripper": min(v for k, v in lims.items() if not k.startswith("data")),
+                                 "per_build": lims, "note": "first clash between a jaw and the fixed parts, 2 deg steps"}
+    elif OUT.exists() and "theta_max_deg" in json.loads(OUT.read_text()):
+        data["theta_max_deg"] = json.loads(OUT.read_text())["theta_max_deg"]     # keep the last measured limits
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, indent=1))
     gaps = dict((r[0], r[1]) for r in table)
-    print(f"TCP {data['tcp_mm']} mm; camera origin {data['camera']['T_gripper_camera_mm'][0][3]:.1f}, "
-          f"{data['camera']['T_gripper_camera_mm'][2][3]:.1f} (x, z) mm")
+    for k, c in data["cameras"].items():
+        T = np.array(c["T_gripper_camera_mm"])
+        print(f"{k} camera origin ({T[0, 3]:.1f}, {T[1, 3]:.1f}, {T[2, 3]:.1f}) mm")
+    print(f"TCP {data['tcp_mm']} mm")
     print(f"tip gap: 10 deg -> {gaps[10.0]:.1f} mm, 20 deg -> {gaps[20.0]:.1f} mm, 44 deg -> {gaps[44.0]:.1f} mm")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

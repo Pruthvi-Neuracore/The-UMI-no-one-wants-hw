@@ -1,68 +1,69 @@
 # Bill of materials
 
-Quantities are **per hand**. A bimanual kit is two of each. Purchased parts follow KIWI's
-[assembly guide](https://github.com/TToTMooN/KIWI_hardware/blob/main/chopsticks/chopsticks_assembly.pdf); the OpenArm
-adapter rows are ours.
+Quantities are **per gripper**. A bimanual kit is two of each.
 
-## Data gripper (handheld)
+## Filament (PG blue and white)
+
+| Colour | Material | Parts |
+|---|---|---|
+| **Blue** | PLA (PETG for the robot plates) | bases, clips, X5 frames, `d405_frame`, `openarm_adapter`, `iso_flange_plate`, `x5_button_*` |
+| **White** | PLA | jaws (`jaw_left_dc`, `jaw_left_sa`, `jaw_right`), `pg_pod`, `pg_pod_lid` |
+| **Red** | PLA, second filament | the dots on the jaws: add `hardware/STL/<jaw>_dots.stl` as a part or modifier on the jaw and give it red. Red on white is what the vision tracks |
+| **White** | TPU 95A | `tip_tpu_left`, `tip_tpu_right`, `pg_pod_button` (or blue TPU for the button) |
+
+## Handheld, Insta360 X5 (`data`)
 
 | Item | Qty | Notes |
 |---|---|---|
-| Insta360 X5 | 1 | 360° camera. Voice control on, auto power-off off, 4K 120 fps video, battery cover removed |
-| Shoulder screw M3, Ø4 × 18 mm shoulder | 2 | Jaw pivots |
+| Insta360 X5 | 1 | Voice control on, auto power-off off, 4K 120 fps, battery cover removed |
 | 624 ball bearing (4 × 13 × 5) | 4 | Two per jaw |
-| Socket screw M3 × 55 (button head recommended) | 2 | Camera frame to base, through the clip |
-| Washer M3, 9 mm OD | 2 | |
-| M3 hex nut | 2 | |
-| Countersunk screw 1/4"-20 × 3/8" | 1 | Camera into the frame |
-| Socket cap screw M2 × 4 | 3 | Locating screws, camera button |
+| Shoulder screw M3, Ø4 × 18 mm shoulder | 2 | Jaw pivots |
+| Socket screw M3 × 55 (button head) + M3 nut + M3 × 9 mm OD washer | 2 | Camera frame to base, through the clip |
 | Heat-set insert M2 × 4 | 2 | Back of the base |
 | Heat-set insert M3 × 4 | 2 | Underside of the base |
-| Rubber band | 1 | Reopens the jaws, hooked through the centre cavity |
+| Socket cap screw M2 × 4 | 3 | Locating screws, camera button |
+| **Button head screw 1/4"-20 × 5/8"** | **1** | **Pod + frame + camera (replaces the 3/8" countersunk)** |
+| Rubber band | 1 | Reopens the jaws |
 | Finger straps | 2 | One loop per jaw |
-| Wrist strap + safety pin | 1 | Under the base |
-| Foam pad | – | Under the base and jaws, to taste |
-| 3M grip tape, 1" | – | To taste |
-| Double-sided tape | – | For the ArUco tag |
-| ArUco tag, DICT_4X4_50, 14 mm | 1 | `hardware/tags/gripper_tags_4x4_50_14mm.pdf`, one id per gripper |
+| Wrist strap, foam pad, grip tape | – | To taste |
+| ArUco tag, DICT_4X4_50, 14 mm | 1 | `hardware/tags/pg_tags_4x4_50_14mm.pdf`, one id per gripper |
 | Super glue | – | TPU tips onto the jaws |
 
-| Printed part | Material | Notes |
-|---|---|---|
-| `chopstick_base_dc` | PLA | |
-| `chopstick_clip_dc` | PLA | |
-| `x5_lite_frame` | PLA | |
-| `jaw_left_dc`, `jaw_right` | PLA, 2 colours | Black, with the red dots as a second filament (painted in the 3MF) |
-| `tip_tpu_left`, `tip_tpu_right` | TPU 95A | |
-| `x5_button_cap`, `x5_button_shaft` | PLA | |
-
-## Robot gripper on OpenArm
+### PG pod electronics
 
 | Item | Qty | Notes |
 |---|---|---|
-| Insta360 X5 | 1 | |
-| Feetech SM40BL servo set | 1 | Drives the left jaw through its rotor plate |
-| Shoulder screw M3, Ø4 × 18 mm shoulder | 2 | |
-| 624 ball bearing | 2 | Right (driven) jaw |
-| Socket screw M3 × 55 | 4 | |
-| Washer M3, 9 mm OD | 4 | |
-| M3 hex nut | 4 | |
-| Countersunk screw 1/4"-20 × 3/8" | 1 | |
-| Socket screw M2 × 4 | 5 | |
-| Socket screw M3 × 12 | 4 | Rotor plate to driver jaw |
-| Heat-set insert M2 × 4 | 4 | |
-| Heat-set insert M3 × 4 | 1 | |
-| **Socket head screw M3 × 16** | **6** | **Adapter to the link7 flange (PCD 50)** |
-| **Heat-set insert M3, Ø4.0 hole, ≤ 6 mm long** | **4** | **In the adapter front, for the camera frame** |
-| **Socket head screw M3 × 10** | **4** | **Camera frame to the adapter, from inside the frame** |
-| 3M grip tape, super glue, double-sided tape, ArUco tag | – | |
+| Seeed XIAO ESP32-S3 | 1 | 21 × 17.5 mm, USB-C, LiPo charger, Wi-Fi/BLE |
+| IMU breakout (ICM-42688-P, LSM6DSOX or BNO085 class) | 1 | Up to about 26 × 18 mm, I²C. Tape or epoxy it to the pod's top wall |
+| 1S LiPo, 402535 (300 mAh, 4 × 25 × 35 mm) with protection | 1 | JST-PH or soldered to the XIAO's BAT pads |
+| Slide switch SS12D00 (or similar 8.5 × 3.6 mm) | 1 | In the battery lead |
+| Tactile switch 6 × 6 mm, about 160–250 gf | 1 | On the post behind the button |
+| M2 × 6 self-tapping screw | 4 | Lid |
+| Thin silicone wire, double-sided foam tape | – | |
 
-| Printed part | Material | Notes |
+## Handheld, RealSense D405 (`data_d405`)
+
+As the X5 build, without the X5, the pod or the 1/4"-20 screw, plus:
+
+| Item | Qty | Notes |
 |---|---|---|
-| `chopstick_base_sa` | PLA | |
-| `chopstick_clip_sa`, `x5_clip_b` | PLA | |
-| `x5_frame` | PLA | Reinforced frame. Drill its four rear-wall Ø2.8 holes out to Ø3.2 |
-| `jaw_left_sa`, `jaw_right` | PLA, 2 colours | |
-| `tip_tpu_left`, `tip_tpu_right` | TPU 95A | |
-| `x5_button_cap`, `x5_button_shaft` | PLA | |
-| **`openarm_adapter`** | **PETG or PLA, 100 % infill near the holes** | **Print back face down; no supports needed** |
+| Intel RealSense D405 | 1 | |
+| M3 × 6 socket screw | 2 | Camera to the cup floor (its back holes, 20 mm apart) |
+| USB-C to USB-A cable, USB 3 | 1 | To the laptop |
+
+## Robot gripper (`openarm`, `iso50`, and their `_d405` versions)
+
+| Item | Qty | Notes |
+|---|---|---|
+| Insta360 X5 **or** RealSense D405 | 1 | Same camera as the demos |
+| Feetech SM40BL servo set | 1 | Drives the left jaw through its rotor plate |
+| 624 ball bearing | 2 | Driven (right) jaw |
+| Shoulder screw M3, Ø4 × 18 mm shoulder | 2 | |
+| Socket screw M3 × 55 + nut + 9 mm OD washer | 4 | |
+| Socket screw M3 × 12 | 4 | Rotor plate to the driver jaw |
+| Heat-set insert M2 × 4 / M3 × 4 | 4 / 1 | Base |
+| Socket screw M2 × 4 | 5 | |
+| Heat-set insert M3, Ø4.0 hole, up to 6 mm long | 4 | In the mount plate's front, for the camera frame |
+| Socket head screw M3 × 10 | 4 | Camera frame to the plate, from inside the frame |
+| **OpenArm:** socket head screw M3 × 16 | 6 | `openarm_adapter` to link7 (PCD 50) |
+| **ISO 50:** socket head screw M6 × 14, dowel pin Ø6 × 10 | 4, 1 | `iso_flange_plate` to the tool flange |

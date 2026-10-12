@@ -1,6 +1,6 @@
 """OpenArm flange adapter: bolts the chopstick robot gripper's Insta360 X5 frame to OpenArm link7.
 
-KIWI's own OpenArm plate (4 holes on a 26.9 mm square) does not match the link7 flange in the OpenArm description we
+The upstream OpenArm plate (4 holes on a 26.9 mm square) does not match the link7 flange in the OpenArm description we
 use (openarm_description/meshes/arm/v10/link7: 6 x M3 on a 50 mm PCD, face at link7 z = 94.5 mm, with a 1 mm high
 Ø35 boss), which is also the pattern the stock OpenArm hand bolts to. So this plate is drawn against that flange:
 
@@ -22,7 +22,7 @@ import math
 import numpy as np
 from build123d import Axis, Box, Cylinder, Pos, Rot, export_step, export_stl, fillet
 
-from kiwi import HW
+from parts import HW
 
 T = 15.0              # total thickness, back face at x = -T
 TONGUE = 5.0          # tongue depth in front of the body (frame legs reach 4.8 mm behind x = 0)
@@ -73,7 +73,8 @@ def build():
 
 
 def main():
-    p = build()
+    from restyle import restyle
+    p = restyle("openarm_adapter", build())
     (HW / "STEP").mkdir(parents=True, exist_ok=True)
     export_step(p, str(HW / "STEP" / "openarm_adapter.step"))
     export_stl(p, str(HW / "STL" / "openarm_adapter.stl"), tolerance=0.02, angular_tolerance=0.15)

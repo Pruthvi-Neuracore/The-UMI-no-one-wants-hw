@@ -1,13 +1,16 @@
-"""Write the chopstick URDFs from the CAD and the measured kinematics.
+"""Write the PG Chopstick URDFs from the CAD and the measured kinematics, one per build (parts.BUILDS):
 
-  urdf/chopstick_data.urdf     handheld data gripper: base (+ X5 camera) and two gear-coupled jaws
-  urdf/chopstick_openarm.urdf  robot gripper on the OpenArm adapter; root link `chopstick_flange` is the link7 frame,
-                               so it attaches to openarm_{left,right}_link7 with an identity fixed joint
-  urdf/meshes/*.stl            simplified meshes in each link's frame (mm, scaled by 0.001 in the URDF)
+  urdf/pg_chopstick_data.urdf, ..._data_d405.urdf      handheld: base (+ camera, + pod) and two gear-coupled jaws
+  urdf/pg_chopstick_openarm.urdf, ..._openarm_d405.urdf robot on the OpenArm adapter
+  urdf/pg_chopstick_iso50.urdf, ..._iso50_d405.urdf     robot on the ISO 9409-1-50-4-M6 plate
+  urdf/meshes/*.stl                                     simplified meshes in each link's frame (mm, scaled by 0.001)
 
-Frames in both: chopstick_base (gripper frame), chopstick_camera (between the X5 lens domes, +X out of the front lens),
-chopstick_tcp (where the TPU tips meet), and one revolute joint `chopstick_jaw` (rad, one jaw's opening) with the
-right jaw as its -1 mimic. The camera -> TCP transform is identical in both files, which is what retargeting relies on.
+Robot builds have a root link `chopstick_flange` that is the robot's flange frame (OpenArm link7, or the cobot's tool
+flange such as UR tool0), so they attach with an identity fixed joint.
+Frames: chopstick_base (gripper frame), chopstick_camera (X5: between the lens domes; D405: front-face centre; +X along
+the view, +Z up), chopstick_tcp (where the TPU tips meet), chopstick_tip_{left,right}, and one revolute joint
+`chopstick_jaw` (rad, one jaw's opening) with the right jaw as its -1 mimic. For a given camera, camera -> TCP is the
+same in the handheld and robot files, which is what retargeting relies on.
 
     python urdf.py [--openarm-urdf in.urdf --out out.urdf]   (also splice the gripper onto both OpenArm arms)
 """
@@ -22,15 +25,15 @@ import numpy as np
 import trimesh
 from scipy.spatial.transform import Rotation
 
-import openarm_adapter
+from assembly import WHITE_PARTS
 from kinematics import OUT as KIN_JSON, to_mesh
-from kiwi import DATA_GRIPPER, PIVOT_L, PIVOT_R, ROBOT_GRIPPER, ROOT, load_parts, side_of
+from parts import BUILDS, CAMERA, PIVOT_L, PIVOT_R, ROOT, load_parts, side_of
 
 URDF = ROOT / "urdf"
 MESHES = URDF / "meshes"
 FACES = 6000
 DENSITY = {"pla": 1.24e-3 * 0.55, "tpu": 1.21e-3}       # g/mm3; PLA at ~55 % effective fill (walls + 15 % infill)
-X5_MASS_G, SERVO_MASS_G = 200.0, 150.0                   # Insta360 X5 ~200 g; servo is an estimate, weigh yours
+X5_MASS_G, D405_MASS_G, SERVO_MASS_G = 200.0, 60.0, 150.0  # X5 ~200 g, D405 ~60 g; servo is an estimate, weigh yours
 
 
 def xyz_rpy(T):
@@ -84,21 +87,24 @@ def body(meshes_g):
 
 
 def material_of(n):
-    return "tpu" if n.startswith("tip_tpu") else "black"
+    if n.startswith("tip_tpu"):
+        return "tpu"
+    return "pg_white" if n in WHITE_PARTS else "pg_blue"
 
 
 def build(kind, parts, kin):
-    names = DATA_GRIPPER if kind == "data" else ROBOT_GRIPPER
-    fixed = [n for n in names if side_of(n) is None] + ["insta360_x5_envelope"] + (
-        ["servo_envelope"] if kind == "openarm" else [])
-    meshes = {n: to_mesh(openarm_adapter.build() if n == "openarm_adapter" else parts[n], 0.1) for n in
-              set(fixed) | {n for n in names if side_of(n)}}
-    theta_max = math.radians(kin["theta_max_deg"]["data_gripper" if kind == "data" else "robot_gripper"])
+    robot = not kind.startswith("data")
+    names = BUILDS[kind]
+    fixed = [n for n in names if side_of(n) is None] + [CAMERA[kind]] + (["servo_envelope"] if robot else [])
+    meshes = {n: to_mesh(parts[n], 0.1) for n in set(fixed) | {n for n in names if side_of(n)}}
+    theta_max = math.radians(kin["theta_max_deg"]["robot_gripper" if robot else "data_gripper"])
     links, joints = [], []
 
     def spec(n):
         if n == "insta360_x5_envelope":
             return ("mass", X5_MASS_G)
+        if n == "d405_envelope":
+            return ("mass", D405_MASS_G)
         if n == "servo_envelope":
             return ("mass", SERVO_MASS_G)
         return ("density", DENSITY["tpu" if n.startswith("tip_tpu") else "pla"])
@@ -122,29 +128,31 @@ def build(kind, parts, kin):
         links.append(f'  <link name="chopstick_tip_{side}"/>')
         joints.append(f'  <joint name="chopstick_tip_{side}_joint" type="fixed"><parent link="chopstick_jaw_{side}"/>'
                       f'<child link="chopstick_tip_{side}"/>{origin(trimesh.transformations.translation_matrix(tip * 1e-3))}</joint>')
-    Tcam = np.array(kin["camera"]["T_gripper_camera_mm"])
+    Tcam = np.array(kin["cameras"]["d405" if kind.endswith("_d405") else "x5"]["T_gripper_camera_mm"])
     Tcam[:3, 3] *= 1e-3
     Ttcp = trimesh.transformations.translation_matrix(np.array(kin["tcp_mm"]) * 1e-3)
     for child, T in (("chopstick_camera", Tcam), ("chopstick_tcp", Ttcp)):
         links.append(f'  <link name="{child}"/>')
         joints.append(f'  <joint name="{child}_joint" type="fixed"><parent link="chopstick_base"/>'
                       f'<child link="{child}"/>{origin(T)}</joint>')
-    if kind == "openarm":
+    if robot:
+        T = np.array(kin["mounts"][kind.split("_")[0]]["T_flange_gripper_m"])
         links.insert(0, '  <link name="chopstick_flange"/>')
         joints.insert(0, '  <joint name="chopstick_mount_joint" type="fixed"><parent link="chopstick_flange"/>'
-                         f'<child link="chopstick_base"/>{origin(openarm_adapter.T_LINK7)}</joint>')
+                         f'<child link="chopstick_base"/>{origin(T)}</joint>')
     return links, joints
 
 
-MATERIALS = ('  <material name="black"><color rgba="0.24 0.25 0.27 1"/></material>\n'
-             '  <material name="tpu"><color rgba="0.6 0.63 0.66 1"/></material>\n'
+MATERIALS = ('  <material name="pg_blue"><color rgba="0.12 0.37 0.68 1"/></material>\n'
+             '  <material name="pg_white"><color rgba="0.96 0.96 0.97 1"/></material>\n'
+             '  <material name="tpu"><color rgba="0.87 0.9 0.93 1"/></material>\n'
              '  <material name="camera"><color rgba="0.11 0.12 0.13 1"/></material>')
 
 
 def write(kind, parts, kin):
     links, joints = build(kind, parts, kin)
-    name = f"chopstick_{kind}"
-    text = (f'<?xml version="1.0"?>\n<!-- Generated by chopstick/cad/urdf.py from the KIWI chopstick CAD. Units: m, rad. -->\n'
+    name = f"pg_chopstick_{kind}"
+    text = (f'<?xml version="1.0"?>\n<!-- PG Chopstick, generated by chopstick/cad/urdf.py. Units: m, rad. -->\n'
             f'<robot name="{name}">\n{MATERIALS}\n' + "\n".join(links) + "\n" + "\n".join(joints) + "\n</robot>\n")
     (URDF / f"{name}.urdf").write_text(text)
     print(f"wrote urdf/{name}.urdf")
@@ -152,7 +160,7 @@ def write(kind, parts, kin):
 
 
 def splice_openarm(src, dst, gripper_urdf, mesh_dir):
-    """Replace the stock hand and fingers on both OpenArm arms with the chopstick robot gripper."""
+    """Replace the stock hand and fingers on both OpenArm arms with the PG Chopstick robot gripper."""
     s = Path(src).read_text()
     for side in ("left", "right"):
         # drop the stock hand, its tcp, both fingers and their joints
@@ -169,7 +177,7 @@ def splice_openarm(src, dst, gripper_urdf, mesh_dir):
         g += (f'  <joint name="openarm_{side}_chopstick_attach" type="fixed"><parent link="openarm_{side}_link7"/>'
               f'<child link="openarm_{side}_chopstick_flange"/><origin xyz="0 0 0" rpy="0 0 0"/></joint>\n')
         s = s.replace("</robot>", g + "</robot>")
-    if '<material name="black">' not in s:
+    if '<material name="pg_blue">' not in s:
         s = s.replace(">", ">\n" + MATERIALS, 1) if s.lstrip().startswith("<robot") else re.sub(
             r"(<robot[^>]*>)", r"\1\n" + MATERIALS.replace("\\", "\\\\"), s, count=1)
     Path(dst).write_text(s)
@@ -185,10 +193,14 @@ def main():
     if "theta_max_deg" not in kin:
         raise SystemExit("run `python kinematics.py --check` first (it measures the jaw limits)")
     parts = load_parts()
-    write("data", parts, kin)
-    robot = write("openarm", parts, kin)
+    for old in URDF.glob("*.urdf"):
+        old.unlink()
+    for old in MESHES.glob("*.stl"):
+        old.unlink()
+    texts = {kind: write(kind, parts, kin) for kind in BUILDS}
+    robot = texts["openarm"]
     if a.openarm_urdf:
-        out = Path(a.out or "openarm_chopstick.urdf").resolve()
+        out = Path(a.out or "openarm_pg_chopstick.urdf").resolve()
         splice_openarm(a.openarm_urdf, out, robot, str(MESHES.resolve()))
 
 
