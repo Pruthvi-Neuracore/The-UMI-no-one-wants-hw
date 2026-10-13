@@ -136,10 +136,10 @@ real grip force of OpenArm's gripper, the spoon's real mass, and the grasp wet a
 
 ## V2: flat fingers
 
-<p align="center"><img src="docs/img/v2_open.png" alt="V2: two solid, flat triangular fingers on OpenArm's link7, black, with a grey soft strip along each gripping edge" width="560"></p>
+<p align="center"><img src="docs/img/v2_open.png" alt="V2: two solid, flat triangular fingers on OpenArm's link7" width="560"></p>
 
 A flat version, `hardware/v2/`, in the style of the triangular fingers on handheld data-collection grippers, but
-**solid** rather than a truss.
+**solid** rather than a truss, and **one plain printed part**, with no soft part.
 
 - **Plate:** a flat triangle, as tall as the mounting plate where it leaves it and tapering to an 11 mm tip.
 - **Gripping edge:** straight, so the two fingers close flat on each other. Fully closed they are 0.2 mm apart;
@@ -148,20 +148,35 @@ A flat version, `hardware/v2/`, in the style of the triangular fingers on handhe
   thickens to 16 mm over the middle, where the bending is largest, and thins to 11 mm at the tip.
 - **Root ribs:** three gussets at the root, 24 mm wide at the mounting plate and tapering into the plate. They sit in
   the bands between the screw heads and stiffen it sideways.
-- **Soft strip (TPU 95A):** a 4 mm deep strip along the gripping edge, keyed in with a tongue. The last 1.5 mm is a
-  hard tip, 0.6 mm behind the soft face.
 - **Base:** the same OpenArm printed base and screws as the other fingers.
-- **Strength and weight:** every section has at least **1.6×** what a 200 N tip load needs, in both directions. The
-  hard part is 44 cm³ (about 55 g) and the strip 5 cm³.
+- **Strength and weight:** every section has at least **1.7×** what a 200 N tip load needs, in both directions. Each
+  finger is 49 cm³ (about 61 g in PETG).
 
-<p align="center"><img src="docs/img/v2_finger.png" alt="One V2 finger: the flat triangle, its root ribs and the soft strip" width="700"></p>
+<p align="center"><img src="docs/img/v2_finger.png" alt="One V2 finger: the flat triangle and its root ribs" width="700"></p>
 
 | File | Material | Per gripper |
 |---|---|---|
-| `hardware/v2/STL/v2_finger_left.stl`, `v2_finger_right.stl` | PETG | 1 + 1 |
-| `hardware/v2/STL/v2_tpu_left.stl`, `v2_tpu_right.stl` | TPU 95A | 1 + 1 |
+| `hardware/v2/STL/v2_finger_left.stl`, `v2_finger_right.stl` | PETG (or PLA) | 1 + 1 |
 
 Print the plates lying flat on their side: no supports, and the layers run along the finger.
+
+## V3: V1 in one material
+
+<p align="center"><img src="docs/img/v3_open.png" alt="V3: the V1 fingers' shape, all in one material, on OpenArm's link7" width="560"></p>
+
+`hardware/v3/` is **V1 printed as one part**, with no TPU.
+- **Shape:** the same outer shape: OpenArm's printed base, the stock flow, and the chopstick-style jaw with its
+  chisel nose and three scallops.
+- **Material:** what was the TPU soft part is solid plastic, so each finger is one print with nothing to glue.
+- **Closing and strength:** it closes like V1, to 0.2 mm apart, and every section has at least **1.9×** what a 200 N
+  tip load needs.
+- **Weight:** each finger is 66 cm³ (about 83 g in PETG).
+
+<p align="center"><img src="docs/img/v3_finger.png" alt="One V3 finger, side view" width="700"></p>
+
+| File | Material | Per gripper |
+|---|---|---|
+| `hardware/v3/STL/v3_finger_left.stl`, `v3_finger_right.stl` | PLA or PETG | 1 + 1 |
 
 ## Files
 
@@ -173,6 +188,7 @@ Print the plates lying flat on their side: no supports, and the layers run along
 | `cad/openarm_spoon.py` | The spoon fingers' generator, with the fit, form-closure and load check against a spoon's STL |
 | `hardware/spoon/` | The spoon fingers' STEP and STL |
 | `cad/openarm_v2.py`, `hardware/v2/` | V2, the flat fingers: generator, STEP and STL |
+| `cad/openarm_v3.py`, `hardware/v3/` | V3, V1 in one material: generator, STEP and STL |
 | `docs/img/` | Renders |
 
 Licences and sources: [NOTICE.md](NOTICE.md).

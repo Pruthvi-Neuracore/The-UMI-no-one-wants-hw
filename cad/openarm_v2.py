@@ -1,16 +1,14 @@
-"""OpenArm v2 fingers: a solid, flat triangular finger for OpenArm v1, with a soft strip on its gripping edge.
+"""OpenArm V2 fingers: a solid, flat, triangular finger for OpenArm v1, one plain printed part (no soft part).
 
-The finger is a flat plate (FLAT_T thick near the mount, thicker over the middle: THICKNESS), drawn as a triangle: as tall as the mounting plate where it leaves it,
-tapering to the tip, with a straight gripping edge so the two fingers close flat on each other. It is solid (not a
-truss). Three gusset ribs at its root stiffen it sideways; they sit between the screw heads, so all four heads of the
-mounting plate stay open from the front.
+The finger is a flat plate (FLAT_T thick near the mount, thicker over the middle: THICKNESS), drawn as a triangle: as
+tall as the mounting plate where it leaves it, tapering to the tip, with a straight gripping edge so the two fingers
+close flat on each other. It is solid (not a truss). Three gusset ribs at its root stiffen it sideways; they sit between
+the screw heads, so all four heads of the mounting plate stay open from the front.
 
   * base: OpenArm v1's printed finger base (openarm_hardshell.base(): the plate, its four M2.5 holes and the rib);
-  * the hard plate: the triangle, its long edges rounded, its gripping edge TIP_BACK behind the soft strip's face;
-  * `v2_tpu_<side>` (TPU 95A): a strip along the gripping edge, STRIP_T deep, with a tongue keyed into the plate
-    (glue it in); the last TIP_T of the edge is the hard tip.
+  * the plate: the triangle, its long edges rounded; the root ribs.
 
-Finger frame as in openarm_hardshell.py (x along the finger, y across it, z through it, the gripping face at low z).
+Finger frame as in openarm_hardshell.py (x along the finger, y across it, z through it, the gripping edge at low z).
 
     python openarm_v2.py [--openarm /path/to/handumi-sw/assets]
 """
@@ -24,7 +22,7 @@ import openarm_hardshell as H
 
 OUT = H.OUT / "v2"
 IMG = H.IMG
-GRIP_Z = 24.8              # the soft strip's face: the fingers close to 0.2 mm apart, as the other fingers
+GRIP_Z = 24.8              # the gripping edge: the fingers close to 0.2 mm apart, as the other fingers
 FLAT_T = 10.0              # the plate's thickness (across the finger): the screw heads at y = +-7.5 stay clear
 # root ribs: three horizontal gussets at the root, ROOT_HALF each side of centre at the mounting plate, tapering into
 # the triangle over ROOT_LEN; they sit in the bands between the screw heads (z 37.8-42.6 and 47.8-52.6), so the heads
@@ -37,10 +35,6 @@ ROOT_BANDS = [(None, 37.0), (43.4, 47.0), (53.4, 59.6)]   # z ranges (None: from
 TIP_X = 115.0
 TIP_H = 11.0               # the tip's height (from the gripping edge)
 ROOT_TOP = 59.6            # the triangle's root runs up the mounting plate to its top
-STRIP = (40.0, TIP_X - 1.5)  # the soft strip's length (the last TIP_T is the hard tip)
-STRIP_T = 4.0
-TIP_T, TIP_BACK = 1.5, 0.6
-TONGUE = dict(half=2.0, h=2.5)
 EDGE_R = 1.5
 
 
@@ -73,7 +67,7 @@ def root_ribs():
                           (0, 1))
     ribs = None
     for z0, z1 in ROOT_BANDS:
-        z0 = GRIP_Z + TIP_BACK if z0 is None else z0
+        z0 = GRIP_Z if z0 is None else z0
         band = wedge & (Pos(0, 0, (z0 + z1) / 2) * Box(600, 100, z1 - z0))
         ribs = band if ribs is None else ribs + band
     for r in (1.0, 0.6):
@@ -87,30 +81,22 @@ def root_ribs():
 
 
 def build():
-    """(hard, soft)."""
-    tri = plate()
-    s0, s1 = STRIP
-    strip = tri & (Pos((s0 + s1) / 2, 0, GRIP_Z + STRIP_T / 2) * Box(s1 - s0, 40, STRIP_T))
-    t = TONGUE
-    tongue = Pos((s0 + s1) / 2, 0, GRIP_Z + STRIP_T + t["h"] / 2 - 0.05) * Box(s1 - s0 - 12, 2 * t["half"], t["h"] + 0.1)
-    soft = strip + tongue
-    hard = tri - soft
-    hard -= Pos(0, 0, GRIP_Z - 5 + TIP_BACK) * Box(600, 100, 10)        # hard edge just behind the soft face
-    hard = H.base() + hard + root_ribs()
+    """The finger: one plain printed part (no soft part)."""
+    hard = H.base() + plate() + root_ribs()
     (x0, x1) = H.PLATE["x"]
     for y, z in H.HOLES:                                               # through holes, head seats in the plate
         hard -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(H.HOLE_D / 2, x1 - x0 + 2)
         hard -= Pos(x1 - H.CBORE[1] / 2 + 0.01, y, z) * Rot(0, 90, 0) * Cylinder(H.CBORE[0] / 2, H.CBORE[1] + 0.02)
     if len(hard.solids()) > 1:
         hard = max(hard.solids(), key=lambda q: q.volume)
-    return hard, soft
+    return hard
 
 
-def render(assets, parts):
+def render(assets, finger):
     import pyvista as pv
     import trimesh
-    meshes = {n: H._mesh(p, 0.03) for n, p in parts.items()}
-    col = {"hard": "#2b2e33", "soft": "#9aa3ad", "link7": "#c9ccd1"}         # black plate, grey TPU strip
+    fm = H._mesh(finger, 0.03)
+    col = {"finger": "#2b2e33", "link7": "#c9ccd1"}
 
     def plot(path, items, view, up=(0, 0, 1), size=(1600, 1100), zoom=1.1):
         p = pv.Plotter(off_screen=True, window_size=size, lighting="three lights")
@@ -124,41 +110,34 @@ def render(assets, parts):
         p.screenshot(str(path))
         p.close()
         print("wrote", path.name)
-    hm, sm = meshes["v2_finger_left"], meshes["v2_tpu_left"]
-    plot(IMG / "v2_finger.png", [(hm, col["hard"]), (sm, col["soft"])], (0.3, -1.0, 0.35), up=(0, 0, -1),
-         size=(1800, 1000), zoom=1.25)
+    plot(IMG / "v2_finger.png", [(fm, col["finger"])], (0.3, -1.0, 0.35), up=(0, 0, -1), size=(1800, 1000), zoom=1.25)
     if not assets:
         return
-    M = {"hardshell_finger_left": hm, "hardshell_tpu_left": sm}
+    M = {"hardshell_finger_left": fm, "hardshell_tpu_left": trimesh.creation.box((0.1, 0.1, 0.1))}
     _, (lo, hi) = H.on_openarm(assets, M, 0.0)
     for name, frac in (("v2_open", 0.5), ("v2_closed", 0.0)):
         o, _ = H.on_openarm(assets, M, lo + frac * (hi - lo))
-        items = [(o["link7"], col["link7"])] + [(o[k], col["hard" if k.startswith("finger") else "soft"])
-                                                for k in o if k != "link7"]
+        items = [(o["link7"], col["link7"]), (o["finger_left"], col["finger"]), (o["finger_right"], col["finger"])]
         plot(IMG / f"{name}.png", items, (1.0, -0.55, 0.3), zoom=1.0)
-        gap = trimesh.proximity.closest_point(o["tpu_left"], o["tpu_right"].vertices)[1].min()
-        hits = [round(o[a].intersection(o[b]).volume, 1) for a, b in
-                (("finger_left", "finger_right"), ("tpu_left", "tpu_right"), ("finger_left", "tpu_right"))]
-        print(f"  {name}: soft strips {gap:.1f} mm apart; overlaps hard/hard, soft/soft, hard/soft: {hits} mm3")
+        gap = trimesh.proximity.closest_point(o["finger_left"], o["finger_right"].vertices)[1].min()
+        hit = round(o["finger_left"].intersection(o["finger_right"]).volume, 1)
+        print(f"  {name}: fingers {gap:.1f} mm apart at the nearest point; overlap {hit} mm3")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--openarm", help="handumi-sw assets folder (for the renders and checks on OpenArm)")
     a = ap.parse_args()
-    hard, soft = build()
+    finger = build()
     for d in ("STEP", "STL"):
         (OUT / d).mkdir(parents=True, exist_ok=True)
-    parts = {"v2_finger_left": hard, "v2_tpu_left": soft,
-             "v2_finger_right": mirror(hard, Plane.XZ), "v2_tpu_right": mirror(soft, Plane.XZ)}
-    for n, p in parts.items():
+    for n, p in (("v2_finger_left", finger), ("v2_finger_right", mirror(finger, Plane.XZ))):
         export_step(p, str(OUT / "STEP" / f"{n}.step"))
         export_stl(p, str(OUT / "STL" / f"{n}.stl"), tolerance=0.02, angular_tolerance=0.15)
         bb = p.bounding_box()
         print(f"{n}: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, {p.volume / 1e3:.1f} cm3, "
               f"{len(p.solids())} solid(s)")
-    print(f"hard / soft overlap {(hard & soft).volume if (hard & soft).solids() else 0:.1f} mm3")
-    render(a.openarm, parts)
+    render(a.openarm, finger)
 
 
 if __name__ == "__main__":
