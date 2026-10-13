@@ -258,6 +258,34 @@ the root. One broad side is flat, and the other is opened into ribbed cells.
 | `hardware/v6/STL/v6_finger_left.stl`, `v6_finger_right.stl` | PETG (or PLA) | 1 + 1 |
 
 
+## Chest camera: a D435 mast on OpenArm's core
+
+<p align="center"><img src="docs/img/chest_camera.png" alt="The chest camera mast bolted to OpenArm's 60 x 60 core, with a D435 on its arm, tilted down" width="420"></p>
+
+`hardware/chest_camera/` raises the chest camera on a mast for a wider view. It's two printed parts.
+
+**`chest_camera_holder`** is the head camera holder (`head camera holder v4.stl`), turned into a mast for
+OpenArm's core:
+- **Mounting plate:** its tilted foot is cut off, and the column stands on a block on a 60 mm mounting plate.
+- **T-slots:** two keys on the back of the plate sit in the two 8 mm T-slots of one face of the 60 × 60 core,
+  30 mm apart. It's held by 4× M5 bolts into 8 mm-slot hammer nuts. The plate runs down below the column, so all
+  four bolt heads are open from the front.
+- **Arm:** the arm at the top points away from the core. It has 4× M3 holes, counterbored from below, for the
+  camera mount.
+
+**`d435_mount`** (separate file) carries a RealSense D435 on top of the arm:
+- **Base:** it sits on the arm, held by 4× M3 screws from below into M3 heat-set inserts in its base.
+- **Seat:** the seat is tilted 20° down (`TILT` in the generator). A rear wall takes the D435's two rear M3 holes,
+  45 mm apart, and a low front lip stops the camera sliding forward.
+
+<p align="center"><img src="docs/img/d435_mount.png" alt="The D435 mount: the tilted seat, the rear wall with its two M3 holes, the front lip" width="460"></p>
+
+| File | Material | Per robot | Hardware |
+|---|---|---|---|
+| `hardware/chest_camera/STL/chest_camera_holder.stl` | PETG | 1 | 4× M5 × 12 button head, 4× M5 hammer nuts (8 mm slot) |
+| `hardware/chest_camera/STL/d435_mount.stl` | PETG | 1 | 4× M3 × 25, 4× M3 heat-set inserts, 2× M3 × 8 (camera) |
+
+
 ## Files
 
 | Path | What |
@@ -272,6 +300,7 @@ the root. One broad side is flat, and the other is opened into ribbed cells.
 | `cad/openarm_v4.py`, `hardware/v4/`, `cad/source/arx_x5/` | V4, the flat ARX-X5-style blade on OpenArm's base: generator, STEP, STL, and the HandUMI tip its outline is measured from |
 | `cad/openarm_v5.py`, `hardware/v5/` | V5, flat triangular fingers with a ribbed back: generator, STEP, STL |
 | `cad/openarm_v6.py`, `hardware/v6/` | V6, the fine-tip finger on OpenArm's base: generator, STEP, STL (it reads the source STEPs from `cad/source/fine_tip/`, which isn't published) |
+| `cad/openarm_chest_camera.py`, `hardware/chest_camera/` | The chest camera mast and its D435 mount: generator, STEP, STL (it reads the holder STL from `cad/source/head_camera/`, which isn't published) |
 | `cad/openarm_base.py`, `hardware/base/` | The base on its own (mounting plate, four M2.5 holes with counterbores, rib), left and right, as a starting block for your own fingers |
 | `docs/img/` | Renders |
 
