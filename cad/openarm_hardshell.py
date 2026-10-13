@@ -4,14 +4,16 @@ Each finger is one hard part and one soft part sharing one outer surface, so the
   * the base is OpenArm v1's own finger base (measured from its description): the 5.2 mm mounting plate with its
     four M2.5 holes (counterbored on the finger side) and the keying features behind it (centre block, two prongs,
     rib and the round boss), so it fits the carriage exactly as the stock finger does;
-  * from the plate to midway (x = 35) the finger follows the stock finger's own sections, then flows, in one smooth
-    loft through rounded sections, into a longer finger with a flat gripping plane and a rounded tip;
-  * `hardshell_tpu_<side>` (TPU 95A), the soft part: the front SOFT_T of that same section along the gripping length,
-    with three shallow transverse grooves (as on the PG Chopstick's pad) and a tongue on its back that keys into the
-    hard part (glue it in);
-  * `hardshell_finger_<side>` (PETG / PLA), the hard part: everything else, including a TIP_T hard tip over the soft
-    part's end (its face TIP_BACK behind the soft face, so the soft part touches first), and straight Ø5 access bores
-    from the four screw heads along the finger.
+  * from the plate to midway (x = 35) the finger follows the stock finger's own sections, then a smooth loft carries
+    it into the jaw, drawn in the PG Chopstick's language: flat facets; in plan, straight sides chamfered to a point;
+    in side view, a flat gripping edge and a straight back breaking into a chisel nose; three big scallops along the
+    gripping edge;
+  * `hardshell_tpu_<side>` (TPU 95A), the soft part: the jaw's lower body below a flat parting line (falling along the
+    chisel so the hard spine stays whole), flush with the hard part's faces, with the scallops and a tongue on its
+    back that keys into the hard part (glue it in);
+  * `hardshell_finger_<side>` (PETG / PLA), the hard part: everything else (base, flow, spine and a TIP_T hard tip),
+    its gripping face TIP_BACK behind the soft face so the soft part touches first, with straight access bores for
+    the four screw heads.
 
 Finger frame (mm; Open-ENPIRE's OpenArm jaw frame, which places the stock finger where OpenArm puts it): x along the
 finger from the carriage, y across, z through the finger, the gripping face at low z. The right finger is the mirror
@@ -41,17 +43,21 @@ BOSS = dict(yz=(-18.1, 45.2), small=(8.0, (-7.4, -3.8)), big=(13.6, (-3.9, 1.5))
 # --- the finger: sections (x, y_min, y_max, z_face, z_back); up to x = 35 they are the stock finger's -------------------
 STOCK = [(6.4, -30.2, 30.2, 42.3, 59.2), (11, -26.3, 26.7, 41.8, 57.6), (17, -22.1, 24.3, 41.0, 55.4),
          (23, -19.0, 23.3, 40.3, 53.3), (29, -16.9, 21.7, 39.4, 51.1), (35, -15.6, 19.2, 38.4, 48.9)]
-GRIP_Z = 25.4              # the soft face: the pads close to about 0.7 mm apart
-FLOW = [(46, -15.0, 15.0, 31.0, 46.5), (56, -14.5, 14.5, GRIP_Z, 45.0), (76, -13.5, 13.5, GRIP_Z, 42.0),
-        (96, -12.0, 12.0, GRIP_Z, 39.0), (110, -10.0, 10.0, GRIP_Z, 36.5), (116, -8.0, 8.0, GRIP_Z, 34.5)]
-TIP = (119.0, -5.5, 5.5, GRIP_Z + 0.4, 31.5)
+GRIP_Z = 24.8              # the soft face: the pads close to a fraction of a millimetre apart
+FLOW = [(46, -15.0, 15.0, 31.0, 46.5), (57, -14.6, 14.6, GRIP_Z, 45.0)]   # from the stock sections into the jaw
 SECTION_R = 4.0
-SOFT_X = (56.0, TIP[0] - 1.5)  # the soft part's length (the last 1.5 mm is the hard tip)
-SOFT_T = 6.0               # its thickness behind the face
+# the distal jaw, in the PG Chopstick's language: flat facets, a pointed (hexagonal) plan, a chisel nose, big scallops
+JAW_X0 = 53.0              # it starts inside the flow's last section
+JAW_SIDE = [(JAW_X0, 45.2), (96.0, 41.5), (120.0, None)]  # back line (x, z); the chisel runs from (96, 41.5) to the tip
+JAW_PLAN = [(JAW_X0, 14.8), (94.0, 13.5), (120.0, 3.5)]   # half-width (x, y): straight sides, then the point
+JAW_EDGE_R = 1.2
+SCALLOPS = [(66.0, 7.5, 2.6), (83.0, 7.5, 2.6), (99.0, 6.0, 2.0)]   # (x, radius, depth) along the gripping edge
+SOFT_X = (59.0, 120.0 - 1.5)   # the soft part's length (the last 1.5 mm is the hard tip)
+SPLIT = [(59.0, 8.0), (92.0, 7.0), (108.0, 3.0), (118.5, 0.9)]   # the parting line above the soft face, along x:
+                                                                # it falls with the chisel so the hard spine stays
+                                                                # whole all the way into the hard tip
 TIP_T, TIP_BACK = 1.5, 0.6
-GROOVES = [72.0, 88.0, 103.0]
-GROOVE_R, GROOVE_D = 7.0, 1.2
-TONGUE = dict(x=(62.0, 108.0), half=4.0, h=2.5)
+TONGUE = dict(x=(64.0, 104.0), half=4.0, h=2.5)
 BORE_D = 5.0
 # how far each screw's access bore runs: the upper two until they come out of the sloping back; the lower two as open
 # channels under the base's gripping face (a ball-end key reaches them from the gripping side)
@@ -90,24 +96,63 @@ def base():
     return b
 
 
+def _poly_prism(pts, axes, lo=-200.0, hi=200.0):
+    """Extrude a polygon drawn on two axes (0 = x, 1 = y, 2 = z) along the third, from lo to hi."""
+    from build123d import Polyline
+    third = ({0, 1, 2} - set(axes)).pop()
+    q3 = []
+    for a, b in pts:
+        q = [0.0, 0.0, 0.0]
+        q[axes[0]], q[axes[1]], q[third] = a, b, lo
+        q3.append(tuple(q))
+    d = [0, 0, 0]
+    d[third] = 1
+    return extrude(make_face(Polyline(*q3, close=True)), hi - lo, dir=tuple(d))
+
+
+def jaw():
+    """The distal jaw: side outline (flat gripping edge, straight back, chisel nose) and plan outline (straight sides
+    to a point), intersected, long edges lightly rounded."""
+    (x0, z0), (xc, zc), (xt, _) = JAW_SIDE
+    zt = GRIP_Z + TIP_BACK + 0.8                                   # the chisel ends just above the gripping edge
+    side = [(x0, GRIP_Z), (xt, GRIP_Z), (xt, zt), (xc, zc), (x0, z0)]
+    (p0, h0), (p1, h1), (pt, ht) = JAW_PLAN
+    plan = [(p0, -h0), (p1, -h1), (pt, -ht), (pt, ht), (p1, h1), (p0, h0)]
+    j = _poly_prism(side, (0, 2)) & _poly_prism(plan, (0, 1))
+    for r in (JAW_EDGE_R, 0.8):
+        try:
+            b = fillet(j.edges().filter_by(Axis.X), r)
+            if b.is_valid:
+                return b
+        except Exception:
+            pass
+    return j
+
+
 def finger_body():
-    """The whole finger's outer form: one smooth loft from the plate, through the stock finger's sections, to the tip."""
-    secs = [_section(*s) for s in STOCK + FLOW] + [_section(*TIP, r=2.5)]
-    return loft(secs)
+    """The whole finger's outer form: the stock flow (a smooth loft from the plate through the stock finger's sections)
+    joined to the faceted distal jaw."""
+    flow = loft([_section(*s) for s in STOCK + FLOW])
+    return flow + jaw()
 
 
 def split(body):
-    """(hard, soft): the soft part is the front SOFT_T of the body along SOFT_X, with grooves and a tongue."""
+    """(hard, soft): the soft part is the jaw's lower body below the parting line along SOFT_X, with the scallops and a
+    tongue; the hard part is the rest, with the 1.5 mm hard tip (its face TIP_BACK behind the soft face)."""
     (s0, s1) = SOFT_X
-    soft = body & (Pos((s0 + s1) / 2, 0, GRIP_Z - 10 + (SOFT_T + 10) / 2) * Box(s1 - s0, 100, SOFT_T + 10))
+    xs, hs = zip(*SPLIT)
+    pts = [(s0, GRIP_Z - 10)] + [(x, GRIP_Z + h) for x, h in SPLIT] + [(s1, GRIP_Z - 10)]   # SPLIT ends at s1
+    region = _poly_prism(pts, (0, 2))
+    soft = body & region
     t = TONGUE
-    tongue = Pos(sum(t["x"]) / 2, 0, GRIP_Z + SOFT_T + t["h"] / 2 - 0.05) * Box(t["x"][1] - t["x"][0], 2 * t["half"], t["h"] + 0.1)
+    zt = GRIP_Z + float(np.interp(sum(t["x"]) / 2, xs, hs))
+    tongue = Pos(sum(t["x"]) / 2, 0, zt + t["h"] / 2 - 0.05) * Box(t["x"][1] - t["x"][0], 2 * t["half"], t["h"] + 0.1)
     soft = soft + tongue
-    hard = body - soft                                                 # (before the grooves: they are open air)
-    for x in GROOVES:
-        soft -= Pos(x, 0, GRIP_Z - GROOVE_R + GROOVE_D) * Rot(90, 0, 0) * Cylinder(GROOVE_R, 60)
-    # the hard tip's face sits TIP_BACK behind the soft face
-    hard -= Pos(SOFT_X[1] + 5, 0, GRIP_Z - 5 + TIP_BACK) * Box(10, 100, 10)
+    hard = body - soft
+    for x, r, d in SCALLOPS:
+        soft -= Pos(x, 0, GRIP_Z - r + d) * Rot(90, 0, 0) * Cylinder(r, 80)
+    hard -= Pos(0, 0, GRIP_Z - 5 + TIP_BACK) * Box(600, 100, 10)       # the hard face sits TIP_BACK behind the soft
+    hard = max(hard.solids(), key=lambda q: q.volume) if len(hard.solids()) > 1 else hard
     return hard, soft
 
 
