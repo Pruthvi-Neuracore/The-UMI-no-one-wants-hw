@@ -1,59 +1,61 @@
 """OpenArm hard-shell fingers: printed fingers for OpenArm v1's parallel gripper, in place of its stock fingers.
 
-One soft part and one hard part per finger, as in Open-ENPIRE:
-  * `hardshell_tpu_<side>` (TPU 95A), the soft part: the PG Chopstick's TPU pad (from TToTMooN/KIWI_hardware), its
-    straight part, turned so its face lies parallel to the finger.
-  * `hardshell_finger_<side>` (PETG / PLA), the hard part:
-      - Open-ENPIRE's OpenArm mount (pgeedh/Open-ENPIRE-Gripper): a 5.1 mm plate with four M3 holes and the key rib
-        behind it, where the stock finger's base goes;
-      - a straight, prismatic jaw: the intersection of two straight-sided outlines (side view and plan), each the
-        convex envelope of the soft part with a margin plus a solid base block square to the plate; rounded long
-        edges, a chamfered tip, and a 1.5 mm hard tip past the soft part's end;
-      - a pocket: the soft part's exact shape with straight walls up to its face, which stands PROUD of the rim.
-The soft part drops into the pocket and is glued in. The upper two screws sit above the base block, reachable with
-the finger glued; the lower two are in straight bores through the block, so fit them before gluing the pad in.
-Strength: check_strength.py.
+Each finger is one hard part and one soft part sharing one outer surface, so the finger reads as one seamless form:
+  * the base is OpenArm v1's own finger base (measured from its description): the 5.2 mm mounting plate with its
+    four M2.5 holes (counterbored on the finger side) and the keying features behind it (centre block, two prongs,
+    rib and the round boss), so it fits the carriage exactly as the stock finger does;
+  * from the plate to midway (x = 35) the finger follows the stock finger's own sections, then flows, in one smooth
+    loft through rounded sections, into a longer finger with a flat gripping plane and a rounded tip;
+  * `hardshell_tpu_<side>` (TPU 95A), the soft part: the front SOFT_T of that same section along the gripping length,
+    with three shallow transverse grooves (as on the PG Chopstick's pad) and a tongue on its back that keys into the
+    hard part (glue it in);
+  * `hardshell_finger_<side>` (PETG / PLA), the hard part: everything else, including a TIP_T hard tip over the soft
+    part's end (its face TIP_BACK behind the soft face, so the soft part touches first), and straight Ø5 access bores
+    from the four screw heads along the finger.
 
-Finger frame (mm; Open-ENPIRE's OpenArm jaw frame): x along the finger from the mount plate's front face, y across the
-plate (its height), z through the finger, the gripping face at low z. The right finger is the mirror image in y (as in
-OpenArm's description).
+Finger frame (mm; Open-ENPIRE's OpenArm jaw frame, which places the stock finger where OpenArm puts it): x along the
+finger from the carriage, y across, z through the finger, the gripping face at low z. The right finger is the mirror
+image in y (as in OpenArm's description). Strength: check_strength.py.
 
     python openarm_hardshell.py [--openarm /path/to/handumi-sw/assets] [--no-render]
 """
 import argparse
-import math
 from pathlib import Path
 
 import numpy as np
-from build123d import (Axis, Box, Cylinder, Location, Plane, Polyline, Pos, Rot, export_step, export_stl, extrude,
-                       fillet, import_step, make_face, mirror)
+from build123d import (Axis, Box, Cylinder, Location, Plane, Pos, Rot, export_step, export_stl, extrude, fillet,
+                       loft, make_face, mirror)
 
 HERE = Path(__file__).resolve().parent
-SRC = HERE / "source"
 OUT = HERE.parent / "hardware"
 IMG = HERE.parent / "docs" / "img"
 
-# Open-ENPIRE's OpenArm mount (measured from its OpenArm_Hard jaw)
-PLATE = dict(x=(-5.1, 0.0), y=(-30.8, 30.2), z=(30.0, 59.6), r=2.0)
-RIB = dict(x=(-18.0, -5.1), y=(9.8, 13.8), z=(30.0, 59.6))
-HOLES = [(7.2, 55.7), (7.2, 34.1), (-7.9, 34.0), (-7.9, 55.6)]       # (y, z), M3
-HOLE_D, HEAD_D, HEAD_SEAT = 3.4, 6.0, 1.5                           # through hole; screw-head seat in the plate
-# the soft part: the chopstick pad's straight part, placed in the finger frame
-X_CUT = 100.0              # keep the chopstick pad from x >= X_CUT (its straight part)
-GRIP_Z = 25.0              # its contact face (3 mm inside Open-ENPIRE's 28, so the pads just meet when closed)
-NECK_L = 18.0              # the soft part starts this far in front of the plate (the screws are reached in between)
-# the hard shell
-SHELL_T = 2.5              # wall round the soft part's back and sides
-PROUD = 1.5                # the soft face stands this far proud of the shell's rim
-TIP_T = 1.5                # the hard tip over the soft part's end
-TIP_BACK = 0.6             # the hard tip's face is this far behind the soft face: the soft part touches first
-
-
-def _loc(R, t):
-    from OCP.gp import gp_Trsf
-    tr = gp_Trsf()
-    tr.SetValues(*R[0], t[0], *R[1], t[1], *R[2], t[2])
-    return Location(tr)
+# --- OpenArm v1's finger base (measured from its finger mesh, in this frame) ----------------------------------------
+PLATE = dict(x=(1.4, 6.6), y=(-30.5, 30.5), z=(30.2, 60.2), r=2.0)
+HOLES = [(7.5, 40.2), (-7.5, 40.2), (7.5, 50.2), (-7.5, 50.2)]     # (y, z), M2.5
+HOLE_D, CBORE = 3.0, (4.8, 1.6)                                    # through; counterbore (dia, depth) from the front
+CENTRE = dict(x=(-2.9, 1.5), y=(-10.0, 10.0))                      # behind the plate, full plate height
+PRONGS = dict(x=(-6.2, -2.8), y=(4.0, 10.0), chamfer=1.0)          # two, mirrored in y
+RIB = dict(x=(-6.2, 1.5), y=(10.1, 15.1))
+BOSS = dict(yz=(-18.1, 45.2), small=(8.0, (-7.4, -3.8)), big=(13.6, (-3.9, 1.5)), hole=4.2)
+# --- the finger: sections (x, y_min, y_max, z_face, z_back); up to x = 35 they are the stock finger's -------------------
+STOCK = [(6.4, -30.2, 30.2, 42.3, 59.2), (11, -26.3, 26.7, 41.8, 57.6), (17, -22.1, 24.3, 41.0, 55.4),
+         (23, -19.0, 23.3, 40.3, 53.3), (29, -16.9, 21.7, 39.4, 51.1), (35, -15.6, 19.2, 38.4, 48.9)]
+GRIP_Z = 25.4              # the soft face: the pads close to about 0.7 mm apart
+FLOW = [(46, -15.0, 15.0, 31.0, 46.5), (56, -14.5, 14.5, GRIP_Z, 45.0), (76, -13.5, 13.5, GRIP_Z, 42.0),
+        (96, -12.0, 12.0, GRIP_Z, 39.0), (110, -10.0, 10.0, GRIP_Z, 36.5), (116, -8.0, 8.0, GRIP_Z, 34.5)]
+TIP = (119.0, -5.5, 5.5, GRIP_Z + 0.4, 31.5)
+SECTION_R = 4.0
+SOFT_X = (56.0, TIP[0] - 1.5)  # the soft part's length (the last 1.5 mm is the hard tip)
+SOFT_T = 6.0               # its thickness behind the face
+TIP_T, TIP_BACK = 1.5, 0.6
+GROOVES = [72.0, 88.0, 103.0]
+GROOVE_R, GROOVE_D = 7.0, 1.2
+TONGUE = dict(x=(62.0, 108.0), half=4.0, h=2.5)
+BORE_D = 5.0
+# how far each screw's access bore runs: the upper two until they come out of the sloping back; the lower two as open
+# channels under the base's gripping face (a ball-end key reaches them from the gripping side)
+BORE_LEN = {50.2: 30.0, 40.2: 20.0}
 
 
 def _mesh(shape, tol=0.05):
@@ -62,105 +64,65 @@ def _mesh(shape, tol=0.05):
     return trimesh.Trimesh(np.array([(q.X, q.Y, q.Z) for q in v]), np.array(f), process=True)
 
 
-def soft_part():
-    """The chopstick pad's straight part in the finger frame: its face turned parallel to the finger (the chopstick
-    closes on a pivot, so there it is angled), on z = GRIP_Z, starting NECK_L in front of the plate, centred in y."""
-    tip = import_step(str(SRC / "tip_tpu_right.step")) & (Pos(X_CUT + 100, 0, 0) * Box(200, 200, 200))
-    m = _mesh(tip)
-    xs, ys = [], []
-    for x in np.arange(X_CUT + 15, m.bounds[1][0] - 15, 5.0):
-        s = m.section([1, 0, 0], [x, 0, 0])
-        if s is not None:
-            xs.append(x)
-            ys.append(s.vertices[:, 1].max())
-    th = -math.atan(np.polyfit(xs, ys, 1)[0])
-    Rz = np.array([[math.cos(th), -math.sin(th), 0], [math.sin(th), math.cos(th), 0], [0, 0, 1.0]])
-    M = np.array([[1, 0, 0], [0, 0, 1.0], [0, -1.0, 0]])  # chopstick (x, y, z) -> finger (x, z, -y)
-    R = M @ Rz
-    v = m.vertices @ R.T
-    face = v[v[:, 0] > X_CUT + 15][:, 2].min()
-    t = np.array([NECK_L - v[:, 0].min(), -(v[:, 1].min() + v[:, 1].max()) / 2, GRIP_Z - face])
-    return tip.moved(_loc(R, t)), math.degrees(th)
+def _section(x, y0, y1, z0, z1, r=SECTION_R):
+    from build123d import RectangleRounded
+    pl = Plane(origin=(x, (y0 + y1) / 2, (z0 + z1) / 2), x_dir=(0, 1, 0), z_dir=(1, 0, 0))
+    return make_face(pl * RectangleRounded(y1 - y0, z1 - z0, min(r, (y1 - y0) / 2 - 0.2, (z1 - z0) / 2 - 0.2)).wire())
 
 
-BASE = dict(x=12.0, half=15.5, back=43.0)   # the solid base block: length in front of the plate, half-width, back z
-BACK_MARGIN, SIDE_MARGIN = 3.0, 2.5         # hard material behind and beside the soft part
-EDGE_R = 1.5
+def base():
+    """OpenArm v1's finger base: the plate (holes added later) and the keying features behind it."""
+    (x0, x1), (y0, y1), (z0, z1) = PLATE["x"], PLATE["y"], PLATE["z"]
+    zc, h = (z0 + z1) / 2, z1 - z0
+    b = fillet((Pos((x0 + x1) / 2, (y0 + y1) / 2, zc) * Box(x1 - x0, y1 - y0, h)).edges().filter_by(Axis.X), PLATE["r"])
+    (a0, a1), (c0, c1) = CENTRE["x"], CENTRE["y"]
+    b += Pos((a0 + a1) / 2, (c0 + c1) / 2, zc) * Box(a1 - a0, c1 - c0, h)
+    (p0, p1), (q0, q1) = PRONGS["x"], PRONGS["y"]
+    for s in (1, -1):
+        pr = Pos((p0 + p1) / 2, s * (q0 + q1) / 2, zc) * Box(p1 - p0 + 0.1, q1 - q0, h)
+        b += pr
+    (r0, r1), (t0, t1) = RIB["x"], RIB["y"]
+    b += Pos((r0 + r1) / 2, (t0 + t1) / 2, zc) * Box(r1 - r0, t1 - t0, h)
+    by, bz = BOSS["yz"]
+    for d, (u0, u1) in (BOSS["small"], BOSS["big"]):
+        b += Pos((u0 + u1) / 2, by, bz) * Rot(0, 90, 0) * Cylinder(d / 2, u1 - u0)
+    b -= Pos(-2.0, by, bz) * Rot(0, 90, 0) * Cylinder(BOSS["hole"] / 2, 20)
+    return b
 
 
-def _silhouette(m, axes):
-    """The soft part's outline projected on two axes (0 = x, 1 = y, 2 = z), as one polygon."""
-    from shapely.geometry import Polygon
-    from shapely.ops import unary_union
-    tris = m.vertices[m.faces][:, :, axes]
-    return unary_union([Polygon(t) for t in tris if Polygon(t).area > 1e-6]).buffer(0.05).simplify(0.15)
+def finger_body():
+    """The whole finger's outer form: one smooth loft from the plate, through the stock finger's sections, to the tip."""
+    secs = [_section(*s) for s in STOCK + FLOW] + [_section(*TIP, r=2.5)]
+    return loft(secs)
 
 
-def _prism(poly, axes, lo=-200.0, hi=200.0):
-    """Extrude a 2D polygon drawn on two axes along the third, from lo to hi."""
-    from build123d import Polyline, make_face
-    third = ({0, 1, 2} - set(axes)).pop()
-    pts = []
-    for a, b in list(poly.exterior.coords)[:-1]:
-        q = [0.0, 0.0, 0.0]
-        q[axes[0]], q[axes[1]], q[third] = a, b, lo
-        pts.append(tuple(q))
-    d = [0, 0, 0]
-    d[third] = 1
-    return extrude(make_face(Polyline(*pts, close=True)), hi - lo, dir=tuple(d))
-
-
-def holder(soft):
-    """The hard jaw: the intersection of two straight-sided outlines, the side view (x, z) and the plan view (x, y),
-    each the convex envelope of the soft part with a margin and the solid base block. Flat faces and straight tapers,
-    a 1.5 mm hard tip past the soft part's end, edges rounded. The soft part's pocket is cut in build()."""
-    from shapely.geometry import box
-    m = _mesh(soft, 0.05)
-    xs, xe = m.bounds[0][0], m.bounds[1][0]
-    face = m.bounds[0][2]                                                  # the soft face's lowest point
-    rim = face + PROUD
-    side = _silhouette(m, [0, 2]).buffer(BACK_MARGIN).union(box(0.0, rim, BASE["x"], BASE["back"])).convex_hull
-    side = side.intersection(box(0.0, rim, xe + TIP_T, 200)).union(
-        side.intersection(box(xe - 2.0, face + TIP_BACK, xe + TIP_T, 200)))
-    side = side.convex_hull.intersection(box(0.0, face + TIP_BACK, xe + TIP_T, 200)).difference(
-        box(0.0, face + TIP_BACK - 1, xe - 2.0, rim))                    # the rim, and the tip's lip below it
-    plan = _silhouette(m, [0, 1]).buffer(SIDE_MARGIN).union(box(0.0, -BASE["half"], BASE["x"], BASE["half"]))
-    plan = plan.convex_hull.intersection(box(0.0, -100, xe + TIP_T, 100))
-    body = _prism(side, [0, 2]) & _prism(plan, [0, 1])
-    for edges in (body.edges(), body.edges().filter_by(Axis.X)):          # round what rounds cleanly
-        try:
-            b = fillet(edges, EDGE_R)
-            if b.is_valid:
-                return b
-        except Exception:
-            pass
-    print("  (jaw edges left sharp)")
-    return body
-
-
-def pocket(soft):
-    """The soft part's seat: its exact shape, plus straight walls from its outline up to past its face, so the whole
-    soft face is exposed."""
-    m = _mesh(soft, 0.05)
-    plan = _silhouette(m, [0, 1])
-    lo, hi = m.bounds[0][2] - 5.0, m.bounds[0][2] + PROUD + 6.0
-    return soft + (_prism(plan, [0, 1], lo, hi) & (Pos(0, 0, (lo + hi) / 2) * Box(600, 600, hi - lo)))
+def split(body):
+    """(hard, soft): the soft part is the front SOFT_T of the body along SOFT_X, with grooves and a tongue."""
+    (s0, s1) = SOFT_X
+    soft = body & (Pos((s0 + s1) / 2, 0, GRIP_Z - 10 + (SOFT_T + 10) / 2) * Box(s1 - s0, 100, SOFT_T + 10))
+    t = TONGUE
+    tongue = Pos(sum(t["x"]) / 2, 0, GRIP_Z + SOFT_T + t["h"] / 2 - 0.05) * Box(t["x"][1] - t["x"][0], 2 * t["half"], t["h"] + 0.1)
+    soft = soft + tongue
+    hard = body - soft                                                 # (before the grooves: they are open air)
+    for x in GROOVES:
+        soft -= Pos(x, 0, GRIP_Z - GROOVE_R + GROOVE_D) * Rot(90, 0, 0) * Cylinder(GROOVE_R, 60)
+    # the hard tip's face sits TIP_BACK behind the soft face
+    hard -= Pos(SOFT_X[1] + 5, 0, GRIP_Z - 5 + TIP_BACK) * Box(10, 100, 10)
+    return hard, soft
 
 
 def build():
-    """(jaw, soft, turn)."""
-    soft, th = soft_part()
-    jaw = holder(soft)
-    (x0, x1), (y0, y1), (z0, z1) = PLATE["x"], PLATE["y"], PLATE["z"]
-    plate = Pos((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2) * Box(x1 - x0, y1 - y0, z1 - z0)
-    plate = fillet(plate.edges().filter_by(Axis.X), PLATE["r"])
-    (rx0, rx1), (ry0, ry1), (rz0, rz1) = RIB["x"], RIB["y"], RIB["z"]
-    rib = Pos((rx0 + rx1) / 2 + 0.25, (ry0 + ry1) / 2, (rz0 + rz1) / 2) * Box(rx1 - rx0 + 0.5, ry1 - ry0, rz1 - rz0)
-    jaw = plate + rib + jaw - pocket(soft)
-    for y, z in HOLES:      # M3 through the plate, a head seat, and a straight head bore through the base block
-        jaw -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(HOLE_D / 2, x1 - x0 + 2)
-        jaw -= Pos(BASE["x"] / 2, y, z) * Rot(0, 90, 0) * Cylinder(HEAD_D / 2, BASE["x"] + 2 * HEAD_SEAT)
-    return jaw, soft, th
+    """(hard, soft)."""
+    body = finger_body()
+    hard, soft = split(body)
+    hard = base() + hard
+    (x0, x1) = PLATE["x"]
+    for y, z in HOLES:
+        hard -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(HOLE_D / 2, x1 - x0 + 2)
+        L = BORE_LEN[z]                                                # head seat and key access, to where it opens
+        hard -= Pos(x1 - CBORE[1] + L / 2, y, z) * Rot(0, 90, 0) * Cylinder(max(CBORE[0], BORE_D) / 2, L)
+    hard -= soft                                                       # (the bores never reach the soft part)
+    return hard, soft
 
 
 def on_openarm(assets, meshes, q):
@@ -252,7 +214,7 @@ def main():
     ap.add_argument("--openarm", help="handumi-sw assets folder (for the renders and checks on OpenArm's link7)")
     ap.add_argument("--no-render", action="store_true")
     a = ap.parse_args()
-    shell, soft, th = build()
+    shell, soft = build()
     parts = {"hardshell_finger_left": shell, "hardshell_tpu_left": soft,
              "hardshell_finger_right": mirror(shell, Plane.XZ), "hardshell_tpu_right": mirror(soft, Plane.XZ)}
     for d in ("STEP", "STL"):
@@ -263,7 +225,7 @@ def main():
         bb = p.bounding_box()
         print(f"{n}: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, {p.volume / 1e3:.1f} cm3, "
               f"{len(p.solids())} solid(s)")
-    print(f"pad turned {th:.1f} deg; shell / soft overlap {(shell & soft).volume if (shell & soft).solids() else 0:.1f} mm3")
+    print(f"hard / soft overlap {(shell & soft).volume if (shell & soft).solids() else 0:.1f} mm3")
     if not a.no_render:
         render(a.openarm, parts)
 

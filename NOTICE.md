@@ -1,12 +1,12 @@
 # Notice
 
-- **The soft pad** is the PG Chopstick's TPU tip, derived from TToTMooN/KIWI_hardware (commit `626ad7b`), Apache-2.0.
-  Its source part is in `cad/source/`, as split from the upstream assembly. Changes: cut to its straight part and
-  turned 9° so its face lies parallel to the finger.
-- **The OpenArm mount** (the plate, its four M3 holes and the key rib) is Open-ENPIRE's OpenArm jaw mount, from
-  pgeedh/Open-ENPIRE-Gripper, Apache-2.0, re-modelled from its dimensions.
-- The hard jaw is new.
-- OpenArm's geometry, used only for the checks and renders, comes from the OpenArm v1 description and is not
+- **The base** (the mounting plate, its four M2.5 holes and the keying features behind it), and the finger's sections
+  up to x = 35 mm, are re-modelled from the dimensions of OpenArm v1's own finger in its robot description, so they
+  fit the carriage as the stock finger does. OpenArm's description is not redistributed here; see the OpenArm
+  project for its licence.
+- The rest of the finger, its split into hard and soft parts, the tongue and the hard tip are new. The soft face's
+  transverse grooves follow the PG Chopstick's TPU pad; no geometry is copied from it.
+- OpenArm's geometry, used for the checks and renders, comes from the OpenArm v1 description and is not
   redistributed here.
 
-The licence text is in `LICENSE`.
+This repository's own work is under Apache-2.0; the licence text is in `LICENSE`.
