@@ -77,6 +77,49 @@ On OpenArm v1's description, closed, half open and fully open:
    2. Screw the new hard part on with the same four screws.
    3. Glue the soft part in with flexible CA, or a TPU-rated contact adhesive.
 
+## Spoon fingers
+
+<p align="center"><img src="docs/img/spoon_held.png" alt="The spoon fingers on OpenArm's link7 holding the 50 cm spoon by its handle near the neck" width="700"></p>
+
+A second pair, `hardware/spoon/`, made for holding a **large spoon or fork by its flat, wide handle** without it
+slipping or turning. It is designed around a 50 cm spoon whose handle is 7.7 mm thick and 22–43 mm wide, with rounded
+edges.
+
+**Why flat pads aren't enough:** picked from above, the fingers close across the handle's width. The spoon's weight,
+about 100 mm out from the grasp, then tries to turn it about the closing axis. Flat pads resist that only by friction.
+At a 20 N grip that's about 0.04 N·m, far below what a heavy spoon needs, so it tips.
+
+**What these fingers do instead:** they hold it by **form closure**.
+- Each fingertip has a **slot** that takes the handle's edge: 8.4 mm high for the 7.7 mm handle, 4.5 mm deep,
+  round-bottomed like the edge, with lead-in chamfers.
+- The slot is lined with 1.2 mm of TPU, one piece with the soft gripping face above it.
+- When the spoon tries to tip, the handle bears on the slot's lips across the whole 31 mm width of the wide,
+  square-ended jaw. The moment is carried by the lips, not by friction.
+
+<p align="center"><img src="docs/img/spoon_slots.png" alt="Looking down the handle: its rounded edges seated in the two slots, wrapped by the black TPU liners" width="560"></p>
+<p align="center"><img src="docs/img/spoon_finger.png" alt="Side view of a spoon finger: OpenArm's base, the wide jaw, the soft face and the slot at the tip" width="700"></p>
+
+**Checked with the spoon's own model** (`cad/openarm_spoon.py --spoon <stl>`), held 200 mm along the handle, where it is
+38.5 mm wide (14.5 mm of the 44 mm finger stroke):
+- **Fit:** the handle sits in both slots, touching only the TPU liners, which it presses slightly. No hard part
+  touches it.
+- **Form closure:** tilting the spoon 3° either way about the closing axis drives it into the slot lips, so it can't
+  turn.
+- **Load:** a 0.5 kg spoon, with its centre of mass 108 mm from the grasp, puts 0.53 N·m on the grasp. The lips carry
+  that as ±17 N across the 31 mm width. That's about 1.5 MPa in the 3.5 mm PETG lip, far below its strength.
+- **Picking it up:** the lower lip at the tip is 4.7 mm thick, liner included. A spoon lying on a table rests on its
+  bowl and the end of its handle, so near the neck the handle is 10–18 mm clear of the table and the lip slides under
+  it.
+- **Strength and clearance:** every section of the hard part has at least 2.2× what a 100 N knock at the tip needs.
+  Over the whole stroke the fingers never touch each other.
+
+| File | Material | Per gripper |
+|---|---|---|
+| `hardware/spoon/STL/spoon_finger_left.stl`, `spoon_finger_right.stl` | PETG | 1 + 1 |
+| `hardware/spoon/STL/spoon_tpu_left.stl`, `spoon_tpu_right.stl` | TPU 95A | 1 + 1 |
+
+They fit OpenArm the same way as the fingers above, with the same base and screws.
+
 ## Files
 
 | Path | What |
@@ -84,6 +127,8 @@ On OpenArm v1's description, closed, half open and fully open:
 | `hardware/STEP/`, `hardware/STL/` | The four printable parts |
 | `cad/openarm_hardshell.py` | The generator (build123d). `python openarm_hardshell.py --openarm <handumi-sw assets>` also renders and checks on OpenArm |
 | `cad/check_strength.py` | The bending check along the hard part |
+| `cad/openarm_spoon.py` | The spoon fingers' generator, with the fit, form-closure and load check against a spoon's STL |
+| `hardware/spoon/` | The spoon fingers' STEP and STL |
 | `docs/img/` | Renders |
 
 Licences and sources: [NOTICE.md](NOTICE.md).
