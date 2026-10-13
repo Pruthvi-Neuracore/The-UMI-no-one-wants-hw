@@ -8,8 +8,8 @@
 </p>
 
 <p align="center">
-  <img src="insta360_x5/chopstick/img/hero.png" alt="PG Chopstick handheld gripper with an Insta360 X5" width="440">
-  <img src="d405/chopstick/img/hero.png" alt="PG Chopstick handheld gripper with a RealSense D405 and a Quest Touch Pro controller" width="440">
+  <img src="insta360_x5/chop-umi/img/hero.png" alt="PG Chopstick handheld gripper with an Insta360 X5" width="440">
+  <img src="d405/chop-umi/img/hero.png" alt="PG Chopstick handheld gripper with a RealSense D405 and a Quest Touch Pro controller" width="440">
 </p>
 
 > Each kit also has its own branch: [`pg-chopstick-x5`](https://github.com/Pruthvi-Neuracore/The-UMI-no-one-wants-hw/tree/pg-chopstick-x5) (Insta360 X5) and
@@ -20,7 +20,7 @@ wrist, and do the task. A camera on the device records what you see. Its robot t
 camera at the same spot, so a policy trained on your demonstrations sees the same thing on the robot.
 
 <p align="center">
-  <img src="insta360_x5/chopstick/img/robot_ur5.png" alt="Bimanual UR5 with PG Chopstick grippers" width="880">
+  <img src="insta360_x5/chop-umi/img/robot_ur5.png" alt="Bimanual UR5 with PG Chopstick grippers" width="880">
 </p>
 
 ## Two camera kits × three ways to grasp
@@ -30,38 +30,41 @@ camera at the same spot, so a policy trained on your demonstrations sees the sam
 | Camera | Insta360 X5, 360° video | Intel RealSense D405 depth camera, on a tilting mount |
 | Pose | from the X5's own IMU and visual mapping of its video | live, from a Meta Quest Touch Pro controller on the device (tracking only) |
 | On the device | wireless: the PG pod (ESP32-S3, IMU, battery) | one USB-C cable: Pico 2 + IMU + USB 3 hub in a small box |
-| **Chopstick**: geared jaws you pinch | [insta360_x5/chopstick](insta360_x5/chopstick/README.md) | [d405/chopstick](d405/chopstick/README.md) |
-| **Parallel**: the HandUMI T-plate gripper, swappable tips | [insta360_x5/parallel](insta360_x5/parallel/README.md) | [d405/parallel](d405/parallel/README.md) |
+| **Chop-UMI**: geared chopstick jaws you pinch | [insta360_x5/chop-umi](insta360_x5/chop-umi/README.md) | [d405/chop-umi](d405/chop-umi/README.md) |
+| **Para-UMI**: the HandUMI T-plate parallel gripper, swappable tips | [insta360_x5/para-umi](insta360_x5/para-umi/README.md) | [d405/para-umi](d405/para-umi/README.md) |
 | **Hand**: camera on your wrist, bare hand | [insta360_x5/hand](insta360_x5/hand/README.md) | [d405/hand](d405/hand/README.md) |
 
-- **Chopstick:** right-hand and left-hand builds and two robot twins, on **OpenArm** (link7 adapter) and on any cobot
-  with an **ISO 9409-1-50-4-M6** flange (UR e-series, ABB GoFa, FANUC CRX, ...).
-- **Parallel:** [HandUMI](https://github.com/Pruthvi-Neuracore/The-UMI-no-one-wants) unchanged. On the X5 kit the only
-  new part is the X5 cradle on its camera hinge. The tips swap (AgileX Piper, Robotiq Hand-E, Open-ENPIRE) to match the
-  robot's own gripper.
-- **Hand:** the camera straps to your wrist, or to a dexterous robot hand's forearm.
+- **Chop-UMI:** right-hand and left-hand builds and two robot twins, on **OpenArm** (link7 adapter) and on any cobot
+  with an **ISO 9409-1-50-4-M6** flange (UR e-series, ABB GoFa, FANUC CRX, ...). On the D405 kit, the Quest controller
+  sits in HandUMI's own controller support, facing forward, mirrored for the left hand.
+- **Para-UMI:** [HandUMI](https://github.com/Pruthvi-Neuracore/The-UMI-no-one-wants) unchanged. On the X5 kit the
+  only new part is the X5 cradle on its camera hinge. The tips swap (AgileX Piper, Robotiq Hand-E, Open-ENPIRE) to
+  match the robot's own gripper, and a printed **camera post** for each robot (Hand-E on UR / ABB / FANUC, Piper,
+  OpenArm) puts the same camera in the same place relative to the robot's fingers.
+- **Hand:** the camera straps to your wrist, or to a dexterous robot hand's forearm. A thumb strap round the palm keeps
+  it put and carries a soft **palm button**: curl your middle and ring fingers in to start and stop recording.
 - **One button per gripper:** it sits under your index finger. **Green** on the right hand records (start / stop);
   **red** on the left hand cancels the take.
 
 <table>
 <tr>
-<td align="center"><img src="insta360_x5/parallel/img/parallel.png" alt="HandUMI T-plate gripper with the Insta360 X5 on its camera post" width="430"><br><b>Parallel</b>: HandUMI with the X5 on its post, swappable tips</td>
-<td align="center"><img src="insta360_x5/hand/img/hand.png" alt="Insta360 X5 strapped to the wrist over a relaxed hand" width="430"><br><b>Hand</b>: the camera rides on your wrist</td>
+<td align="center"><img src="insta360_x5/para-umi/img/parallel.png" alt="HandUMI T-plate gripper with the Insta360 X5 on its camera post" width="430"><br><b>Para-UMI</b>: HandUMI with the X5 on its post, swappable tips</td>
+<td align="center"><img src="insta360_x5/hand/img/hand.png" alt="Insta360 X5 strapped to the wrist over a relaxed hand, with the thumb strap" width="430"><br><b>Hand</b>: the camera rides on your wrist</td>
 </tr>
 <tr>
-<td align="center"><img src="insta360_x5/chopstick/img/robot_abb_gofa.png" alt="ABB GoFa pair with chopsticks" width="430"><br>ABB GoFa ×2, chopsticks</td>
-<td align="center"><img src="insta360_x5/chopstick/img/robot_fanuc_crx.png" alt="FANUC CRX-5iA pair with chopsticks" width="430"><br>FANUC CRX-5iA ×2, chopsticks</td>
+<td align="center"><img src="insta360_x5/para-umi/img/robot_camera_hande.png" alt="The Para-UMI device beside a Robotiq Hand-E with the camera post: the X5 in the same place over both" width="430"><br>Para-UMI's camera on the robot's own gripper</td>
+<td align="center"><img src="insta360_x5/chop-umi/img/robot_fanuc_crx.png" alt="FANUC CRX-5iA pair with chopsticks" width="430"><br>FANUC CRX-5iA ×2, chopsticks</td>
 </tr>
 <tr>
-<td align="center"><img src="insta360_x5/chopstick/img/openarm_bimanual.png" alt="OpenArm with PG Chopsticks" width="430"><br>OpenArm, link7 adapter</td>
+<td align="center"><img src="insta360_x5/hand/img/hand_palm.png" alt="The palm button on the thumb strap" width="430"><br>The palm button, on the thumb strap</td>
 <td align="center"><img src="insta360_x5/hand/img/hand_robot.png" alt="The X5 on a Shadow Hand's forearm on a UR5e" width="430"><br>The same wrist mount on a robot hand</td>
 </tr>
 </table>
 
-## What the chopsticks share
+## What the Chop-UMIs share
 
 <p align="center">
-  <img src="insta360_x5/chopstick/img/opening.png" alt="Chopstick jaws opening 0 to 45 degrees per jaw" width="820">
+  <img src="insta360_x5/chop-umi/img/opening.png" alt="Chopstick jaws opening 0 to 45 degrees per jaw" width="820">
 </p>
 
 - **One interface:** the chopsticks clip to the camera frame with a tongue and two M3 × 55 screws, and every robot plate
@@ -70,21 +73,21 @@ camera at the same spot, so a policy trained on your demonstrations sees the sam
   that fits any finger.
 - **Blue tracking dots:** printed as inlays on the jaws, so the camera sees how far they are open.
 - **Checked in CAD:** every build is clash-checked closed, half open and fully open, and every robot twin has a URDF.
-- **Parallel grippers:** these are HandUMI's own design (finger sleeves, record button, tip flange), with the same
+- **Para-UMI grippers:** these are HandUMI's own design (finger sleeves, record button, tip flange), with the same
   green record / red cancel button covers.
 - **PG look:** blue structure, white moving parts, an engraved PG badge on every part.
 
 <p align="center">
-  <img src="insta360_x5/chopstick/img/sleeve.png" alt="Elastic finger sleeve with the green record button" width="430">
-  <img src="insta360_x5/chopstick/img/plates.png" alt="OpenArm adapter and ISO 50 plate" width="430">
+  <img src="insta360_x5/chop-umi/img/sleeve.png" alt="Elastic finger sleeve with the green record button" width="430">
+  <img src="insta360_x5/chop-umi/img/plates.png" alt="OpenArm adapter and ISO 50 plate" width="430">
 </p>
 
 ## Repository layout
 
 ```
 pg-chopstick/                               (this folder, on main)
-  insta360_x5/{chopstick,parallel,hand}/    README · bom.md · electronics.md · STEP/ · STL/ · assembly/ · urdf/ · img/
-  d405/{chopstick,parallel,hand}/           (same)
+  insta360_x5/{chop-umi,para-umi,hand}/     README · bom.md · electronics.md · STEP/ · STL/ · assembly/ · urdf/ · img/
+  d405/{chop-umi,para-umi,hand}/            (same)
   tags/                                     ArUco tag sheet, one tag per device
   docs/media/                               pg_chopstick.mp4, pg_chopstick.gif
 ```
@@ -100,7 +103,8 @@ Each variant folder holds everything you need to print and build it: every part 
 
 Use Python 3.12 with `build123d`, `bd_warehouse`, `trimesh`, `manifold3d`, `scipy`, `pyvista` and `yourdfpy`. On the `cad` branch, in
 `pg-chopstick/cad/<kit>/`, run the part scripts, then `kinematics.py --check`, `urdf.py`, `assembly.py --check`, `render_docs.py`,
-`robots.py`, `t_gripper.py` (the HandUMI parallel gripper) and finally `package.py`, which copies the results into
+`robots.py`, `t_gripper.py` (the HandUMI parallel gripper), `robot_cameras.py` (its robot camera posts) and finally
+`package.py`, which copies the results into
 `pg-chopstick/<kit>/`. Generated intermediates go to
 `build/` (not committed).
 
