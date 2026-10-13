@@ -6,13 +6,13 @@ One soft part and one hard part per finger, as in Open-ENPIRE:
   * `hardshell_finger_<side>` (PETG / PLA), the hard part:
       - Open-ENPIRE's OpenArm mount (pgeedh/Open-ENPIRE-Gripper): a 5.1 mm plate with four M3 holes and the key rib
         behind it, where the stock finger's base goes;
-      - three ribs from the plate to the holder, between the screw heads;
-      - the holder: the soft part's side outline grown by SHELL_T, across a constant width SHELL_T wider than the soft
-        part each side, edges rounded, with the soft part's exact shape cut into it. The soft face stands PROUD of
-        its rim; past the soft part's end a TIP_T hard tip.
-The soft part drops into the holder and is glued in. The holder starts NECK_L in front of the plate, so the screws
-stay reachable with the finger glued: the upper two from above, the lower two with a ball-end hex key between the
-ribs.
+      - a solid base, lofted from nearly the plate's full front face into the shell, with the four screw bores
+        through it;
+      - the shell: every cross-section of the soft part grown by SHELL_T and lofted, so it is shaped exactly like
+        the soft finger, with the soft part's exact shape cut into it. The soft face stands PROUD of its rim; past the
+        soft part's end a TIP_T hard tip.
+The soft part drops into the shell and is glued in. The upper two screws are reached through the base's sloped face
+with the finger glued; the lower two sit in line with the finger, so fit them before gluing the pad in.
 
 Finger frame (mm; Open-ENPIRE's OpenArm jaw frame): x along the finger from the mount plate's front face, y across the
 plate (its height), z through the finger, the gripping face at low z. The right finger is the mirror image in y (as in
@@ -42,7 +42,7 @@ HOLE_D, HEAD_D, HEAD_SEAT = 3.4, 6.0, 1.5                           # through ho
 X_CUT = 100.0              # keep the chopstick pad from x >= X_CUT (its straight part)
 GRIP_Z = 25.0              # its contact face (3 mm inside Open-ENPIRE's 28, so the pads just meet when closed)
 NECK_L = 18.0              # the soft part starts this far in front of the plate (the screws are reached in between)
-# the hard holder
+# the hard shell
 SHELL_T = 2.5              # wall round the soft part's back and sides
 PROUD = 1.5                # the soft face stands this far proud of the shell's rim
 TIP_T = 1.5                # the hard tip over the soft part's end

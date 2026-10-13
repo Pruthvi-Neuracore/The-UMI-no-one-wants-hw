@@ -1,6 +1,6 @@
 # OpenArm hard-shell fingers
 
-<p align="center"><img src="docs/img/openarm_open.png" alt="Two fingers on OpenArm's link7, half open: white hard holders on Open-ENPIRE's mount, each carrying the black PG Chopstick soft pad" width="560"></p>
+<p align="center"><img src="docs/img/openarm_open.png" alt="Two fingers on OpenArm's link7, half open: white hard shells on Open-ENPIRE's mount, each carrying the black PG Chopstick soft pad" width="560"></p>
 
 Printed fingers for **OpenArm v1's parallel gripper**, in place of its stock fingers. Each finger is one soft part and
 one hard part, as in Open-ENPIRE:
