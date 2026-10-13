@@ -189,14 +189,16 @@ as the gripping face.
 
 - **Solid and centred:** the original ARX finger is a pocketed tray, hollow under its top skin, and sits off to one
   side. V4 has no pockets or ridges, and it's symmetric about the middle of the mounting plate.
-- **Flat, with short screw holes:** the blade is an even 12.6 mm thick out to 40 mm from the plate, then tapers to
-  3.2 mm at the tip. Its back sits just below the lower screw heads, so all four M2.5 screws go in straight from
-  the front through the 5 mm plate alone. There are no long bores and no cutouts.
+- **Centred, like OpenArm's own finger:** the root runs across the middle of the mounting plate, between the two
+  rows of screws (z 40.2–50.2). It then sweeps down in a smooth S into the flat gripping face, which runs from 38 mm
+  out to the tip.
+- **Screw cutouts:** as on OpenArm's finger, a rounded 5.6 mm slot is cut through the root over each column of
+  screws, so all four heads are open and a ball-end hex key reaches them. The screws only pass through the 5 mm plate.
 - **Closing:** the fingers close flat on each other, 0.2 mm apart fully closed.
 - **Strength:** it carries 200 N at the tip with a 1.5 safety factor, the same target as the other fingers.
-- **Weight:** each finger is 36.5 cm³ (about 46 g in PETG).
+- **Weight:** each finger is 32.9 cm³ (about 42 g in PETG).
 
-<p align="center"><img src="docs/img/v4_finger.png" alt="One V4 finger: the solid flat blade on OpenArm's base, its four screw heads open above it" width="700"></p>
+<p align="center"><img src="docs/img/v4_finger.png" alt="One V4 finger: the solid flat blade on OpenArm's base, with a screw slot through its root over each column of screws" width="700"></p>
 
 | File | Material | Per gripper |
 |---|---|---|

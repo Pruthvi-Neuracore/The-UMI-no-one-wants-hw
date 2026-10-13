@@ -6,9 +6,11 @@ The original is a pocketed tray (hollow under its top skin) and sits off-centre.
   * solid: the blade is the ARX's plan outline (PLAN, measured from the STL in cad/source/arx_x5/) intersected with
     a side profile (SIDE), with no pockets;
   * centred on the mounting plate (the ARX outline drifts up to 4.6 mm to one side; here it is symmetric);
-  * flat: an even 12.6 mm thick from the mounting plate to x 40, its back just under the lower screw heads, so all
-    four M2.5 screws go straight in from the front through the plate alone (no bores through the blade, no
-    cutouts), then tapering into the ARX's own thickness to the tip;
+  * centred on the plate like OpenArm's own finger: its root runs between the two rows of screws (z 40.2-50.2, the
+    plate's middle), then it sweeps down in a smooth S into the flat gripping face, from x 38 to the tip, tapering
+    into the ARX's own thickness;
+  * screw cutouts, as OpenArm's finger has: a rounded slot through the root over each column of screws (SLOT), so
+    both heads are open from above and a ball-end hex key reaches them;
   * its broad flat face is the gripping face, at GRIP_Z (the fingers close 0.2 mm apart);
   * fused to OpenArm's base (the plate, its four holes and head seats, the rib).
 
@@ -17,9 +19,11 @@ Finger frame as in openarm_hardshell.py (x along the finger, y across it, z thro
     python openarm_v4.py [--openarm /path/to/handumi-sw/assets]
 """
 import argparse
+import math
 from pathlib import Path
 
-from build123d import Axis, Cylinder, Plane, Pos, Rot, export_step, export_stl, fillet, mirror
+import numpy as np
+from build123d import Axis, Box, Cylinder, Plane, Pos, Rot, export_step, export_stl, fillet, mirror
 
 import openarm_hardshell as H
 
@@ -29,10 +33,15 @@ SRC = Path(__file__).resolve().parent / "source" / "arx_x5" / "ARX-X5-2023-LEFT-
 GRIP_Z = 24.8              # the gripping face: 0.2 mm apart when closed, as the other fingers
 # the blade's half-width along x (the ARX-X5 finger's width, centred), to its rounded tip
 PLAN = [(11.0, 29.6), (15.0, 26.9), (19.0, 24.2), (23.0, 21.5), (27.0, 19.7), (79.0, 5.35), (80.6, 4.0)]
-# the blade's back (z) along x: flat at BACK_Z, just under the lower screw heads (their seats reach down to z 37.8)
-# so a hex key reaches every head straight along x, then into the ARX's own taper (3.2 mm thick at the tip)
-BACK_Z = 37.4
-SIDE = [(14.0, BACK_Z), (40.0, BACK_Z), (47.0, 34.8), (59.0, 32.3), (80.6, 28.0)]
+# side profile (z along x): the root between the screw rows (ROOT_Z), the back easing down into the ARX's taper from
+# BACK_X, the underside easing down into the flat gripping face (GRIP_Z) from FACE_X
+ROOT_Z = (40.2, 50.2)
+BACK_X = (14.0, 47.0)
+BACK_TAPER = [(47.0, 34.8), (59.0, 32.3), (80.6, 28.0)]    # the ARX's back, 3.2 mm above the gripping face at the tip
+FACE_X = (12.0, 38.0)
+# the screw cutouts: a slot through the root over each column of screws (y = +-7.5), (width, length from the plate,
+# floor z): it clears both head seats (4.8 mm) and gives a ball-end key ~25 deg of swing
+SLOT = (5.6, 24.0, 37.6)
 ROUND = (4.0, 1.4)         # plan and side corners rounded with these radii (the tip is only 3.2 mm thick)
 EDGE_R = 1.2
 
@@ -43,12 +52,21 @@ def _rounded(pts, r):
     return [(round(x, 3), round(y, 3)) for x, y in list(pl.simplify(0.02).exterior.coords)[:-1]]
 
 
+def _ease(x, xa, xb, za, zb):
+    t = min(max((x - xa) / (xb - xa), 0.0), 1.0)
+    return za + (zb - za) * (1 - math.cos(math.pi * t)) / 2
+
+
 def blade():
     """The solid blade: plan outline x side profile, its long edges rounded."""
     x0 = H.PLATE["x"][1] - 0.5                                  # into the mounting plate
     xb = x0 - 10.0                                              # (cut back to the plate after rounding)
     plan = [(xb, -30.5)] + [(x, -h) for x, h in PLAN] + [(x, h) for x, h in PLAN[::-1]] + [(xb, 30.5)]
-    side = [(xb, GRIP_Z), (PLAN[-1][0], GRIP_Z)] + SIDE[::-1] + [(xb, SIDE[0][1])]
+    xs = np.linspace(xb, BACK_X[1], 40)
+    top = [(x, _ease(x, *BACK_X, ROOT_Z[1], BACK_TAPER[0][1])) for x in xs] + BACK_TAPER[1:]
+    xs = np.linspace(xb, PLAN[-1][0], 60)
+    bottom = [(x, _ease(x, *FACE_X, ROOT_Z[0], GRIP_Z)) for x in xs]
+    side = top + bottom[::-1]
     b = H._poly_prism(_rounded(plan, ROUND[0]), (0, 1)) & H._poly_prism(_rounded(side, ROUND[1]), (0, 2))
     b = b & H._poly_prism([(x0, -100), (200, -100), (200, 100), (x0, 100)], (0, 1))
     for r in (EDGE_R, 0.8):
@@ -61,8 +79,20 @@ def blade():
     return b
 
 
+def slots():
+    """The screw cutouts: a round-ended slot through the root over each column of screws."""
+    (_, x1) = H.PLATE["x"]
+    w, length, z0 = SLOT
+    out = None
+    for y in sorted({y for y, _ in H.HOLES}):
+        xa, xe = x1 - 0.01, x1 + length - w / 2
+        s = Pos((xa + xe) / 2, y, z0 + 50) * Box(xe - xa, w, 100) + Pos(xe, y, z0 + 50) * Cylinder(w / 2, 100)
+        out = s if out is None else out + s
+    return out
+
+
 def build():
-    v4 = H.base() + blade()
+    v4 = H.base() + (blade() - slots())
     (x0, x1) = H.PLATE["x"]
     for y, z in H.HOLES:
         v4 -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(H.HOLE_D / 2, x1 - x0 + 2)
