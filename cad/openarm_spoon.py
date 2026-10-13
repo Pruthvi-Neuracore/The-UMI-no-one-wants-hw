@@ -1,18 +1,22 @@
 """OpenArm spoon fingers: a hard/soft finger pair for OpenArm v1 that holds a large spoon (or fork) by its flat handle
 without slipping or turning.
 
-The spoon (docs: spoon 50 cm): a flat handle 43 mm wide at most, narrowing to 22 mm at the neck, 7.7 mm thick nearly
-all along, rounded edges. Picked from above, the fingers close across the handle's width, edge to edge. The spoon's
-weight, with its centre of mass about 100 mm out from the grasp, then tries to turn the spoon about the closing axis.
-Flat pads resist that only by friction, so the spoon tips. These fingers hold it by **form closure**: each fingertip
-has a slot that takes the handle's edge, lined with TPU. When the spoon tries to tip, the handle bears on the slot's
-lips across the whole finger width, so the moment is carried by the lips' normal force instead of by friction.
+The spoon (spoon 50 cm): a flat handle 22-43 mm wide and 7.7 mm thick nearly all along, rounded edges. Picked from
+above, the fingers close across the handle's width, edge to edge. The spoon's weight, with its centre of mass about
+100 mm out from the grasp, then tries to turn the spoon about the closing axis; flat pads resist that only by friction,
+so the spoon tips. These fingers hold it by **form closure**: each fingertip has a TPU-lined **V-groove** that takes
+the handle's edge. When the spoon tries to tip, the handle bears on the groove's flanks across the whole finger width,
+so the moment is carried by the flanks' normal force instead of by friction.
 
   * base and flow: OpenArm v1's own finger base and the stock finger's sections up to midway (openarm_hardshell.py);
-  * the jaw: wide and square-ended (2 x JAW_HALF across), so the slot is as long as possible;
-  * the slot: near the tip, SLOT_H high (the handle's 7.7 mm plus the liner's give), SLOT_D deep, round-bottomed like
-    the handle's edge, with lead-in chamfers; the lower lip is thin (LIP) so it can slide under the raised handle;
-  * the soft part (TPU 95A): the slot's liner and the gripping face above it, in one piece, keyed into the hard part.
+  * the jaw: widening to 2 x JAW_HALF (40 mm), so the flanks have a long lever against tipping;
+  * the V-groove: 90 deg, V_DEPTH deep, round-bottomed. A rounded edge of any thickness from about 3 to 10 mm seats
+    where it touches both flanks, and the 14 mm mouth catches it several millimetres off centre and guides it in as
+    the fingers close;
+  * the spatula lip below the groove: LIP + liner at the face, its corner chamfered, thickening towards its root, so it
+    slides under a handle raised off the table;
+  * the soft part (TPU 95A): the groove's liner and the gripping face above it, in one piece, with fine ribs in the
+    liner against sliding along the handle, keyed into the hard part.
 
 Finger frame as in openarm_hardshell.py (x along the finger, y across it, z through it, the gripping face at low z).
 
@@ -27,74 +31,96 @@ from build123d import Axis, Box, Cylinder, Plane, Pos, Rot, export_step, export_
 
 import openarm_hardshell as H
 
+HANDLE_R = None            # the handle edge's radius for the grasp placement (None: the spoon's, 7.7 / 2)
+
 OUT = H.OUT / "spoon"
 IMG = H.IMG
 FACE_Z = 24.8              # the jaw's face (as the chopstick finger)
-HANDLE_T = 7.7             # the spoon handle's thickness
-LINER = 1.2                # TPU liner in the slot
-SLOT_H = HANDLE_T + 0.7    # the slot's opening for the handle (the liner gives the rest)
-SLOT_D = 4.5               # how deep the handle's edge sits in the slot
-LIP = 3.5                  # the lower lip, at the tip
-TIP_X = 112.0
-JAW_HALF = 15.5
-JAW_X0 = 53.0
-JAW_BACK = [(JAW_X0, 45.2), (TIP_X, 38.0)]
-CHAMFER = 1.0
+# the V-groove: across the finger, opening at the face, 90 deg, round-bottomed; lined with TPU
+V_HALF = 45.0              # half-angle of the V (deg)
+V_DEPTH = 7.0              # apex depth from the face, inside the liner
+V_APEX_R = 0.8
+LINER = 1.2
+RIB = (0.5, 1.0, 3.0)      # ribs in the liner's face: depth, gap width, pitch (along the handle, across the finger)
+LIP = 2.5                  # the spatula lip at the tip, at the face (it thickens towards its root)
+TIP_CHAMFER = 1.2          # the lip's leading corner, chamfered so it slides under a raised handle
+JAW_HALF = 20.0            # 40 mm wide: more lever against tipping
+JAW_X0, JAW_X1 = 53.0, 70.0  # the jaw widens from the flow's width to JAW_HALF over this length
+JAW_BACK = (45.2, 40.0)    # the back's height at JAW_X0 and at the tip
 SOFT_X0 = 60.0
-SOFT_T = 5.0               # the soft face's thickness above the slot
+SOFT_T = 5.0               # the soft face's thickness above the groove
 
 
-def slot_x():
-    """(x_lo, x_hi) of the handle's opening: the lower lip LIP + LINER thick at the tip."""
-    hi = TIP_X - LIP - LINER
-    return hi - SLOT_H, hi
+def groove_x():
+    """The groove's centre and the tip's x: the lower flank meets the face LIP + LINER short of the tip."""
+    mouth = V_DEPTH * math.tan(math.radians(V_HALF))           # half-height of the mouth (inside the liner)
+    tip = 112.0
+    xc = tip - LIP - LINER - mouth
+    return xc, mouth, tip
+
+
+def seat_depth(r):
+    """How deep (from the face) a rounded edge of radius r sits in the V: where it touches both flanks."""
+    a = math.radians(V_HALF)
+    return V_DEPTH - r / math.sin(a) + r
+
+
+def vgroove(clear=0.0):
+    """The groove (the open space for the handle), grown by `clear`: a V across the full width, opening at the face,
+    apex rounded."""
+    from build123d import Polyline, make_face, extrude
+    xc, mouth, tip = groove_x()
+    a = math.radians(V_HALF)
+    d = V_DEPTH + clear / math.sin(a)                          # the grown V's apex depth
+    m = d * math.tan(a) + 2.0                                   # extend past the face
+    zf = FACE_Z - 2.0 / math.tan(a)
+    pts = [(xc - m, zf), (xc, FACE_Z + d), (xc + m, zf)]
+    q3 = [(x, -60.0, z) for x, z in pts]
+    v = extrude(make_face(Polyline(*q3, close=True)), 120.0, dir=(0, 1, 0))
+    try:
+        v = fillet(v.edges().filter_by(Axis.Y).sort_by(Axis.Z)[-1:], V_APEX_R + clear)
+    except Exception:
+        pass
+    return v
 
 
 def jaw():
-    """The wide, square-ended jaw (before the slot)."""
-    (x0, z0), (x1, z1) = JAW_BACK
-    side = [(x0, FACE_Z), (TIP_X, FACE_Z), (TIP_X, z1), (x0, z0)]
-    plan = [(x0, -JAW_HALF), (TIP_X, -JAW_HALF), (TIP_X, JAW_HALF), (x0, JAW_HALF)]
+    """The wide jaw: widens from the flow to JAW_HALF, straight to a square tip; the tip's lip bevelled underneath."""
+    xc, mouth, tip = groove_x()
+    z0, z1 = JAW_BACK
+    side = [(JAW_X0, FACE_Z), (tip - 0.01, FACE_Z), (tip, FACE_Z + 0.01), (tip, z1), (JAW_X0, z0)]
+    plan = [(JAW_X0, -15.2), (JAW_X1, -JAW_HALF), (tip, -JAW_HALF), (tip, JAW_HALF), (JAW_X1, JAW_HALF), (JAW_X0, 15.2)]
     j = H._poly_prism(side, (0, 2)) & H._poly_prism(plan, (0, 1))
     for r in (2.0, 1.2):
         try:
-            b = fillet(j.edges().filter_by(Axis.X), r)
-            if b.is_valid:
-                j = b
+            bb = fillet(j.edges().filter_by(Axis.X), r)
+            if bb.is_valid:
+                j = bb
                 break
         except Exception:
             pass
     return j
 
 
-def slot(clear=0.0):
-    """The handle's slot, as a solid to cut: across the full width (y), opening at the face, round-bottomed, with
-    lead-in chamfers at the mouth. `clear` grows it (for the hard part's seat of the liner)."""
-    lo, hi = slot_x()
-    lo, hi = lo - clear, hi + clear
-    h = hi - lo
-    d = SLOT_D + clear
-    body = Pos((lo + hi) / 2, 0, FACE_Z + (d - h / 2) / 2 - 1.0) * Box(h, 100, d - h / 2 + 2.0)
-    body += Pos((lo + hi) / 2, 0, FACE_Z + d - h / 2) * Rot(90, 0, 0) * Cylinder(h / 2, 100)   # round bottom
-    c = CHAMFER + clear
-    for s in (-1, 1):                                       # lead-in chamfers at the mouth
-        xm = lo if s < 0 else hi
-        body += Pos(xm, 0, FACE_Z) * Rot(0, 45, 0) * Box(c * math.sqrt(2), 100, c * math.sqrt(2))
-    return body
-
-
 def build():
     """(hard, soft)."""
     flow = loft([H._section(*s) for s in H.STOCK + [(46, -15.0, 15.0, 31.0, 46.5), (57, -15.2, 15.2, FACE_Z, 45.0)]])
     body = flow + jaw()
-    lo, hi = slot_x()
-    # the soft part: the liner round the slot and the face above it, one piece
-    liner = slot(LINER) - slot(0.0)
-    face = Pos((SOFT_X0 + lo) / 2, 0, FACE_Z + SOFT_T / 2) * Box(lo - SOFT_X0, 2 * JAW_HALF + 2, SOFT_T)
+    xc, mouth, tip = groove_x()
+    # the soft part: the liner in the V and the face above it, one piece; ribs in the liner's face
+    liner = (vgroove(LINER) - vgroove(0.0)) & body
+    lo = xc - mouth - LINER
+    face = Pos((SOFT_X0 + lo) / 2 + 0.5, 0, FACE_Z + SOFT_T / 2) * Box(lo - SOFT_X0 + 1.0, 2 * JAW_HALF + 2, SOFT_T)
     soft = (liner + face) & body
+    depth, gap, pitch = RIB
+    skin = vgroove(depth) - vgroove(0.0)
+    for y in np.arange(-JAW_HALF + pitch / 2, JAW_HALF, pitch):
+        soft -= skin & (Pos(xc, y, FACE_Z + 5) * Box(40, gap, 30))
     tongue = Pos((SOFT_X0 + 6 + lo - 6) / 2, 0, FACE_Z + SOFT_T + 1.2) * Box(lo - SOFT_X0 - 12, 8.0, 2.5)
     soft = soft + tongue
-    hard = body - soft - slot(0.0)
+    hard = body - (liner + face + tongue) - vgroove(0.0)
+    # the spatula lip: chamfer its leading corner so the edge that slides under the handle is thin
+    hard -= Pos(tip, 0, FACE_Z) * Rot(0, 45, 0) * Box(TIP_CHAMFER * math.sqrt(2), 120, TIP_CHAMFER * math.sqrt(2))
     hard = H.base() + hard
     (x0, x1) = H.PLATE["x"]
     for y, z in H.HOLES:
@@ -104,7 +130,7 @@ def build():
     hard -= Pos(0, 0, FACE_Z - 5 + H.TIP_BACK) * Box(600, 100, 10)    # hard faces just behind the soft face
     if len(hard.solids()) > 1:
         hard = max(hard.solids(), key=lambda q: q.volume)
-    soft -= slot(0.0)
+    soft -= vgroove(0.0)
     return hard, soft
 
 
@@ -160,11 +186,11 @@ def grasp(assets, spoon, x_grip, preload=0.3):
     s = spoon.section([1, 0, 0], [x_grip, 0, 0]).vertices
     width = np.ptp(s[:, 1])
     yc, zc = (s[:, 1].min() + s[:, 1].max()) / 2, (s[:, 2].min() + s[:, 2].max()) / 2
-    q = (width - preload - 0.2 - 2 * SLOT_D) / 2000.0
+    r = HANDLE_R if HANDLE_R else 3.85
+    q = (width - preload - 0.2 - 2 * seat_depth(r)) / 2000.0
     T = finger_transforms(assets, q)
-    lo, hi = slot_x()
-    xs = (lo + hi) / 2
-    bottom = {k: (T[k] @ [xs, 0.0, FACE_Z + SLOT_D, 1])[:3] for k in T}
+    xs, _, _ = groove_x()
+    bottom = {k: (T[k] @ [xs, 0.0, FACE_Z + seat_depth(r), 1])[:3] for k in T}
     c = (bottom["left"] + bottom["right"]) / 2
     yv = bottom["right"] - bottom["left"]
     yv /= np.linalg.norm(yv)                                   # spoon y: across the handle, from left to right finger

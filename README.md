@@ -81,44 +81,56 @@ On OpenArm v1's description, closed, half open and fully open:
 
 <p align="center"><img src="docs/img/spoon_held.png" alt="The spoon fingers on OpenArm's link7 holding the 50 cm spoon by its handle near the neck" width="700"></p>
 
-A second pair, `hardware/spoon/`, made for holding a **large spoon or fork by its flat, wide handle** without it
-slipping or turning. It is designed around a 50 cm spoon whose handle is 7.7 mm thick and 22–43 mm wide, with rounded
-edges.
+A second pair, `hardware/spoon/`, made for holding a **spoon or fork by its flat handle** without it slipping or
+turning. It is designed around a 50 cm spoon (handle 7.7 mm thick, 22–43 mm wide, rounded edges), and works for flat
+handles from about 3 to 10 mm thick.
 
 **Why flat pads aren't enough:** picked from above, the fingers close across the handle's width. The spoon's weight,
 about 100 mm out from the grasp, then tries to turn it about the closing axis. Flat pads resist that only by friction.
 At a 20 N grip that's about 0.04 N·m, far below what a heavy spoon needs, so it tips.
 
-**What these fingers do instead:** they hold it by **form closure**.
-- Each fingertip has a **slot** that takes the handle's edge: 8.4 mm high for the 7.7 mm handle, 4.5 mm deep,
-  round-bottomed like the edge, with lead-in chamfers.
-- The slot is lined with 1.2 mm of TPU, one piece with the soft gripping face above it.
-- When the spoon tries to tip, the handle bears on the slot's lips across the whole 31 mm width of the wide,
-  square-ended jaw. The moment is carried by the lips, not by friction.
+**What these fingers do instead:** they hold it by **form closure**. Each fingertip has a TPU-lined **V-groove**
+that takes the handle's edge. When the spoon tries to tip, the handle bears on the groove's flanks across the whole
+40 mm width of the jaw. The flanks carry the moment, not friction.
 
-<p align="center"><img src="docs/img/spoon_slots.png" alt="Looking down the handle: its rounded edges seated in the two slots, wrapped by the black TPU liners" width="560"></p>
-<p align="center"><img src="docs/img/spoon_finger.png" alt="Side view of a spoon finger: OpenArm's base, the wide jaw, the soft face and the slot at the tip" width="700"></p>
+- **Self-centring:** the groove is 90°, 7 mm deep and 14 mm tall at its mouth. As the fingers close, a handle that
+  arrives off-centre slides down the flanks into place:
+
+  | Handle | Off-centre it still catches | Seats this deep |
+  |---|---|---|
+  | 7.7 mm (this spoon) | ±3.1 mm | 5.4 mm |
+  | 3 mm (a fork) | ±5.5 mm | 6.4 mm |
+  | 10 mm | ±2.0 mm | 4.9 mm |
+
+- **One groove for many handles:** a rounded edge of any thickness seats where it touches both flanks.
+- **Lining:** 1.2 mm of TPU 95A in the groove, one piece with the soft gripping face above it. Fine ribs across its
+  face stop the handle sliding along its length.
+- **Spatula lip:** below the groove the tip is 3.7 mm at the face, liner included, with a chamfered leading corner,
+  and it thickens towards its root. So it slides under a handle that's raised off the table.
+
+<p align="center"><img src="docs/img/spoon_slots.png" alt="Looking down the handle: its rounded edges seated in the two V-grooves, in the ribbed black TPU liners" width="560"></p>
+<p align="center"><img src="docs/img/spoon_finger.png" alt="Side view of a spoon finger: OpenArm's base, the wide jaw, the soft face, the V-groove and the spatula lip at the tip" width="700"></p>
 
 **Checked with the spoon's own model** (`cad/openarm_spoon.py --spoon <stl>`), held 200 mm along the handle, where it is
-38.5 mm wide (14.5 mm of the 44 mm finger stroke):
-- **Fit:** the handle sits in both slots, touching only the TPU liners, which it presses slightly. No hard part
-  touches it.
-- **Form closure:** tilting the spoon 3° either way about the closing axis drives it into the slot lips, so it can't
-  turn.
-- **Load:** a 0.5 kg spoon, with its centre of mass 108 mm from the grasp, puts 0.53 N·m on the grasp. The lips carry
-  that as ±17 N across the 31 mm width. That's about 1.5 MPa in the 3.5 mm PETG lip, far below its strength.
-- **Picking it up:** the lower lip at the tip is 4.7 mm thick, liner included. A spoon lying on a table rests on its
-  bowl and the end of its handle, so near the neck the handle is 10–18 mm clear of the table and the lip slides under
-  it.
+38.5 mm wide (13.6 mm of the 44 mm finger stroke):
+- **Fit:** the handle seats in both grooves, touching only the TPU liners. No hard part touches it.
+- **Form closure:** tilting it 3° either way about the closing axis drives it into the flanks, so it can't turn.
+- **Load:** a 0.5 kg spoon, with its centre of mass 108 mm from the grasp, puts 0.53 N·m on the grasp. The flanks
+  carry that as ±13 N across the 40 mm width.
+- **A 3 mm × 25 mm fork handle:** it seats the same way, at 5.9 mm of stroke, touching only the liners, and a 3° tilt
+  is blocked too.
+- **Picking it up:** a spoon lying on a table rests on its bowl and the end of its handle, so near the neck the handle
+  is 10–18 mm clear of the table and the lip slides under it.
 - **Strength and clearance:** every section of the hard part has at least 2.2× what a 100 N knock at the tip needs.
-  Over the whole stroke the fingers never touch each other.
+  Over the whole stroke the fingers never touch each other, and fully closed the soft faces are 0.2 mm apart.
 
 | File | Material | Per gripper |
 |---|---|---|
 | `hardware/spoon/STL/spoon_finger_left.stl`, `spoon_finger_right.stl` | PETG | 1 + 1 |
 | `hardware/spoon/STL/spoon_tpu_left.stl`, `spoon_tpu_right.stl` | TPU 95A | 1 + 1 |
 
-They fit OpenArm the same way as the fingers above, with the same base and screws.
+They fit OpenArm the same way as the fingers above, with the same base and screws. Still to prove on hardware: the
+real grip force of OpenArm's gripper, the spoon's real mass, and the grasp wet as well as dry.
 
 ## Files
 
