@@ -1,9 +1,9 @@
 """OpenArm hard-shell fingers: printed fingers for OpenArm v1's parallel gripper, in place of its stock fingers.
 
 Each finger is one hard part and one soft part sharing one outer surface, so the finger reads as one seamless form:
-  * the base is OpenArm v1's own finger base (measured from its description): the 5.2 mm mounting plate with its
-    four M2.5 holes (counterbored on the finger side) and the keying features behind it (centre block, two prongs,
-    rib and the round boss), so it fits the carriage exactly as the stock finger does;
+  * the base is OpenArm v1's own printed finger base (measured from its description, the printed body only): the
+    5.2 mm mounting plate with its four M2.5 holes (counterbored on the finger side), the rib and the round boss
+    behind it, so it fits the carriage exactly as the stock finger does;
   * from the plate to midway (x = 35) the finger follows the stock finger's own sections, then a smooth loft carries
     it into the jaw, drawn in the PG Chopstick's language: flat facets; in plan, straight sides chamfered to a point;
     in side view, a flat gripping edge and a straight back breaking into a chisel nose; three big scallops along the
@@ -36,8 +36,8 @@ IMG = HERE.parent / "docs" / "img"
 PLATE = dict(x=(1.4, 6.6), y=(-30.5, 30.5), z=(30.2, 60.2), r=2.0)
 HOLES = [(7.5, 40.2), (-7.5, 40.2), (7.5, 50.2), (-7.5, 50.2)]     # (y, z), M2.5
 HOLE_D, CBORE = 3.0, (4.8, 1.6)                                    # through; counterbore (dia, depth) from the front
-CENTRE = dict(x=(-2.9, 1.5), y=(-10.0, 10.0))                      # behind the plate, full plate height
-PRONGS = dict(x=(-6.2, -2.8), y=(4.0, 10.0), chamfer=1.0)          # two, mirrored in y
+# (the 20 x 30 x 11 mm block behind the plate in OpenArm's finger model is the gripper's carriage, a separate metal
+# part, not the printed finger: it is left out)
 RIB = dict(x=(-6.2, 1.5), y=(10.1, 15.1))
 BOSS = dict(yz=(-18.1, 45.2), small=(8.0, (-7.4, -3.8)), big=(13.6, (-3.9, 1.5)), hole=4.2)
 # --- the finger: sections (x, y_min, y_max, z_face, z_back); up to x = 35 they are the stock finger's -------------------
@@ -79,16 +79,10 @@ def _section(x, y0, y1, z0, z1, r=SECTION_R):
 
 
 def base():
-    """OpenArm v1's finger base: the plate (holes added later) and the keying features behind it."""
+    """OpenArm v1's printed finger base: the plate (holes added later), the rib and the round boss behind it."""
     (x0, x1), (y0, y1), (z0, z1) = PLATE["x"], PLATE["y"], PLATE["z"]
     zc, h = (z0 + z1) / 2, z1 - z0
     b = fillet((Pos((x0 + x1) / 2, (y0 + y1) / 2, zc) * Box(x1 - x0, y1 - y0, h)).edges().filter_by(Axis.X), PLATE["r"])
-    (a0, a1), (c0, c1) = CENTRE["x"], CENTRE["y"]
-    b += Pos((a0 + a1) / 2, (c0 + c1) / 2, zc) * Box(a1 - a0, c1 - c0, h)
-    (p0, p1), (q0, q1) = PRONGS["x"], PRONGS["y"]
-    for s in (1, -1):
-        pr = Pos((p0 + p1) / 2, s * (q0 + q1) / 2, zc) * Box(p1 - p0 + 0.1, q1 - q0, h)
-        b += pr
     (r0, r1), (t0, t1) = RIB["x"], RIB["y"]
     b += Pos((r0 + r1) / 2, (t0 + t1) / 2, zc) * Box(r1 - r0, t1 - t0, h)
     by, bz = BOSS["yz"]

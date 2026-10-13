@@ -1,6 +1,7 @@
 # Notice
 
-- **The base** (the mounting plate, its four M2.5 holes and the keying features behind it), and the finger's sections
+- **The base** (the mounting plate, its four M2.5 holes, the rib and the round boss behind it: the printed finger
+  only, not the gripper's carriage block), and the finger's sections
   up to x = 35 mm, are re-modelled from the dimensions of OpenArm v1's own finger in its robot description, so they
   fit the carriage as the stock finger does. OpenArm's description is not redistributed here; see the OpenArm
   project for its licence.
