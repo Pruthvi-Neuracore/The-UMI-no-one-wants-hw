@@ -1,7 +1,7 @@
 """Bending check of the hard part along the finger: section modulus Z = I / c of each cross-section, in the closing
 direction (z) and across (y), against a crash load at the fingertip.
 
-    python check_strength.py [STL] [--load 100] [--sf 1.5] [--stress 45]
+    python check_strength.py [STL] [--load 200] [--sf 1.5] [--stress 45]
 
 Requirement at x: Z >= load * (tip - x) * sf / stress (PETG, along the layers, about 45 MPa).
 """
@@ -36,7 +36,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stl", nargs="?", default=str(Path(__file__).resolve().parents[1] /
                                                   "hardware/STL/hardshell_finger_left.stl"))
-    ap.add_argument("--load", type=float, default=100.0, help="N at the fingertip")
+    ap.add_argument("--load", type=float, default=200.0, help="N at the fingertip")
     ap.add_argument("--sf", type=float, default=1.5)
     ap.add_argument("--stress", type=float, default=45.0, help="MPa")
     a = ap.parse_args()

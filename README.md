@@ -23,8 +23,8 @@ fingers are.
 - **Base: OpenArm's own.** It's re-modelled from OpenArm v1's finger: the mounting plate with its four M2.5 holes, and
   the keying features behind it (centre block, two prongs, rib and the round boss). So it fits the carriage exactly
   as the stock finger does.
-- **Flow:** up to midway (35 mm), the finger follows the stock finger's own sections. A smooth loft then carries it into
-  the jaw.
+- **Flow:** near the base the finger follows the stock finger's own sections, thickening sooner from x = 17 mm for
+  strength. A smooth loft then carries it into the jaw.
 - **Jaw, in the PG Chopstick's design language:**
   - flat facets and lightly rounded long edges;
   - in plan, straight sides that chamfer to a point;
@@ -41,13 +41,13 @@ fingers are.
 
 ## Strength and weight
 
-`cad/check_strength.py` slices the hard part every 5 mm and checks its bending strength against **a 100 N knock at the
-fingertip**, with a 1.5 safety factor on PETG's ~45 MPa:
-- Every section passes, with at least 1.3× what's needed.
-- The tightest is just behind the chisel tip, where the bending is smallest.
-- A normal grasp is a few tens of newtons.
+`cad/check_strength.py` slices the hard part every 5 mm and checks its bending strength against **a 200 N load at the
+fingertip**, with a 1.5 safety factor on PETG's ~45 MPa. Every section passes, with at least **1.9×** what's needed.
 
-The hard part is 56 cm³ (about 70 g in PETG) and the soft part 8 cm³.
+The stock finger is only about 12 mm deep partway along. It is 77 mm long; this one is longer, and sized for that tip
+load. So past x = 17 mm the finger thickens towards the gripping side sooner than the stock one.
+
+The hard part is 63 cm³ (about 79 g in PETG) and the soft part 8 cm³.
 
 ## The screws
 
@@ -121,7 +121,7 @@ that takes the handle's edge. When the spoon tries to tip, the handle bears on t
   is blocked too.
 - **Picking it up:** a spoon lying on a table rests on its bowl and the end of its handle, so near the neck the handle
   is 10–18 mm clear of the table and the lip slides under it.
-- **Strength and clearance:** every section of the hard part has at least 2.2× what a 100 N knock at the tip needs.
+- **Strength and clearance:** every section of the hard part has at least 2.1× what a 200 N load at the tip needs.
   Over the whole stroke the fingers never touch each other, and fully closed the soft faces are 0.2 mm apart.
 
 | File | Material | Per gripper |

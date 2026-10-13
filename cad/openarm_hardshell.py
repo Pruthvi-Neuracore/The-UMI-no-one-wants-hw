@@ -42,18 +42,20 @@ RIB = dict(x=(-6.2, 1.5), y=(10.1, 15.1))
 BOSS = dict(yz=(-18.1, 45.2), small=(8.0, (-7.4, -3.8)), big=(13.6, (-3.9, 1.5)), hole=4.2)
 # --- the finger: sections (x, y_min, y_max, z_face, z_back); up to x = 35 they are the stock finger's -------------------
 STOCK = [(6.4, -30.2, 30.2, 42.3, 59.2), (11, -26.3, 26.7, 41.8, 57.6), (17, -22.1, 24.3, 41.0, 55.4),
-         (23, -19.0, 23.3, 40.3, 53.3), (29, -16.9, 21.7, 39.4, 51.1), (35, -15.6, 19.2, 38.4, 48.9)]
+         # past x = 17 the finger thickens towards the gripping side sooner than the stock one (this finger is longer,
+         # and sized for a 200 N tip load): the stock finger is 77 mm long and only ~12 mm deep here
+         (23, -19.0, 23.3, 39.0, 53.6), (29, -17.2, 21.7, 36.6, 52.2), (35, -16.2, 19.6, 34.4, 50.6)]
 GRIP_Z = 24.8              # the soft face: the pads close to a fraction of a millimetre apart
-FLOW = [(46, -15.0, 15.0, 31.0, 46.5), (57, -14.6, 14.6, GRIP_Z, 45.0)]   # from the stock sections into the jaw
+FLOW = [(46, -15.2, 15.2, 29.5, 47.6), (57, -14.8, 14.8, GRIP_Z, 45.8)]   # from the stock sections into the jaw
 SECTION_R = 4.0
 # the distal jaw, in the PG Chopstick's language: flat facets, a pointed (hexagonal) plan, a chisel nose, big scallops
 JAW_X0 = 53.0              # it starts inside the flow's last section
-JAW_SIDE = [(JAW_X0, 45.2), (96.0, 41.5), (120.0, None)]  # back line (x, z); the chisel runs from (96, 41.5) to the tip
+JAW_SIDE = [(JAW_X0, 46.0), (103.0, 43.0), (120.0, None)]  # back line (x, z); the chisel runs from (103, 43) to the tip
 JAW_PLAN = [(JAW_X0, 14.8), (94.0, 13.5), (120.0, 3.5)]   # half-width (x, y): straight sides, then the point
 JAW_EDGE_R = 1.2
 SCALLOPS = [(66.0, 7.5, 2.6), (83.0, 7.5, 2.6), (99.0, 6.0, 2.0)]   # (x, radius, depth) along the gripping edge
 SOFT_X = (59.0, 120.0 - 1.5)   # the soft part's length (the last 1.5 mm is the hard tip)
-SPLIT = [(59.0, 8.0), (92.0, 7.0), (108.0, 3.0), (118.5, 0.9)]   # the parting line above the soft face, along x:
+SPLIT = [(59.0, 8.0), (92.0, 6.5), (108.0, 2.2), (118.5, 0.6)]   # the parting line above the soft face, along x:
                                                                 # it falls with the chisel so the hard spine stays
                                                                 # whole all the way into the hard tip
 TIP_T, TIP_BACK = 1.5, 0.6

@@ -46,7 +46,7 @@ LIP = 2.5                  # the spatula lip at the tip, at the face (it thicken
 TIP_CHAMFER = 1.2          # the lip's leading corner, chamfered so it slides under a raised handle
 JAW_HALF = 20.0            # 40 mm wide: more lever against tipping
 JAW_X0, JAW_X1 = 53.0, 70.0  # the jaw widens from the flow's width to JAW_HALF over this length
-JAW_BACK = (45.2, 40.0)    # the back's height at JAW_X0 and at the tip
+JAW_BACK = (45.8, 41.0)    # the back's height at JAW_X0 and at the tip
 SOFT_X0 = 60.0
 SOFT_T = 5.0               # the soft face's thickness above the groove
 
@@ -104,7 +104,7 @@ def jaw():
 
 def build():
     """(hard, soft)."""
-    flow = loft([H._section(*s) for s in H.STOCK + [(46, -15.0, 15.0, 31.0, 46.5), (57, -15.2, 15.2, FACE_Z, 45.0)]])
+    flow = loft([H._section(*s) for s in H.STOCK + [(46, -15.2, 15.2, 29.5, 47.6), (57, -15.2, 15.2, FACE_Z, 45.8)]])
     body = flow + jaw()
     xc, mouth, tip = groove_x()
     # the soft part: the liner in the V and the face above it, one piece; ribs in the liner's face
