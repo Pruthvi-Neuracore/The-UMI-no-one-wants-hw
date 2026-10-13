@@ -46,7 +46,7 @@ M3 = (3.4, 6.2, 3.0)       # clearance, counterbore dia, counterbore depth
 MOUNT_X = -19.0            # the mount's centre on the arm
 # the D435 mount
 D435 = (90.0, 25.0, 25.0)  # width, depth, height
-TILT = 20.0                # the seat's tilt down (deg)
+TILT = 45.0                # the seat's tilt down (deg): the camera looks 45 deg down
 FIT = 0.4
 SEAT_T, WALL_T, WALL_H, LIP = 4.0, 4.0, 18.0, (2.5, 3.0)
 REAR_M3 = (45.0, 12.5)     # the D435's rear M3 holes: spacing, height above its bottom face

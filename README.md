@@ -260,7 +260,7 @@ the root. One broad side is flat, and the other is opened into ribbed cells.
 
 ## Chest camera: a D435 mast on OpenArm's core
 
-<p align="center"><img src="docs/img/chest_camera.png" alt="The chest camera mast bolted to OpenArm's 60 x 60 core, with a D435 on its arm, tilted down" width="420"></p>
+<p align="center"><img src="docs/img/chest_camera.png" alt="The chest camera mast bolted to OpenArm's 60 x 60 core, with a D435 on its arm, looking 45° down" width="420"></p>
 
 `hardware/chest_camera/` raises the chest camera on a mast for a wider view. It's two printed parts.
 
@@ -275,7 +275,7 @@ OpenArm's core:
 
 **`d435_mount`** (separate file) carries a RealSense D435 on top of the arm:
 - **Base:** it sits on the arm, held by 4× M3 screws from below into M3 heat-set inserts in its base.
-- **Seat:** the seat is tilted 20° down (`TILT` in the generator). A rear wall takes the D435's two rear M3 holes,
+- **Seat:** the seat is tilted 45° down (`TILT` in the generator), so the camera looks forward and down. A rear wall takes the D435's two rear M3 holes,
   45 mm apart, and a low front lip stops the camera sliding forward.
 
 <p align="center"><img src="docs/img/d435_mount.png" alt="The D435 mount: the tilted seat, the rear wall with its two M3 holes, the front lip" width="460"></p>
