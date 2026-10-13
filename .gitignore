@@ -4,3 +4,7 @@ __pycache__/
 *.FCStd1
 *~
 .DS_Store
+build/
+# Meta-owned reference models used only for renders (see each source/*/README.md)
+**/cad/*/source/hand/*.glb
+**/cad/*/source/quest/*.stl
