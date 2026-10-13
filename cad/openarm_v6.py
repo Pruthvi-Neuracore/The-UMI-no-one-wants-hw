@@ -1,15 +1,15 @@
 """OpenArm V6 fingers: the "fine tip" flat finger (fine_tip_flange_left/right.stp) on OpenArm v1's printed finger base,
 one plain printed part per finger.
 
-The fine-tip finger is a flat triangle, 78 mm long, its straight edge the gripping face (49 x 33.6 mm at the root),
-its curved back opened into ribbed cells, on a 3.5 mm flange with slotted holes for its own carriage. Here:
-  * its flange is cut off (everything below the cells' floor) and the finger stands on OpenArm's base instead: the
-    plate, its four M2.5 holes and the rib, the plate carried down to the gripping face (one plane with it, as V5's)
-    and out under the whole finger root, so the cells have a floor;
-  * its gripping edge is the gripping face (GRIP_Z, the fingers close 0.2 mm apart);
-  * across the finger it sits SHIFT off the plate's centre, so OpenArm's four screw heads land in the cells (clear of
-    the web through the middle of the finger); where the rib between the cells crosses the upper two heads, a
-    key slot (KEY) is cut through it.
+The fine-tip finger is a flat triangle, 78 mm long and 49 mm wide at the root: one broad side is flat (the gripping
+face), the other opened into ribbed cells, on a 3.5 mm flange with slotted holes for its own carriage. Here:
+  * its flat side faces the other finger: it is the gripping face, levelled (it leans ~3 deg in the source) so it runs
+    along the approach, at GRIP_Z (the fingers close 0.2 mm apart);
+  * its flange is cut off (everything below the cells' floor) and the finger, centred, stands on OpenArm's base
+    instead: the plate, its four M2.5 holes and the rib, the plate carried down to the gripping face (one plane with
+    it, as V5's), so the cells have a floor;
+  * OpenArm's four screw heads land in the root cells on the back; key slots (KEY) through the cross wall let a
+    straight hex key reach the lower two.
 
 Finger frame as in openarm_hardshell.py (x along the finger, y across it, z through it, the gripping face at low z).
 The source STEP files are read from cad/source/fine_tip/ (or --src).
@@ -29,32 +29,47 @@ SRC = Path(__file__).resolve().parent / "source" / "fine_tip"
 GRIP_Z = 24.8              # the gripping face: 0.2 mm apart when closed, as the other fingers
 FLANGE_Y = 3.5             # in the source frame: the flange is y < 3.5 (the cells' floor); the finger starts there
 WIDTH_X = 24.5             # in the source frame: the gripping edge is the plane x = -24.5
-SHIFT = 15.2               # source z of the finger frame's y = 0: the lower screw heads' row in the lower cells
-KEY = (5.0, 26.0)          # key slots through the rib over the upper screw heads: (diameter, length from the plate)
+SINK = 2.5                 # the finger's root sunk into the mounting plate (5.2 mm thick)
+TILT_DEG = None            # the flat side's lean to the finger's length (measured from the source when None)
+KEY = (5.0, 26.0)          # key slots along the screws, through the cells' cross wall: (diameter, length from the plate)
 
 
 def fine_tip(src):
-    """The fine-tip finger without its flange, in the finger frame: source y -> x (along), z -> y (across),
-    x -> z (through, the gripping edge at GRIP_Z)."""
-    s = import_step(str(Path(src) / "fine_tip_flange_left.stp"))
+    """The fine-tip finger without its flange, in the finger frame: source y -> x (along), -x -> y (across),
+    z -> z (through; the flat side, source -z, levelled at GRIP_Z)."""
+    import math
+    import numpy as np
+    import trimesh
+    path = Path(src) / "fine_tip_flange_left.stp"
+    s = import_step(str(path))
+    m = trimesh.Trimesh(*[np.array(q) for q in (lambda vf: ([(p.X, p.Y, p.Z) for p in vf[0]], vf[1]))(
+        s.tessellate(0.05, 0.2))])
+    n, area = m.face_normals, m.area_faces
+    flat = (n[:, 2] < -0.95) & (m.triangles_center[:, 1] > 26.0)      # the flat side, past the root pockets
+    nf = (n[flat] * area[flat][:, None]).sum(0)
+    tilt = TILT_DEG if TILT_DEG is not None else math.degrees(math.atan2(nf[1], -nf[2]))
     s = s & (Pos(0, FLANGE_Y + 100, 0) * Box(400, 200, 400))
-    x1 = H.PLATE["x"][1]
-    loc = Plane(origin=(x1 - FLANGE_Y, -SHIFT, GRIP_Z + WIDTH_X), x_dir=(0, 0, 1), z_dir=(0, 1, 0)).location
-    return loc * s
+    s = Plane(origin=(0, 0, 0), x_dir=(0, -1, 0), z_dir=(0, 0, 1)).location * s   # y -> x, x -> -y, z -> z
+    s = Rot(0, tilt, 0) * s
+    bb = s.bounding_box()
+    # the root, cut square in the source, leans by the levelling: sink it into the plate so it fuses all along
+    s = Pos(H.PLATE["x"][1] - SINK - bb.min.X, -(bb.min.Y + bb.max.Y) / 2, GRIP_Z - bb.min.Z) * s
+    return s, tilt
 
 
 def base_to_finger(finger):
-    """OpenArm's plate carried down to the gripping face and out under the finger's root, so the cells have a floor."""
+    """OpenArm's plate carried down to the gripping face (and out under the finger's root, were it wider)."""
     (x0, x1), (y0, y1), (z0, z1) = H.PLATE["x"], H.PLATE["y"], H.PLATE["z"]
     root = (finger & (Pos(x1 + 0.5, 0, 0) * Box(1.0, 400, 400))).bounding_box()
     ya, yb = min(y0, root.min.Y), max(y1, root.max.Y)
-    za, zb = GRIP_Z, max(z1, root.max.Z)
+    za, zb = GRIP_Z, max(z1, root.max.Z)          # (the finger's root fits the stock plate: this is the plate, lowered)
     b = Pos((x0 + x1) / 2, (ya + yb) / 2, (za + zb) / 2) * Box(x1 - x0, yb - ya, zb - za)
     return fillet(b.edges().filter_by(Axis.X), H.PLATE["r"])
 
 
 def build(src):
-    finger = fine_tip(src)
+    finger, tilt = fine_tip(src)
+    print(f"fine-tip finger: flat side levelled by {tilt:.1f} deg")
     v6 = H.base() + base_to_finger(finger) + finger
     (x0, x1) = H.PLATE["x"]
     for y, z in H.HOLES:

@@ -233,24 +233,25 @@ per finger, left and right, on OpenArm's printed finger base.
 
 ## V6: the fine-tip flat finger on OpenArm's base
 
-<p align="center"><img src="docs/img/v6_open.png" alt="V6: two fine-tip flat fingers, their straight gripping edges facing each other, on OpenArm's link7" width="560"></p>
+<p align="center"><img src="docs/img/v6_open.png" alt="V6: two fine-tip flat fingers, their flat sides facing each other, on OpenArm's link7" width="560"></p>
 
 `hardware/v6/` is the "fine tip" flat finger from `fine_tip_flange_left/right.stp` on OpenArm's printed finger base.
-It's one plain printed part per finger, left and right. The finger is a flat triangle, 78 mm long, with ribbed cells
-on its back and a straight edge (49 × 33.6 mm at the root) that does the gripping.
+It's one plain printed part per finger, left and right. The finger is a flat triangle, 78 mm long and 49 mm wide at
+the root. One broad side is flat, and the other is opened into ribbed cells.
 
-- **Base swapped:** its own 3.5 mm flange and slotted holes are cut off. It stands on OpenArm's base instead (the plate,
-  its four M2.5 holes and the rib). The plate runs down flush with the gripping face, as on V5, and out under the
-  whole finger root, so the cells have a floor.
-- **Screws:** the finger sits 1.6 mm off the plate's centre, so OpenArm's four screw heads land inside its cells,
-  clear of the web through its middle. Where the rib between the cells crosses the upper two heads, a 5 mm key slot
-  is cut through it.
-- **Closing:** the fingers close flat on each other, 0.2 mm apart, and clear link7 by at least 3.8 mm.
-- **Strength:** about 180 N at the tip with a 1.5 safety factor (0.9× the 200 N target). The weakest point is the
-  slim tip.
-- **Weight:** each finger is 40.2 cm³ (about 51 g in PETG).
+- **Flat side in:** the flat side faces the other finger and is the gripping face. The source leans it by 3.3°;
+  here it's levelled, so the fingers close flat on each other, 0.2 mm apart. Two shallow pockets at its root stay
+  as they are.
+- **Base swapped:** its own 3.5 mm flange and slotted holes are cut off. The finger is centred on OpenArm's base
+  instead: the plate, its four M2.5 holes and the rib. As on V5, the plate runs down flush with the gripping face.
+- **Screws:** OpenArm's four screw heads land in the root cells on the back. Key slots through the cells' cross wall
+  let a straight hex key reach the lower two.
+- **Clearance:** the fingers clear link7 by at least 3.8 mm.
+- **Strength:** about 160 N at the tip with a 1.5 safety factor (0.8× the 200 N target). The weakest point is the
+  slim tip, which is kept as designed.
+- **Weight:** each finger is 34.5 cm³ (about 44 g in PETG).
 
-<p align="center"><img src="docs/img/v6_finger.png" alt="One V6 finger: the fine-tip blade on OpenArm's base, the screw heads in its cells" width="520"></p>
+<p align="center"><img src="docs/img/v6_finger.png" alt="One V6 finger from the back: the ribbed cells, the screw heads at their floor, the key slots through the cross wall" width="520"></p>
 
 | File | Material | Per gripper |
 |---|---|---|
