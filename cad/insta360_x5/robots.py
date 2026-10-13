@@ -33,9 +33,11 @@ ROBOTS = {
                      view=(1.6, -0.75, 0.8)),
     "fanuc_crx": dict(urdf="example_fanuc/fanuc_decription/crx5ia/arm.urdf", dual=False, elbow="J3_link",
                       bases={"left": (0.0, -0.45, 0.0), "right": (0.0, 0.45, 0.0)}, mirror=(-1, 1, 1, -1, 1, -1),
+                      mirror_exact=True,                   # bases and targets are symmetric: the right arm mirrors
                       tcp={"left": (0.58, -0.17, 0.22), "right": (0.58, 0.17, 0.22)}, approach=(0.6, 0.0, -0.8),
                       seed={"J2": 0.3, "J3": -0.3, "J5": -1.2},
-                      view=(1.6, -0.75, 0.8)),
+                      flange_axis=(1.0, 0.0, 0.0),        # the faceplate normal is the flange frame's +X (J6's axis)
+                      view=(1.6, -0.12, 0.6)),
 }
 TCP_FROM_FLANGE = 0.016 + 0.2047          # ISO plate thickness + gripper-frame TCP x (m)
 STOCK_GRIPPER = ("robotiq", "hande", "finger", "knuckle", "coupler", "eef", "pad", "arg2f")
@@ -97,6 +99,8 @@ def link_meshes(r, root_dir, T_scene=np.eye(4), keep=None):
 def approach_in_flange(arm):
     """The tool approach direction in the flange frame: from the flange towards tool0, or, where tool0 sits on the
     flange, tool0's own +Z (the ROS-Industrial tool0 convention)."""
+    if getattr(arm, "flange_axis", None) is not None:
+        return np.asarray(arm.flange_axis, float)
     F, t = arm.link("flange"), arm.link("tool0")
     a = t[:3, 3] - F[:3, 3]
     a = t[:3, 2].copy() if np.linalg.norm(a) < 1e-6 else a / np.linalg.norm(a)
@@ -163,8 +167,15 @@ def render(root, name, spec, parts):
         arms = {s: Arm(yourdfpy.URDF.load(str(path), build_scene_graph=True, load_meshes=False), "",
                        trimesh.transformations.translation_matrix(spec["bases"][s])) for s in ("left", "right")}
         models = [(a.r, a.T) for a in arms.values()]
+    for a in arms.values():
+        a.flange_axis = spec.get("flange_axis")
     q_left, a_f = None, {}
     for side in ("left", "right"):
+        if side == "right" and spec.get("mirror_exact"):
+            q = np.array(spec["mirror"]) * q_left
+            arms[side].r.update_cfg(dict(zip(arms[side].joints(), q)))
+            a_f[side] = approach_in_flange(arms[side])
+            continue
         start = np.array(spec["mirror"]) * q_left if side == "right" and spec.get("mirror") else None
         q, err, a_f[side] = solve(arms[side], np.array(spec["tcp"][side]), spec["approach"], spec["seed"],
                                   spec["elbow"], start)

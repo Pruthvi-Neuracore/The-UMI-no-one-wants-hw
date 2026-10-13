@@ -2,7 +2,10 @@
 
     python package.py
 
-For the chopstick and hand families of this kit, assembly/<kit>/<family>/ gets:
+Folders and file names: the chopstick family is Chop-UMI (chop-umi/, chop-umi_<build>.*), the parallel family is
+Para-UMI (para-umi/, para-umi_right_<tips>.*), the hand family is hand/.
+
+For the chopstick and hand families of this kit, assembly/<kit>/<folder>/ gets:
   STEP/, STL/   every printed part any of the family's builds uses (handheld and robot), plus dot inlays
   assembly/     <build>.glb and <build>.stl for each build
   urdf/         pg_<build>.urdf for each build, with only the meshes they use
@@ -22,13 +25,23 @@ IMAGES = {
     "chopstick": ["hero", "opening", "pair", "sleeve", "kit", "openarm_bimanual", "robot_ur5", "robot_fanuc_crx",
                   "robot_abb_gofa", "parts", "plates", "pod"],
     "parallel": ["parallel", "parallel_back", "parallel_opening", "parallel_parts", "camera_mount",
-                 "tips_agilex-piper", "tips_robotiq-hand-e", "tips_open-enpire"],
-    "hand": ["hand", "hand_robot", "pod", "parts"],
+                 "tips_agilex-piper", "tips_robotiq-hand-e", "tips_open-enpire",
+                 "robot_camera_hande", "robot_camera_piper", "robot_camera_openarm"],
+    "hand": ["hand", "hand_palm", "hand_robot", "pod", "parts"],
 }
+FOLDER = {"chopstick": "chop-umi", "parallel": "para-umi", "hand": "hand"}
 
 
-# parts a family needs that aren't in its builds: the wrist saddle for a robot hand's forearm (hand_robot.png)
-EXTRA = {"insta360_x5": {"hand": ["pg_wrist_saddle_robot"]}, "d405": {"hand": ["ebox_wrist_saddle_robot"]}}
+def public(name):
+    """A build's file name in the repository: chopstick_* -> chop-umi_*, *parallel* -> para-umi."""
+    name = re.sub(r"^(pg_)?chopstick", lambda m: (m.group(1) or "") + "chop-umi", name)
+    return re.sub(r"^(x5|d405)_parallel", "para-umi", name)
+
+
+# parts a family needs that aren't in its builds: the wrist saddle for a robot hand's forearm (hand_robot.png), the
+# palm button (on the thumb strap, not rigid to the head) and the left hand's Quest mount
+EXTRA = {"insta360_x5": {"hand": ["pg_wrist_saddle_robot", "palm_button"]},
+         "d405": {"hand": ["ebox_wrist_saddle_robot", "palm_button", "quest_arm_left", "quest_support_left"]}}
 
 
 def part_files(name):
@@ -49,7 +62,9 @@ def package_t_gripper(dest):
             shutil.rmtree(dest / sub)
     for sub in ("STEP", "STL"):
         shutil.copytree(src / "hardware" / sub, dest / sub)
-    shutil.copytree(src / "assembly", dest / "assembly")
+    (dest / "assembly").mkdir()
+    for f in sorted((src / "assembly").iterdir()):
+        shutil.copy2(f, dest / "assembly" / public(f.name))
     (dest / "img").mkdir()
     for img in IMAGES["parallel"]:
         f = ROOT / "docs" / "img" / f"{img}.png"
@@ -58,11 +73,11 @@ def package_t_gripper(dest):
     for f in sorted((HERE / "handumi" / "docs" / "img").glob("*.png")):
         shutil.copy2(f, dest / "img" / f.name)
     n = sum(1 for _ in dest.rglob("*") if _.is_file())
-    print(f"{KIT}/parallel: HandUMI T-plate gripper, {n} files")
+    print(f"{KIT}/{FOLDER['parallel']}: HandUMI T-plate gripper, {n} files")
 
 
 def package(fam):
-    dest = DEST / fam
+    dest = DEST / FOLDER[fam]
     if fam == "parallel":
         return package_t_gripper(dest)
     builds = [b for b in BUILDS if family(b) == fam]
@@ -80,10 +95,10 @@ def package(fam):
         for ext in ("glb", "stl"):
             src = ROOT / "assemblies" / f"{b}.{ext}"
             if src.exists():
-                shutil.copy2(src, dest / "assembly" / src.name)
+                shutil.copy2(src, dest / "assembly" / public(src.name))
         urdf = ROOT / "urdf" / f"pg_{b}.urdf"
         if urdf.exists():
-            shutil.copy2(urdf, dest / "urdf" / urdf.name)
+            shutil.copy2(urdf, dest / "urdf" / public(urdf.name))
             (dest / "urdf" / "meshes").mkdir(exist_ok=True)
             for m in re.findall(r'filename="meshes/([^"]+)"', urdf.read_text()):
                 shutil.copy2(ROOT / "urdf" / "meshes" / m, dest / "urdf" / "meshes" / m)
@@ -91,7 +106,7 @@ def package(fam):
         src = ROOT / "docs" / "img" / f"{img}.png"
         if src.exists():
             shutil.copy2(src, dest / "img" / src.name)
-    print(f"{KIT}/{fam}: {len(builds)} builds, {len(names)} parts ({copied} files)")
+    print(f"{KIT}/{FOLDER[fam]}: {len(builds)} builds, {len(names)} parts ({copied} files)")
 
 
 def main():
