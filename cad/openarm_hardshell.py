@@ -129,6 +129,26 @@ def _rim(m):
     return grid, np.array([f + (TIP_BACK if x > xe - 0.5 else PROUD) for x, f in zip(grid, face)])
 
 
+SPINE_HALF = (13.0, 0.0)   # the spine's half-width at the base end and the tip (never less than the grown soft part)
+SPINE_BACK = (52.0, 3.0)   # its back: z at the base end, and how far behind the soft part's back at the tip
+
+
+def _spine(p, x, m):
+    """One section of the hard part: the soft part's section grown by SHELL_T, joined to a solid spine behind it
+    (tapering from the base to the tip), as one rounded convex outline. The soft part is cut out later, so the hard part
+    carries the load in a solid section rather than a thin skin."""
+    from shapely.geometry import box
+    x0, x1 = m.bounds[0][0], m.bounds[1][0]
+    t = (x - x0) / (x1 - x0)
+    g = p.buffer(SHELL_T, join_style=1)
+    y0, z0, y1, z1 = g.bounds
+    yc = (y0 + y1) / 2
+    half = max((y1 - y0) / 2, SPINE_HALF[0] + (SPINE_HALF[1] - SPINE_HALF[0]) * t)
+    back = max(z1, SPINE_BACK[0] + ((z1 + SPINE_BACK[1]) - SPINE_BACK[0]) * t)
+    spine = box(yc - half, z0, yc + half, back)
+    return g.union(spine).convex_hull.buffer(-2.0).buffer(2.0, join_style=1)
+
+
 def holder(soft):
     """The hard shell: every cross-section of the soft part grown by SHELL_T and lofted, closed at the base and over
     the tip (TIP_T past the soft part's end), the gripping side trimmed to the rim; and the solid base from the mount
@@ -136,7 +156,7 @@ def holder(soft):
     from build123d import Polyline, loft, make_face
     from shapely.geometry import Polygon
     m = _mesh(soft, 0.03)
-    grown = [(x, p.buffer(SHELL_T, join_style=1)) for x, p in _soft_sections(m)]
+    grown = [(x, _spine(p, x, m)) for x, p in _soft_sections(m)]
     xb, pb = grown[0]
     xe, pe = grown[-1]
     c = np.array(pe.centroid.coords[0])

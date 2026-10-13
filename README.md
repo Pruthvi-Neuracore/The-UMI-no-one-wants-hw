@@ -25,8 +25,9 @@ fingers are.
 
 - **Mount:** Open-ENPIRE's OpenArm mount, unchanged: a 5 mm plate with four M3 holes (with head seats) and the key
   rib behind it. It goes where the stock finger's base goes, with the same screws.
-- **Hard shell:** shaped exactly like the soft finger. Every cross-section of the pad is grown by 2.5 mm and lofted,
-  so the shell follows the pad's back and sides all the way along.
+- **Hard part:** shaped like the soft finger, with a solid spine behind it. Every cross-section of the pad is grown by
+  2.5 mm and joined to a solid spine behind the pad. The spine is at least 26 mm wide, and its back tapers from 52 mm
+  deep at the base to 3 mm behind the pad at the tip. These sections are lofted into one rounded body.
   - The pad's exact shape is cut into it, so the pad drops in and is glued along its back and sides.
   - The rim follows the pad's face, 1.5 mm behind it, so the whole soft face is free to grip.
   - Past the pad's end, a 1.5 mm **hard tip** closes over it, coming down to 0.6 mm behind the soft face, so the very
@@ -63,6 +64,21 @@ fingers are.
   here it's turned straight, so the two pads close flat on each other.
 - **Closing:** fully closed, the pads are 0.6 mm apart, so they can hold thin things. Fully open, they are about 89 mm
   apart.
+
+## Strength
+
+A thin skin round the pad would snap: open on the gripping side, it is weak in the very direction the finger closes.
+So the hard part carries the load in a solid section. `cad/check_strength.py` slices it every 5 mm and checks its
+bending strength (section modulus) against **a 100 N knock at the fingertip**, with a 1.5 safety factor on PETG's
+~45 MPa:
+
+| Where | Needed | Has (closing direction) |
+|---|---|---|
+| Base, where the finger leaves the plate | 357 mm³ | 965 mm³ |
+| Middle of the finger | 190 mm³ | 416 mm³ |
+| Near the tip | 73 mm³ | 370 mm³ |
+
+Every section has at least 2.5× what's needed (across the jaws, more still). A normal grasp is a few tens of newtons.
 
 ## The screws
 
