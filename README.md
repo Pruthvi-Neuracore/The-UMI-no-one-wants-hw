@@ -219,8 +219,10 @@ per finger, left and right, on OpenArm's printed finger base.
   outline. They're open to the back and run out through its slope. The two middle cells sit over the screw columns,
   with their floor just under the lower screw heads, so all four heads are open at the bottom of the cells and a hex
   key reaches them along the cell.
+- **Flush base:** the mounting plate is carried down to the gripping face, so the plate's end and the flat face
+  are one plane.
 - **Strength:** 1.7× what's needed for 200 N at the tip with a 1.5 safety factor.
-- **Weight:** each finger is 60.1 cm³ (about 76 g in PETG).
+- **Weight:** each finger is 61.6 cm³ (about 78 g in PETG).
 
 <p align="center"><img src="docs/img/v5_finger.png" alt="One V5 finger from the back: the four cells at the root, between the ribs" width="520"></p>
 

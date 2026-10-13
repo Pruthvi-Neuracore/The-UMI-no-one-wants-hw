@@ -8,7 +8,8 @@ parallel grippers, on OpenArm v1's printed finger base. One plain printed part p
     slope, separated by ribs (RIB_T) and closed by the side walls (WALL_T) that follow the outline. The two middle
     cells are over the screw columns: their floor is just under the lower screw heads, so all four heads are open at
     the bottom of the cells, and a hex key reaches them straight along the cell;
-  * base: OpenArm v1's printed finger base (openarm_hardshell.base(): the plate, its four M2.5 holes and the rib).
+  * base: OpenArm v1's printed finger base (openarm_hardshell.base(): the plate, its four M2.5 holes and the rib),
+    its plate carried down to the gripping face, so the plate's end and the flat gripping face are one plane.
 
 Finger frame as in openarm_hardshell.py (x along the finger, y across it, z through it, the gripping face at low z).
 
@@ -90,8 +91,16 @@ def cells():
     return inner & out
 
 
+def plate_to_face():
+    """The mounting plate carried down to the gripping face (the stock plate ends 5.4 mm above it)."""
+    (x0, x1), (y0, y1), (z0, _) = H.PLATE["x"], H.PLATE["y"], H.PLATE["z"]
+    h = z0 - GRIP_Z + 2.0 * H.PLATE["r"]
+    b = Pos((x0 + x1) / 2, (y0 + y1) / 2, GRIP_Z + h / 2) * Box(x1 - x0, y1 - y0, h)
+    return fillet(b.edges().filter_by(Axis.X), H.PLATE["r"])
+
+
 def build():
-    v5 = H.base() + (wedge() - cells())
+    v5 = H.base() + plate_to_face() + (wedge() - cells())
     (x0, x1) = H.PLATE["x"]
     for y, z in H.HOLES:
         v5 -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(H.HOLE_D / 2, x1 - x0 + 2)
