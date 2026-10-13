@@ -7,6 +7,9 @@
   project for its licence.
 - The rest of the finger, its split into hard and soft parts, the tongue and the hard tip are new. The jaw follows
   the PG Chopstick's design language (facets, chisel nose, scallops); no geometry is copied from it.
+- **V4's finger** is the ARX-X5 gripper tip from murobotics-ai/handumi-hw (`hardware/STL/gripper_tips/ARX-X5-2023/`),
+  Apache-2.0. It is vendored unmodified in `cad/source/arx_x5/`. In V4 its HandUMI flange plate is cut off, the
+  finger is turned and levelled by 6.5°, and it is fused onto OpenArm's base with screw access bores.
 - OpenArm's geometry, used for the checks and renders, comes from the OpenArm v1 description and is not
   redistributed here.
 

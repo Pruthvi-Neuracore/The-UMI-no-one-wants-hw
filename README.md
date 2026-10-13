@@ -178,6 +178,30 @@ Print the plates lying flat on their side: no supports, and the layers run along
 |---|---|---|
 | `hardware/v3/STL/v3_finger_left.stl`, `v3_finger_right.stl` | PLA or PETG | 1 + 1 |
 
+## V4: the ARX-X5 finger on OpenArm's base
+
+<p align="center"><img src="docs/img/v4_open.png" alt="V4: two flat, triangular ARX-X5 blade fingers on OpenArm's link7" width="560"></p>
+
+`hardware/v4/` puts **HandUMI's ARX-X5 gripper finger** (murobotics-ai/handumi-hw, `gripper_tips/ARX-X5-2023`,
+Apache-2.0) on OpenArm's printed finger base. It is one plain part per finger, left and right.
+
+- **What changed from the HandUMI tip:** HandUMI's flange plate is cut off. Its finger root is 61 mm across, the same
+  as OpenArm's plate, and is fused onto the base: the plate, its four M2.5 holes and the rib.
+- **Gripping face:** the finger's broad, flat face is turned towards the other finger and levelled by 6.5° so it runs
+  exactly along the approach. The fingers close flat on each other: 0.2 mm apart fully closed, about 88 mm fully open.
+- **Screws:** straight access bores run from the four screw heads along the finger's root.
+- **Strength:** it's a thin blade, as the ARX finger is, so it's lighter but less strong than the fingers above. It
+  carries about **120 N at the tip** with a 1.5 safety factor, or about 180 N before PETG yields. That's plenty for
+  grasping, but less margin for knocks. The weakest point is about 30 mm out from the base.
+- **Weight:** each finger is 23.6 cm³ (about 30 g in PETG).
+
+<p align="center"><img src="docs/img/v4_finger.png" alt="One V4 finger: the ARX-X5 blade on OpenArm's base, with the screw access in its root" width="700"></p>
+
+| File | Material | Per gripper |
+|---|---|---|
+| `hardware/v4/STL/v4_finger_left.stl`, `v4_finger_right.stl` | PETG (or PLA) | 1 + 1 |
+
+
 ## Files
 
 | Path | What |
@@ -189,6 +213,7 @@ Print the plates lying flat on their side: no supports, and the layers run along
 | `hardware/spoon/` | The spoon fingers' STEP and STL |
 | `cad/openarm_v2.py`, `hardware/v2/` | V2, the flat fingers: generator, STEP and STL |
 | `cad/openarm_v3.py`, `hardware/v3/` | V3, V1 in one material: generator, STEP and STL |
+| `cad/openarm_v4.py`, `hardware/v4/`, `cad/source/arx_x5/` | V4, the ARX-X5 finger on OpenArm's base: generator, STEP, STL, and the HandUMI tip it starts from |
 | `cad/openarm_base.py`, `hardware/base/` | The base on its own (mounting plate, four M2.5 holes with counterbores, rib), left and right, as a starting block for your own fingers |
 | `docs/img/` | Renders |
 
