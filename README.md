@@ -1,12 +1,15 @@
 # OpenArm hard-shell fingers
 
-<p align="center"><img src="docs/img/openarm_open.png" alt="Two fingers on OpenArm's link7, half open: yellow hard shells on Open-ENPIRE's mount, each wrapping a black soft part" width="560"></p>
+<p align="center"><img src="docs/img/openarm_open.png" alt="Two fingers on OpenArm's link7, half open: white hard holders on Open-ENPIRE's mount, each carrying the black PG Chopstick soft pad" width="560"></p>
 
-Printed fingers for **OpenArm v1's parallel gripper**, in place of its stock fingers. Each finger is a **soft TPU part
-inside a hard shell**: the shell follows the soft part all round its back and sides, and closes over its end as a thin
-hard tip, so the fingertip is hard and soft together.
+Printed fingers for **OpenArm v1's parallel gripper**, in place of its stock fingers. Each finger is one soft part and
+one hard part, as in Open-ENPIRE:
 
-<p align="center"><img src="docs/img/finger.png" alt="One finger: the hard shell (left), the soft part (middle) and the two together (right)" width="820"></p>
+- **Soft part:** the PG Chopstick's TPU pad, its grooved face and soft fingertip.
+- **Hard part:** a holder the pad drops into, on Open-ENPIRE's OpenArm mount.
+
+<p align="center"><img src="docs/img/finger.png" alt="One finger: the hard holder with its pocket (left), the soft pad (middle) and the pad in the holder (right)" width="820"></p>
+<p align="center"><img src="docs/img/finger_side.png" alt="Side view: the pad's face stands just proud of the holder's rim" width="700"></p>
 
 ## What you print
 
@@ -16,49 +19,45 @@ hard tip, so the fingertip is hard and soft together.
 | `hardware/STL/hardshell_tpu_left.stl`, `hardshell_tpu_right.stl` | TPU 95A | 1 + 1 |
 
 The STEP files are in `hardware/STEP/`. The right parts are the mirror images of the left ones, as OpenArm's own
-fingers are. The renders show a yellow shell and a black soft part; any colours work.
+fingers are.
 
 ## How it's made
 
-- **Mount:** Open-ENPIRE's OpenArm mount, unchanged: a 5 mm plate with four M3 holes and the key rib behind it. It
-  goes where the stock finger's base goes, with the same screws.
-- **Hard shell:** a 2.5 mm wall that follows the soft part's back and sides along its whole length.
-  - At the fingertip it closes over the soft part's end as a **1.5 mm hard tip**, coming down to 0.6 mm behind the
-    soft face.
-  - Three ribs join it to the plate.
-- **Soft part:** a tapered finger in TPU 95A.
-  - Its contact face stands 1.5 mm proud of the shell's rim and has three shallow transverse grooves, like the PG
-    Chopstick's pad.
-  - It curves 1.5 mm inward over the last part of the finger, so the tips pinch first.
-  - It's glued into the shell along its whole back and sides.
-- **Hard and soft at the tip:** a light grasp is on the soft part. A firm one, or a thin object at the very tip, also
-  bears on the hard tip.
-- **Closing:** fully closed, the soft tips are 0.6 mm apart and the hard tips 1.8 mm. Fully open, they are about
-  89 mm apart.
+- **Mount:** Open-ENPIRE's OpenArm mount, unchanged: a 5 mm plate with four M3 holes (with head seats) and the key
+  rib behind it. It goes where the stock finger's base goes, with the same screws.
+- **Holder (hard):** the pad's side outline grown by 2.5 mm, as one constant width 2.5 mm wider than the pad on each
+  side, with rounded edges.
+  - The pad's exact shape is cut into it, so the pad drops in and is glued along its back and sides.
+  - The rim follows the pad's face, 1.5 mm behind it, so the whole soft face is free to grip.
+  - Past the pad's end, a 1.5 mm **hard tip** comes down to 0.6 mm behind the soft face, so the very tip is hard and
+    soft together.
+- **Soft part:** the chopstick pad's straight part. The chopstick closes on a pivot, so there its pad is angled 9°;
+  here it's turned straight, so the two pads close flat on each other.
+- **Closing:** fully closed, the pads are 0.6 mm apart, so they can hold thin things. Fully open, they are about 89 mm
+  apart.
 
 ## The screws, with the finger glued
 
-The shell starts 18 mm in front of the mount plate. The ribs run between the screw heads, so all four screws stay
-reachable after the soft part is glued in:
-- The upper two screws are open from above.
-- The lower two take a 2.5 mm ball-end hex key, between the ribs and over the shell's base.
+The holder starts 18 mm in front of the mount plate, joined to it by three ribs that run between the screw heads. So
+all four screws stay reachable after the pad is glued in:
+- The upper two are open from above.
+- The lower two take a 2.5 mm ball-end hex key, between the ribs.
 
 <p align="center"><img src="docs/img/openarm_closed.png" alt="The fingers closed on OpenArm's link7" width="560"></p>
 
 ## Checked
 
 On OpenArm v1's description, closed, half open and fully open:
-- The shells never touch each other, and neither do the soft parts.
-- The shell and the soft part don't overlap.
+- The holders never touch each other, and neither do the pads.
+- The holder and the pad don't overlap.
 - Fully closed, the mount's key rib sits in link7's slot the same way Open-ENPIRE's does.
 
 ## Print and fit
 
-1. **Shell:** print it standing on the mount plate's back face, with supports only under the plate's overhang. Use 4
-   walls and 30% infill. Or print it lying on its back, with tree supports under the rim.
-2. **Soft part:** print in TPU 95A, lying on its back, with no supports.
-3. **Glue:** glue the soft part into the shell. For TPU to PETG or PLA, use flexible CA, or a TPU-rated contact
-   adhesive.
+1. **Holder:** print it standing on the mount plate's back face. Use 4 walls and 30% infill, with supports only under
+   the plate.
+2. **Pad:** print in TPU 95A, lying on its back.
+3. **Glue:** glue the pad into the holder with flexible CA, or a TPU-rated contact adhesive.
 4. **Fit:**
    1. Take off the stock finger.
    2. Screw the finger on with its four M3 screws: the upper two from above, the lower two with the ball-end key
@@ -70,6 +69,7 @@ On OpenArm v1's description, closed, half open and fully open:
 |---|---|
 | `hardware/STEP/`, `hardware/STL/` | The four printable parts |
 | `cad/openarm_hardshell.py` | The generator (build123d). `python openarm_hardshell.py --openarm <handumi-sw assets>` also renders and checks on OpenArm |
+| `cad/source/` | The chopstick TPU pad it starts from |
 | `docs/img/` | Renders |
 
 Licences and sources: [NOTICE.md](NOTICE.md) (Apache-2.0).

@@ -1,17 +1,18 @@
 """OpenArm hard-shell fingers: printed fingers for OpenArm v1's parallel gripper, in place of its stock fingers.
 
-Each finger is two prints:
-  * `hardshell_finger_<side>` (PETG / PLA): Open-ENPIRE's OpenArm mount (pgeedh/Open-ENPIRE-Gripper: a 5.1 mm plate
-    with four M3 holes and the key rib behind it, where the stock finger's base goes), three neck ribs, and a hard
-    shell that follows the soft part all round its back and sides at SHELL_T, closing over its end as a 1.5 mm
-    **hard tip**.
-  * `hardshell_tpu_<side>` (TPU 95A): the soft part, a tapered finger whose contact face has three shallow transverse
-    grooves like the PG Chopstick's pad. It is glued into the shell along its whole back and sides.
-The screws stay reachable with the two glued together: the shell starts 18 mm in front of the mount plate, and the
-neck ribs pass between the screw heads (the upper two are open from above; the lower two take a ball-end hex key
-between the ribs).
-The tip is hard and soft together: the soft face stands NAIL_BACK proud of the hard tip, so a light grasp is on the soft
-part, and a firm one, or a thin object at the very tip, also bears on the 1.5 mm hard tip.
+One soft part and one hard part per finger, as in Open-ENPIRE:
+  * `hardshell_tpu_<side>` (TPU 95A), the soft part: the PG Chopstick's TPU pad (from TToTMooN/KIWI_hardware), its
+    straight part, turned so its face lies parallel to the finger.
+  * `hardshell_finger_<side>` (PETG / PLA), the hard part:
+      - Open-ENPIRE's OpenArm mount (pgeedh/Open-ENPIRE-Gripper): a 5.1 mm plate with four M3 holes and the key rib
+        behind it, where the stock finger's base goes;
+      - three ribs from the plate to the holder, between the screw heads;
+      - the holder: the soft part's side outline grown by SHELL_T, across a constant width SHELL_T wider than the soft
+        part each side, edges rounded, with the soft part's exact shape cut into it. The soft face stands PROUD of
+        its rim; past the soft part's end a TIP_T hard tip.
+The soft part drops into the holder and is glued in. The holder starts NECK_L in front of the plate, so the screws
+stay reachable with the finger glued: the upper two from above, the lower two with a ball-end hex key between the
+ribs.
 
 Finger frame (mm; Open-ENPIRE's OpenArm jaw frame): x along the finger from the mount plate's front face, y across the
 plate (its height), z through the finger, the gripping face at low z. The right finger is the mirror image in y (as in
@@ -20,13 +21,15 @@ OpenArm's description).
     python openarm_hardshell.py [--openarm /path/to/handumi-sw/assets] [--no-render]
 """
 import argparse
+import math
 from pathlib import Path
 
 import numpy as np
-from build123d import (Axis, Box, Cylinder, Plane, Pos, Rot, export_step, export_stl, extrude, fillet, loft,
-                       mirror)
+from build123d import (Axis, Box, Cylinder, Location, Plane, Polyline, Pos, Rot, export_step, export_stl, extrude,
+                       fillet, import_step, make_face, mirror)
 
 HERE = Path(__file__).resolve().parent
+SRC = HERE / "source"
 OUT = HERE.parent / "hardware"
 IMG = HERE.parent / "docs" / "img"
 
@@ -34,37 +37,25 @@ IMG = HERE.parent / "docs" / "img"
 PLATE = dict(x=(-5.1, 0.0), y=(-30.8, 30.2), z=(30.0, 59.6), r=2.0)
 RIB = dict(x=(-18.0, -5.1), y=(9.8, 13.8), z=(30.0, 59.6))
 HOLES = [(7.2, 55.7), (7.2, 34.1), (-7.9, 34.0), (-7.9, 55.6)]       # (y, z), M3
-HOLE_D, HEAD_D, HEAD_FROM = 3.4, 6.0, -1.5                          # through, screw-head bore from x = HEAD_FROM on
-# the finger
-GRIP_Z = 25.0              # the soft part's contact face at the tip (the pads just meet there when closed); along the
-                           # finger it sits HOOK further back, so the tips pinch first
-SHELL_T = 2.5              # the hard shell's wall: it follows the soft part's back and sides all the way, at this thickness
+HOLE_D, HEAD_D, HEAD_SEAT = 3.4, 6.0, 1.5                           # through hole; screw-head seat in the plate
+# the soft part: the chopstick pad's straight part, placed in the finger frame
+X_CUT = 100.0              # keep the chopstick pad from x >= X_CUT (its straight part)
+GRIP_Z = 25.0              # its contact face (3 mm inside Open-ENPIRE's 28, so the pads just meet when closed)
+NECK_L = 18.0              # the soft part starts this far in front of the plate (the screws are reached in between)
+# the hard holder
+SHELL_T = 2.5              # wall round the soft part's back and sides
 PROUD = 1.5                # the soft face stands this far proud of the shell's rim
-NAIL_BACK = 0.6            # the hard tip's face is this far behind the soft face: the soft part touches first
-HOOK = 1.5
-# the soft part's sections along x: (x, half-height in y, contact face z, back z)
-SOFT = [(18.0, 12.0, GRIP_Z + HOOK, 37.0), (60.0, 11.0, GRIP_Z + HOOK, 34.0), (95.0, 9.8, GRIP_Z + 0.6, 32.0),
-        (110.0, 8.0, GRIP_Z, 29.5)]
-R_SOFT, R_SHELL = 2.0, 3.5         # corner radii of the sections
-TIP_T = 1.5                # the hard tip: the shell closes over the soft part's end with this thickness, down to just
-                           # behind the soft face (NAIL_BACK), then the soft part starts
-GROOVES = [40.0, 62.0, 84.0]       # x of the soft face's transverse grooves (like the chopstick pad's)
-GROOVE_R, GROOVE_D = 7.0, 1.2
-# the neck: three ribs from the plate to the shell, clear of the four screw heads (Ø5.5 at y = 7.2 / -7.9)
-NECK_RIBS = [(-4.2, 4.2), (10.6, 14.6), (-15.6, -11.6)]
+TIP_T = 1.5                # the hard tip over the soft part's end
+TIP_BACK = 0.6             # the hard tip's face is this far behind the soft face: the soft part touches first
+NECK_RIBS = [(-4.2, 4.2), (10.6, 14.6), (-15.6, -11.6)]             # y spans, clear of the screw heads
 NECK_Z = (27.0, 48.0)      # below the upper screws (z 55.7), so those are open from above
 
 
-def _section(x, half, z0, z1, r=R_SOFT):
-    """A rounded rectangle in the plane x = const, across y (half-height) and z (z0..z1)."""
-    from build123d import RectangleRounded
-    pl = Plane(origin=(x, 0, (z0 + z1) / 2), x_dir=(0, 1, 0), z_dir=(1, 0, 0))
-    return pl * RectangleRounded(2 * half, z1 - z0, min(r, half - 0.1, (z1 - z0) / 2 - 0.1))
-
-
-def _face_z(x):
-    xs, zs = [s[0] for s in SOFT], [s[2] for s in SOFT]
-    return float(np.interp(x, xs, zs))
+def _loc(R, t):
+    from OCP.gp import gp_Trsf
+    tr = gp_Trsf()
+    tr.SetValues(*R[0], t[0], *R[1], t[1], *R[2], t[2])
+    return Location(tr)
 
 
 def _mesh(shape, tol=0.05):
@@ -73,38 +64,89 @@ def _mesh(shape, tol=0.05):
     return trimesh.Trimesh(np.array([(q.X, q.Y, q.Z) for q in v]), np.array(f), process=True)
 
 
+def soft_part():
+    """The chopstick pad's straight part in the finger frame: its face turned parallel to the finger (the chopstick
+    closes on a pivot, so there it is angled), on z = GRIP_Z, starting NECK_L in front of the plate, centred in y."""
+    tip = import_step(str(SRC / "tip_tpu_right.step")) & (Pos(X_CUT + 100, 0, 0) * Box(200, 200, 200))
+    m = _mesh(tip)
+    xs, ys = [], []
+    for x in np.arange(X_CUT + 15, m.bounds[1][0] - 15, 5.0):
+        s = m.section([1, 0, 0], [x, 0, 0])
+        if s is not None:
+            xs.append(x)
+            ys.append(s.vertices[:, 1].max())
+    th = -math.atan(np.polyfit(xs, ys, 1)[0])
+    Rz = np.array([[math.cos(th), -math.sin(th), 0], [math.sin(th), math.cos(th), 0], [0, 0, 1.0]])
+    M = np.array([[1, 0, 0], [0, 0, 1.0], [0, -1.0, 0]])  # chopstick (x, y, z) -> finger (x, z, -y)
+    R = M @ Rz
+    v = m.vertices @ R.T
+    face = v[v[:, 0] > X_CUT + 15][:, 2].min()
+    t = np.array([NECK_L - v[:, 0].min(), -(v[:, 1].min() + v[:, 1].max()) / 2, GRIP_Z - face])
+    return tip.moved(_loc(R, t)), math.degrees(th)
+
+
+def holder_profile(soft):
+    """The holder's side outline (x, z): the soft part's silhouette grown by SHELL_T, open on the gripping side down to
+    PROUD behind the soft face, and past the soft part's end a TIP_T hard tip down to TIP_BACK behind it."""
+    from shapely.geometry import Polygon, box
+    from shapely.ops import unary_union
+    m = _mesh(soft, 0.05)
+    tris = m.vertices[m.faces][:, :, [0, 2]]
+    sil = unary_union([Polygon(t) for t in tris if Polygon(t).area > 1e-6]).buffer(0)
+    xs, xe = m.bounds[0][0], m.bounds[1][0]
+    out = sil.convex_hull.buffer(SHELL_T, join_style=1).intersection(box(xs - SHELL_T, -100, xe + TIP_T, 200))
+    # the rim follows the soft face along the finger, PROUD behind it (TIP_BACK over the hard tip)
+    grid = np.arange(xs - SHELL_T - 1, xe + TIP_T + 1.01, 1.0)
+    face = []
+    for x in grid:
+        sec = m.section([1, 0, 0], [float(np.clip(x, xs + 0.3, xe - 0.3)), 0, 0])
+        face.append(sec.vertices[:, 2].min())
+    face = np.array(face)
+    face = np.array([face[max(0, i - 7):i + 8].max() for i in range(len(face))])     # never above the soft face
+    face = np.convolve(np.pad(face, 4, mode="edge"), np.ones(9) / 9, mode="valid")    # and smoothly
+    rim = [(x, f + (TIP_BACK if x > xe - 0.5 else PROUD)) for x, f in zip(grid, face)]
+    keep = Polygon(rim + [(grid[-1], 200), (grid[0], 200)]).buffer(0)
+    out = out.intersection(keep)
+    if out.geom_type != "Polygon":
+        out = max(out.geoms, key=lambda g: g.area)
+    return out.simplify(0.2)
+
+
+def holder(soft):
+    """The holder: its side outline extruded across the full width, edges rounded (the soft part is cut out later)."""
+    prof = holder_profile(soft)
+    w = soft.bounding_box().size.Y / 2 + SHELL_T
+    yc = (soft.bounding_box().min.Y + soft.bounding_box().max.Y) / 2
+    pts = [(x, yc - w, z) for x, z in list(prof.exterior.coords)[:-1]]
+    body = extrude(make_face(Polyline(*pts, close=True)), 2 * w, dir=(0, 1, 0))
+    try:                                                                     # round the edges round both sides
+        body = fillet([e for f in body.faces().filter_by(Axis.Y) for e in f.edges()], 1.2)
+    except Exception as e:
+        print("  (holder edges left sharp:", e, ")")
+    return body
+
+
 def build():
-    """(shell, soft): the hard shell with its mount and hard tip, and the soft part it wraps."""
+    """(shell, soft, turn)."""
+    soft, th = soft_part()
+    xb = soft.bounding_box().min.X
+    shell = holder(soft)
+    # the mount and the neck
     (x0, x1), (y0, y1), (z0, z1) = PLATE["x"], PLATE["y"], PLATE["z"]
     plate = Pos((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2) * Box(x1 - x0, y1 - y0, z1 - z0)
     plate = fillet(plate.edges().filter_by(Axis.X), PLATE["r"])
     (rx0, rx1), (ry0, ry1), (rz0, rz1) = RIB["x"], RIB["y"], RIB["z"]
     rib = Pos((rx0 + rx1) / 2 + 0.25, (ry0 + ry1) / 2, (rz0 + rz1) / 2) * Box(rx1 - rx0 + 0.5, ry1 - ry0, rz1 - rz0)
-    # the soft part: a tapered finger, its contact face flat at GRIP_Z with three shallow grooves
-    soft = loft([_section(x, h, zf, zb) for x, h, zf, zb in SOFT])
-    for x in GROOVES:
-        soft -= Pos(x, 0, _face_z(x) - GROOVE_R + GROOVE_D) * Rot(90, 0, 0) * Cylinder(GROOVE_R, 40)
-    # the hard shell: the same sections grown by SHELL_T round the back and sides (and a wall at the base end), open on
-    # the gripping side down to the rim
-    t = SHELL_T
-    x0s, h0, zf0, zb0 = SOFT[0]
-    outer = [_section(x0s - t, h0 + t, zf0 + PROUD, zb0 + t, R_SHELL)]
-    outer += [_section(x, h + t, zf + PROUD, zb + t, R_SHELL) for x, h, zf, zb in SOFT[1:]]
-    shell = loft(outer) - loft([_section(x, h, zf - 5, zb) for x, h, zf, zb in SOFT])
-    xe, he, zfe, ze = SOFT[-1]                                                  # the hard tip
-
-    cap = _section(xe, he + t, zfe + NAIL_BACK, ze + t, R_SHELL)
-    shell += extrude(cap, TIP_T)
-    neck = None
+    xn = xb - SHELL_T + 1.0
     for a, b in NECK_RIBS:
-        xr = SOFT[0][0] - SHELL_T + 1.0                                         # into the shell's base wall only
-        r = Pos(xr / 2, (a + b) / 2, sum(NECK_Z) / 2) * Box(xr, b - a, NECK_Z[1] - NECK_Z[0])
-        neck = r if neck is None else neck + r
-    shell = plate + rib + neck + shell
+        shell += Pos(xn / 2, (a + b) / 2, sum(NECK_Z) / 2) * Box(xn, b - a, NECK_Z[1] - NECK_Z[0])
+    shell = plate + rib + shell - soft
+    xc = xb - SHELL_T - 0.5                                                     # screw-head clearance up to the holder
     for y, z in HOLES:
         shell -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(HOLE_D / 2, x1 - x0 + 2)
-        shell -= Pos(HEAD_FROM / 2, y, z) * Rot(0, 90, 0) * Cylinder(HEAD_D / 2, -HEAD_FROM + 0.02)   # head seat
-    return shell, soft
+        shell -= Pos(-HEAD_SEAT / 2, y, z) * Rot(0, 90, 0) * Cylinder(HEAD_D / 2, HEAD_SEAT + 0.02)
+        shell -= Pos(xc / 2, y, z) * Rot(0, 90, 0) * Cylinder(HEAD_D / 2 + 0.3, xc)
+    return shell, soft, th
 
 
 def on_openarm(assets, meshes, q):
@@ -142,11 +184,13 @@ def on_openarm(assets, meshes, q):
         for n in ("finger", "tpu"):
             m = meshes[f"hardshell_{n}_left"].copy().apply_transform(T)       # the URDF mirrors the right one
             m.apply_scale(1000.0)
-            if sy < 0:
-                m.invert()
+            m.fix_normals()
             out[f"{n}_{side}"] = m
     lim = r.joint_map[joints[0]].limit
     return out, (lim.lower, lim.upper)
+
+
+COLOURS = {"finger": "#e9edf1", "tpu": "#2b2e33", "link7": "#c9ccd1"}     # white hard shell, black soft part
 
 
 def render(assets, parts):
@@ -154,49 +198,49 @@ def render(assets, parts):
     import trimesh
     meshes = {n: _mesh(p, 0.03) for n, p in parts.items()}
     IMG.mkdir(parents=True, exist_ok=True)
-    col = {"finger": "#f2b705", "tpu": "#2b2e33", "link7": "#c9ccd1"}      # hard yellow, soft black
 
     def plot(path, items, view, up=(0, 0, 1), size=(1600, 1100), zoom=1.2):
         p = pv.Plotter(off_screen=True, window_size=size, lighting="three lights")
         p.set_background("white")
         p.enable_anti_aliasing("ssaa")
+        p.enable_ssao(radius=4.0, bias=0.2, kernel_size=128, blur=True)
         for m, c in items:
-            p.add_mesh(pv.wrap(m), color=c, smooth_shading=True, split_sharp_edges=True, specular=0.3)
+            p.add_mesh(pv.wrap(m), color=c, smooth_shading=True, split_sharp_edges=True, specular=0.35,
+                       specular_power=30)
         p.view_vector(view, viewup=up)
         p.reset_camera()
         p.camera.zoom(zoom)
         p.screenshot(str(path))
         p.close()
         print("wrote", path.name)
-    # the two prints, side by side, and the finger assembled
     sh, pad = meshes["hardshell_finger_left"], meshes["hardshell_tpu_left"]
-    a = [(sh, col["finger"]), (pad.copy().apply_translation([0, 75.0, 0]), col["tpu"]),
-         (sh.copy().apply_translation([0, 150.0, 0]), col["finger"]),
-         (pad.copy().apply_translation([0, 150.0, 0]), col["tpu"])]
+    a = [(sh, COLOURS["finger"]), (pad.copy().apply_translation([0, 75.0, 0]), COLOURS["tpu"]),
+         (sh.copy().apply_translation([0, 150.0, 0]), COLOURS["finger"]),
+         (pad.copy().apply_translation([0, 150.0, 0]), COLOURS["tpu"])]
     plot(IMG / "finger.png", a, (0.35, -0.25, -1.0), up=(1, 0, 0), size=(1800, 1000), zoom=1.15)
+    plot(IMG / "finger_side.png", [(sh, COLOURS["finger"]), (pad, COLOURS["tpu"])], (0.15, -1.0, 0.25),
+         up=(0, 0, -1), size=(1800, 900), zoom=1.2)
     if not assets:
         return
     for name, frac in (("openarm_open", 0.5), ("openarm_closed", 0.0)):
         o, (lo, hi) = on_openarm(assets, meshes, 0.0)
         o, _ = on_openarm(assets, meshes, lo + frac * (hi - lo))
-        items = [(o["link7"], col["link7"])] + [(o[k], col[k.split("_")[0]]) for k in o if k != "link7"]
+        items = [(o["link7"], COLOURS["link7"])] + [(o[k], COLOURS[k.split("_")[0]]) for k in o if k != "link7"]
         plot(IMG / f"{name}.png", items, (1.0, -0.55, 0.3), zoom=1.0)
-        if frac == 0.0:
-            gap = trimesh.proximity.closest_point(o["tpu_left"], o["tpu_right"].vertices)[1].min()
-            print(f"  closed (joint {lo:.3f} m): pads {gap:.1f} mm apart at the nearest point")
-        else:
-            gap = trimesh.proximity.closest_point(o["tpu_left"], o["tpu_right"].vertices)[1].min()
-            print(f"  half open: pads {gap:.1f} mm apart (fully open, {hi:.3f} m per finger: about 89 mm)")
+        gap = trimesh.proximity.closest_point(o["tpu_left"], o["tpu_right"].vertices)[1].min()
+        hits = [round(o[a].intersection(o[b]).volume, 1) for a, b in
+                (("finger_left", "finger_right"), ("tpu_left", "tpu_right"), ("finger_left", "tpu_right"))]
+        print(f"  {name}: soft parts {gap:.1f} mm apart; overlaps shell/shell, soft/soft, shell/soft: {hits} mm3")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--openarm", help="handumi-sw assets folder (for the render on OpenArm's link7)")
+    ap.add_argument("--openarm", help="handumi-sw assets folder (for the renders and checks on OpenArm's link7)")
     ap.add_argument("--no-render", action="store_true")
     a = ap.parse_args()
-    shell, tip = build()
-    parts = {"hardshell_finger_left": shell, "hardshell_tpu_left": tip,
-             "hardshell_finger_right": mirror(shell, Plane.XZ), "hardshell_tpu_right": mirror(tip, Plane.XZ)}
+    shell, soft, th = build()
+    parts = {"hardshell_finger_left": shell, "hardshell_tpu_left": soft,
+             "hardshell_finger_right": mirror(shell, Plane.XZ), "hardshell_tpu_right": mirror(soft, Plane.XZ)}
     for d in ("STEP", "STL"):
         (OUT / d).mkdir(parents=True, exist_ok=True)
     for n, p in parts.items():
@@ -205,8 +249,7 @@ def main():
         bb = p.bounding_box()
         print(f"{n}: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, {p.volume / 1e3:.1f} cm3, "
               f"{len(p.solids())} solid(s)")
-    ov = (shell & tip).volume if (shell & tip).solids() else 0.0
-    print(f"shell / pad overlap: {ov:.1f} mm3")
+    print(f"pad turned {th:.1f} deg; shell / soft overlap {(shell & soft).volume if (shell & soft).solids() else 0:.1f} mm3")
     if not a.no_render:
         render(a.openarm, parts)
 
