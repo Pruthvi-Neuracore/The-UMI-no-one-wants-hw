@@ -21,7 +21,7 @@ fingers are.
 ## How it's made
 
 - **Base: OpenArm's own printed finger base.** It's re-modelled from OpenArm v1's finger: the mounting plate with its
-  four M2.5 holes, plus the rib and the round boss behind it.
+  four M2.5 holes, plus the rib behind it.
   - OpenArm's model also draws a 20 × 30 × 11 mm block behind the plate. That block is the gripper's carriage, a
     separate metal part, so it isn't part of these prints.
   - Both fingers are checked to clear it.
@@ -49,7 +49,7 @@ fingertip**, with a 1.5 safety factor on PETG's ~45 MPa. Every section passes, w
 The stock finger is only about 12 mm deep partway along. It is 77 mm long; this one is longer, and sized for that tip
 load. So past x = 17 mm the finger thickens towards the gripping side sooner than the stock one.
 
-The hard part is 59 cm³ (about 74 g in PETG) and the soft part 8 cm³.
+The hard part is 58.5 cm³ (about 73 g in PETG) and the soft part 8 cm³.
 
 ## The screws
 
