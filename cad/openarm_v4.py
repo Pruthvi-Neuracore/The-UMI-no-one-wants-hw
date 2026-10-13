@@ -1,23 +1,25 @@
-"""OpenArm V4 fingers: the ARX-X5 gripper finger (murobotics-ai/handumi-hw, `gripper_tips/ARX-X5-2023`, Apache-2.0)
-on OpenArm v1's printed finger base, one plain printed part per finger.
+"""OpenArm V4 fingers: a solid, flat, triangular blade after the ARX-X5 gripper finger (murobotics-ai/handumi-hw,
+`gripper_tips/ARX-X5-2023`, Apache-2.0), on OpenArm v1's printed finger base, one plain printed part per finger.
 
-The HandUMI tip is the ARX-X5 finger, a flat, tapering triangular blade, on a 61 x 29 mm flange plate for HandUMI's tip
-flange. Here the flange plate is cut off and the finger is put on OpenArm's base:
-  * turned so its broad flat gripping face faces the other finger, and tilted 6.5 deg so that face runs exactly along
-    the approach: the two fingers close flat on each other (GRIP_Z, 0.2 mm apart when the gripper is closed);
-  * its root (61 mm across, like OpenArm's plate) fused to the base: the plate, its four M2.5 holes, the rib;
-  * straight access bores from the four screw heads along the finger, until they come out of it.
+The ARX-X5 finger is a flat blade, 61 mm wide at its root, tapering to an 11 mm tip, its broad face the gripping face.
+The original is a pocketed tray (hollow under its top skin) and sits off-centre. Here it is:
+  * solid: the blade is the ARX's plan outline (PLAN, measured from the STL in cad/source/arx_x5/) intersected with
+    a side profile (SIDE), with no pockets;
+  * centred on the mounting plate (the ARX outline drifts up to 4.6 mm to one side; here it is symmetric);
+  * flat: an even 12.6 mm thick from the mounting plate to x 40, its back just under the lower screw heads, so all
+    four M2.5 screws go straight in from the front through the plate alone (no bores through the blade, no
+    cutouts), then tapering into the ARX's own thickness to the tip;
+  * its broad flat face is the gripping face, at GRIP_Z (the fingers close 0.2 mm apart);
+  * fused to OpenArm's base (the plate, its four holes and head seats, the rib).
 
 Finger frame as in openarm_hardshell.py (x along the finger, y across it, z through it, the gripping face at low z).
 
     python openarm_v4.py [--openarm /path/to/handumi-sw/assets]
 """
 import argparse
-import math
 from pathlib import Path
 
-import numpy as np
-from build123d import Box, Cylinder, Mesher, Plane, Pos, Rot, export_step, export_stl, mirror
+from build123d import Axis, Cylinder, Plane, Pos, Rot, export_step, export_stl, fillet, mirror
 
 import openarm_hardshell as H
 
@@ -25,40 +27,49 @@ OUT = H.OUT / "v4"
 IMG = H.IMG
 SRC = Path(__file__).resolve().parent / "source" / "arx_x5" / "ARX-X5-2023-LEFT-Gripper.stl"
 GRIP_Z = 24.8              # the gripping face: 0.2 mm apart when closed, as the other fingers
-FLANGE_X = 0.0             # in the tip's own frame, the HandUMI flange plate is x < 0; the finger starts here
-TILT_DEG = None            # the gripping face's tilt to the finger's length (measured from the mesh when None)
-BORE_D, BORE_LEN = 5.0, 90.0
+# the blade's half-width along x (the ARX-X5 finger's width, centred), to its rounded tip
+PLAN = [(11.0, 29.6), (15.0, 26.9), (19.0, 24.2), (23.0, 21.5), (27.0, 19.7), (79.0, 5.35), (80.6, 4.0)]
+# the blade's back (z) along x: flat at BACK_Z, just under the lower screw heads (their seats reach down to z 37.8)
+# so a hex key reaches every head straight along x, then into the ARX's own taper (3.2 mm thick at the tip)
+BACK_Z = 37.4
+SIDE = [(14.0, BACK_Z), (40.0, BACK_Z), (47.0, 34.8), (59.0, 32.3), (80.6, 28.0)]
+ROUND = (4.0, 1.4)         # plan and side corners rounded with these radii (the tip is only 3.2 mm thick)
+EDGE_R = 1.2
 
 
-def arx_finger():
-    """The ARX-X5 finger without its flange plate, in the finger frame (a build123d solid)."""
-    import trimesh
-    m = trimesh.load(SRC)
-    n, a = m.face_normals, m.area_faces
-    top = n[:, 2] > 0.8                                         # the broad flat gripping face (+z in the tip frame)
-    nt = (n[top] * a[top][:, None]).sum(0)
-    nt /= np.linalg.norm(nt)
-    tilt = TILT_DEG if TILT_DEG is not None else math.degrees(math.atan2(-nt[0], nt[2]))
-    solid = Mesher().read(str(SRC))[0]
-    solid = solid & (Pos(FLANGE_X + 100, 0, 0) * Box(200, 400, 400))
-    # flip it 180 deg about x (the gripping face now faces -z, towards the other finger), then level the face
-    solid = Rot(0, -tilt, 0) * Rot(180, 0, 0) * solid
-    bb = solid.bounding_box()
-    x1 = H.PLATE["x"][1] - 0.3
-    solid = Pos(x1 - bb.min.X, -(bb.min.Y + bb.max.Y) / 2, GRIP_Z - bb.min.Z) * solid
-    return solid, tilt
+def _rounded(pts, r):
+    from shapely.geometry import Polygon
+    pl = Polygon(pts).buffer(-r, join_style=1).buffer(r, join_style=1)
+    return [(round(x, 3), round(y, 3)) for x, y in list(pl.simplify(0.02).exterior.coords)[:-1]]
+
+
+def blade():
+    """The solid blade: plan outline x side profile, its long edges rounded."""
+    x0 = H.PLATE["x"][1] - 0.5                                  # into the mounting plate
+    xb = x0 - 10.0                                              # (cut back to the plate after rounding)
+    plan = [(xb, -30.5)] + [(x, -h) for x, h in PLAN] + [(x, h) for x, h in PLAN[::-1]] + [(xb, 30.5)]
+    side = [(xb, GRIP_Z), (PLAN[-1][0], GRIP_Z)] + SIDE[::-1] + [(xb, SIDE[0][1])]
+    b = H._poly_prism(_rounded(plan, ROUND[0]), (0, 1)) & H._poly_prism(_rounded(side, ROUND[1]), (0, 2))
+    b = b & H._poly_prism([(x0, -100), (200, -100), (200, 100), (x0, 100)], (0, 1))
+    for r in (EDGE_R, 0.8):
+        try:
+            f = fillet(b.edges().filter_by(Axis.X, reverse=True).filter_by(lambda e: e.center().X > x0 + 1), r)
+            if f.is_valid:
+                return f
+        except Exception:
+            pass
+    return b
 
 
 def build():
-    finger, tilt = arx_finger()
-    v4 = H.base() + finger
+    v4 = H.base() + blade()
     (x0, x1) = H.PLATE["x"]
     for y, z in H.HOLES:
         v4 -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(H.HOLE_D / 2, x1 - x0 + 2)
-        v4 -= Pos(x1 - H.CBORE[1] + BORE_LEN / 2, y, z) * Rot(0, 90, 0) * Cylinder(max(H.CBORE[0], BORE_D) / 2, BORE_LEN)
+        v4 -= Pos(x1 - H.CBORE[1] / 2 + 0.01, y, z) * Rot(0, 90, 0) * Cylinder(H.CBORE[0] / 2, H.CBORE[1] + 0.02)
     if len(v4.solids()) > 1:
         v4 = max(v4.solids(), key=lambda q: q.volume)
-    return v4, tilt
+    return v4
 
 
 def render(assets, finger):
@@ -97,8 +108,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--openarm", help="handumi-sw assets folder (for the renders and checks on OpenArm)")
     a = ap.parse_args()
-    v4, tilt = build()
-    print(f"ARX-X5 finger: gripping face levelled by {tilt:.1f} deg")
+    v4 = build()
     for d in ("STEP", "STL"):
         (OUT / d).mkdir(parents=True, exist_ok=True)
     for n, p in (("v4_finger_left", v4), ("v4_finger_right", mirror(v4, Plane.XZ))):
