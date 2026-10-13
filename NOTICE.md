@@ -5,7 +5,7 @@
   turned 9° so its face lies parallel to the finger.
 - **The OpenArm mount** (the plate, its four M3 holes and the key rib) is Open-ENPIRE's OpenArm jaw mount, from
   pgeedh/Open-ENPIRE-Gripper, Apache-2.0, re-modelled from its dimensions.
-- The holder is new.
+- The hard shell and its base are new.
 - OpenArm's geometry, used only for the checks and renders, comes from the OpenArm v1 description and is not
   redistributed here.
 
