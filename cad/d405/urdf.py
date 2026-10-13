@@ -108,7 +108,7 @@ def build(kind, parts, kin):
     def spec(n):
         if n == "d405_envelope":
             return ("mass", 60.0)                         # RealSense D405
-        if n == "quest_controller_envelope":
+        if n.startswith("quest_controller_envelope"):
             return ("mass", 164.0)                        # Quest Touch Pro controller
         if n.startswith("sleeve_strap"):
             return ("mass", 3.0)                         # elastic hook-and-loop strap

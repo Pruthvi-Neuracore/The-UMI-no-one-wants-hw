@@ -21,36 +21,40 @@ The Insta360 X5 version is on the [`pg-chopstick-x5`](../../tree/pg-chopstick-x5
 on [`pg-chopstick`](../../tree/pg-chopstick).
 
 <p align="center">
-  <img src="assembly/d405/chopstick/img/hero.png" alt="Chopstick gripper with the D405 head and the Quest Touch Pro controller" width="760">
+  <img src="assembly/d405/chop-umi/img/hero.png" alt="Chopstick gripper with the D405 head and the Quest Touch Pro controller" width="760">
 </p>
 
 ## Three ways to grasp
 
 | | Handheld | Robot twin | Folder |
 |---|---|---|---|
-| **Chopstick**: geared jaws you pinch | right / left hand | OpenArm, ISO 50 (UR, ABB, FANUC) | [assembly/d405/chopstick](assembly/d405/chopstick/README.md) |
-| **Parallel**: the HandUMI T-plate gripper as-is, swappable tips | right / left hand | the robot's own gripper with matching tips (Piper, Hand-E, Open-ENPIRE) | [assembly/d405/parallel](assembly/d405/parallel/README.md) |
-| **Hand**: the D405 head on your wrist, bare hand | either arm | the same head on a robot hand's forearm | [assembly/d405/hand](assembly/d405/hand/README.md) |
+| **Chop-UMI**: geared jaws you pinch | right / left hand | OpenArm, ISO 50 (UR, ABB, FANUC) | [assembly/d405/chop-umi](assembly/d405/chop-umi/README.md) |
+| **Para-UMI**: the HandUMI T-plate gripper as-is, swappable tips | right / left hand | the robot's own gripper with matching tips (Piper, Hand-E, Open-ENPIRE) and a camera post carrying the same D405 | [assembly/d405/para-umi](assembly/d405/para-umi/README.md) |
+| **Hand**: the D405 head on your wrist, bare hand, thumb strap with a palm button | either arm | the same head on a robot hand's forearm | [assembly/d405/hand](assembly/d405/hand/README.md) |
 
 One button per gripper, under your index finger, wired to the Pico: **green** on the right hand records (start /
-stop), **red** on the left hand cancels the take.
+stop), **red** on the left hand cancels the take. On the wrist, a soft **palm button** on the thumb strap starts and
+stops recording: curl your middle and ring fingers into your palm to press it.
+
+The Quest Touch Pro controller sits in **HandUMI's own controller support**, face forward, on a small arm on the box;
+the left hand uses the mirror-image parts and the left controller.
 
 <table>
 <tr>
-<td align="center"><img src="assembly/d405/chopstick/img/pod.png" alt="The head from behind: electronics box, Quest Touch Pro controller, D405 on its hinge" width="430"><br><b>The head</b>: D405 tilt mount, box, Quest controller cradle</td>
-<td align="center"><img src="assembly/d405/parallel/img/parallel.png" alt="HandUMI T-plate gripper with its D405 cup" width="430"><br><b>Parallel</b>: HandUMI</td>
+<td align="center"><img src="assembly/d405/chop-umi/img/pod.png" alt="The head from behind: electronics box, Quest Touch Pro controller, D405 on its hinge" width="430"><br><b>The head</b>: D405 tilt mount, box, Quest controller in HandUMI's support</td>
+<td align="center"><img src="assembly/d405/para-umi/img/parallel.png" alt="HandUMI T-plate gripper with its D405 cup" width="430"><br><b>Para-UMI</b>: HandUMI</td>
 </tr>
 <tr>
 <td align="center"><img src="assembly/d405/hand/img/hand.png" alt="D405 head strapped to the wrist over a relaxed hand" width="430"><br><b>Hand</b></td>
-<td align="center"><img src="assembly/d405/chopstick/img/robot_ur5.png" alt="Bimanual UR5 with chopstick grippers" width="430"><br>UR5 ×2, ISO 50 plates</td>
+<td align="center"><img src="assembly/d405/chop-umi/img/robot_ur5.png" alt="Bimanual UR5 with chopstick grippers" width="430"><br>UR5 ×2, ISO 50 plates</td>
 </tr>
 <tr>
 <td align="center"><img src="assembly/d405/hand/img/hand_robot.png" alt="The D405 head on a Shadow Hand's forearm on a UR5e" width="430"><br>The same head on a robot hand</td>
-<td align="center"><img src="assembly/d405/chopstick/img/openarm_bimanual.png" alt="OpenArm with chopstick grippers" width="430"><br>OpenArm, link7 adapter</td>
+<td align="center"><img src="assembly/d405/para-umi/img/robot_camera_piper.png" alt="Para-UMI beside an AgileX Piper gripper with its camera post: the D405 in the same place over both" width="430"><br>Para-UMI's D405 on the robot's own gripper</td>
 </tr>
 </table>
 
-## What the chopsticks share
+## What the Chop-UMIs share
 
 - **One interface:** the chopsticks clip to `d405_frame` with a tongue and two M3 × 55 screws. The box and both
   robot plates bolt to the frame's back plate with the same four M3 inserts.
@@ -58,19 +62,20 @@ stop), **red** on the left hand cancels the take.
 - **Blue tracking dots:** on the jaws, seen up close by the D405.
 - **Checked in CAD:** every build is clash-checked closed, half open and fully open, and the camera is checked over
   its whole tilt range. Every build has a URDF.
-- **Parallel:** HandUMI exactly as it is (finger sleeves, record button, universal tip flange, its D405 cup), checked
-  with HandUMI's own interference check at every opening with every tip set.
+- **Para-UMI:** HandUMI exactly as it is (finger sleeves, record button, universal tip flange, its D405 cup), checked
+  with HandUMI's own interference check at every opening with every tip set. Each robot gets a camera post that
+  carries the same hinge in the same place relative to its fingers.
 - **PG look:** blue structure, white moving parts and box, an engraved PG badge.
 
 <p align="center">
-  <img src="assembly/d405/chopstick/img/sleeve.png" alt="Elastic finger sleeve with the green record button" width="430">
-  <img src="assembly/d405/chopstick/img/plates.png" alt="OpenArm adapter and ISO 50 plate" width="430">
+  <img src="assembly/d405/chop-umi/img/sleeve.png" alt="Elastic finger sleeve with the green record button" width="430">
+  <img src="assembly/d405/chop-umi/img/plates.png" alt="OpenArm adapter and ISO 50 plate" width="430">
 </p>
 
 ## Repository layout
 
 ```
-assembly/d405/{chopstick,parallel,hand}/   README · bom.md · electronics.md · STEP/ · STL/ · assembly/ · urdf/ · img/
+assembly/d405/{chop-umi,para-umi,hand}/   README · bom.md · electronics.md · STEP/ · STL/ · assembly/ · urdf/ · img/
 assembly/tags/                             ArUco tag sheet
 cad/d405/                                  generators (Python, build123d); package.py fills assembly/
 cad/make_video.py                          the overview video and GIF (docs/media/)

@@ -11,7 +11,7 @@ End effectors:
   * hand: no jaws; the D405 head (camera, electronics box, Quest controller) rides on a wrist saddle (ebox.py).
 
 The head (hardware/head): d405_frame + the HandUMI D405 cup on its tilt hinge, the electronics box (Pico 2, IMU,
-USB 3 hub) and the Meta Quest Touch Pro controller cradle (tracking only).
+USB 3 hub) and the Meta Quest Touch Pro controller on HandUMI's controller support (tracking only).
 """
 import math
 from pathlib import Path
@@ -55,7 +55,7 @@ SERVO_LABEL = "Servo"
 
 # Where each part's files go: hardware/<module>/{STEP,STL}/<name>.* (first matching prefix wins)
 MODULES = [
-    ("head", ("d405_", "ebox", "quest_", "chopstick_clip_")),   # camera, electronics, controller, end-effector clips
+    ("head", ("d405_", "ebox", "quest_", "chopstick_clip_", "palm_button")),   # camera, electronics, controller, clips, palm button
     ("mounts", ("openarm_adapter", "iso_flange_plate")),
     ("chopstick", ("chopstick_base", "jaw_", "tip_tpu", "sleeve_")),
 ]
@@ -182,28 +182,30 @@ def load_parts():
     parts["servo_envelope"] = raw["servo_envelope"]
     parts["d405_cup"] = d405_frame.cup()                    # the HandUMI cup (mesh), on the hinge at TILT_DEG
     parts["d405_envelope"] = d405_frame.camera_envelope()
-    parts["quest_controller_envelope"] = ebox.controller_envelope()
+    parts["quest_controller_envelope"] = ebox.controller_envelope("right")
+    parts["quest_controller_envelope_left"] = ebox.controller_envelope("left")
     return parts
 
 
 # --- builds ---------------------------------------------------------------------------------------------------------
 TIPS = ["tip_tpu_left", "tip_tpu_right"]
 STRAPS = ["sleeve_strap_left", "sleeve_strap_right"]
-HEAD_HANDHELD = ["d405_frame", "d405_cup", "ebox", "ebox_lid", "quest_cradle", "quest_controller_envelope",
-                 "chopstick_clip_dc"]
+QUEST = {s: [f"quest_arm_{s}", f"quest_support_{s}", "quest_controller_envelope" + ("" if s == "right" else "_left")]
+         for s in ("right", "left")}   # HandUMI's controller support on quest_arm, the controller facing forward
+HEAD_HANDHELD = ["d405_frame", "d405_cup", "ebox", "ebox_lid", "chopstick_clip_dc"]
 HEAD_ROBOT = ["d405_frame", "d405_cup", "chopstick_clip_sa"]
 CHOP_SA = ["chopstick_base_sa", "jaw_left_sa", "jaw_right"] + TIPS
 BUILDS = {
     # chopstick, handheld: the record button is in the index-finger sleeve only, wired to the Pico
     # (right hand -> right jaw: start / stop; left hand -> left jaw: cancel)
-    "chopstick_right": HEAD_HANDHELD + ["chopstick_base_dc"] + TIPS + STRAPS
+    "chopstick_right": HEAD_HANDHELD + QUEST["right"] + ["chopstick_base_dc"] + TIPS + STRAPS
                        + ["jaw_left_dc", "jaw_right_dc_button", "sleeve_button_cover_right"],
-    "chopstick_left": HEAD_HANDHELD + ["chopstick_base_dc"] + TIPS + STRAPS
+    "chopstick_left": HEAD_HANDHELD + QUEST["left"] + ["chopstick_base_dc"] + TIPS + STRAPS
                       + ["jaw_left_dc_button", "jaw_right_dc", "sleeve_button_cover_left"],
     "chopstick_openarm": HEAD_ROBOT + CHOP_SA + ["openarm_adapter"],
     "chopstick_iso50": HEAD_ROBOT + CHOP_SA + ["iso_flange_plate"],
     # bare hand: the head on a wrist saddle (in place of the box's lid)
-    "hand": ["d405_frame", "d405_cup", "ebox", "ebox_wrist_saddle", "quest_cradle", "quest_controller_envelope"],
+    "hand": ["d405_frame_hand", "d405_cup", "ebox", "ebox_wrist_saddle"] + QUEST["right"],
 }
 ROBOT_BUILDS = [b for b in BUILDS if b.endswith(("_openarm", "_iso50"))]
 CAMERA = {b: "d405_envelope" for b in BUILDS}

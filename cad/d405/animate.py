@@ -327,9 +327,9 @@ def t_parallel(out, title, sub, seconds=4.5, keys=12):
 
 
 SEGMENTS = {
-    "d405_chopstick": lambda root, out, P: head(out, "chopstick_right", "D405 + Quest · Chopstick",
+    "d405_chopstick": lambda root, out, P: head(out, "chopstick_right", "D405 + Quest · Chop-UMI",
                                                 "depth camera on a tilting mount, Quest Touch Pro controller for tracking", P),
-    "d405_parallel": lambda root, out, P: t_parallel(out, "D405 + Quest · Parallel",
+    "d405_parallel": lambda root, out, P: t_parallel(out, "D405 + Quest · Para-UMI",
                                                      "the HandUMI T-plate gripper with swappable tips and its D405 cup"),
     "d405_hand": lambda root, out, P: hand(out, P),
 }

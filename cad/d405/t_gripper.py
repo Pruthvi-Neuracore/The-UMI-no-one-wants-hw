@@ -186,17 +186,26 @@ def _scene(p, parts, T=np.eye(4)):
         add(p, m.copy().apply_transform(T @ UP_Z), c)
 
 
+HERO_DIR = np.array([-190.0, 330.0, 270.0])    # the chopstick hero's view (from front-right, above), turned for tips
+                                               # along -X: every parallel render is seen the same way
+
+
+def _view(focal, dist):
+    f = np.array(focal, float)
+    return tuple(f + HERO_DIR / np.linalg.norm(HERO_DIR) * dist), tuple(f)
+
+
 def render_all():
     from render_docs import IMG, plotter, shot
     IMG.mkdir(parents=True, exist_ok=True)
     # hero: right hand, Piper tips, half open (Z up after UP_Z: fingers towards -X, closing along Y)
     p = plotter((1700, 1150))
     _scene(p, build(0.45, TIP_SETS[0]))
-    shot(p, IMG / "parallel.png", (-330, -420, 300), (-30, -70, 40), zoom=1.1)
+    shot(p, IMG / "parallel.png", *_view((-40, -72, 30), 620), zoom=1.1)
     # the other side
     p = plotter((1700, 1150))
     _scene(p, build(0.45, TIP_SETS[0]))
-    shot(p, IMG / "parallel_back.png", (420, -330, 260), (0, -70, 40), zoom=1.1)
+    shot(p, IMG / "parallel_back.png", (420, -330, 260), (0, -70, 40), zoom=1.1)          # the hero's far side
     # opening: closed, half, full
     p = plotter((2100, 900))
     for i, op in enumerate((0.0, 0.5, 1.0)):                       # side by side across the view, seen from the front
@@ -206,14 +215,14 @@ def render_all():
     for ts in TIP_SETS:
         p = plotter((1500, 1100))
         _scene(p, build(0.35, ts))
-        shot(p, IMG / f"tips_{SLUG[ts.name]}.png", (-430, -330, 200), (-60, -70, 20), zoom=1.05)
+        shot(p, IMG / f"tips_{SLUG[ts.name]}.png", *_view((-70, -72, 10), 560), zoom=1.05)
     # the X5 mount on the post, close up
     parts = build(0.4, TIP_SETS[0])
     keep = {k: v for k, v in parts.items() if k in ("main_support", "x5_wrist_mount", "insta360_x5", "camera_mount", "d405",
                                                     "electronics_box", "electronics_lid", "end_cover")}
     p = plotter((1500, 1100))
     _scene(p, keep)
-    shot(p, IMG / "camera_mount.png", (-260, -260, 120), (-30, -72, 90), zoom=1.3)
+    shot(p, IMG / "camera_mount.png", *_view((-30, -72, 90), 360), zoom=1.3)
 
 
 def parts_sheet():
