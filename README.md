@@ -205,6 +205,30 @@ as the gripping face.
 | `hardware/v4/STL/v4_finger_left.stl`, `v4_finger_right.stl` | PETG (or PLA) | 1 + 1 |
 
 
+## V5: flat triangular fingers with a ribbed back
+
+<p align="center"><img src="docs/img/v5_open.png" alt="V5: two flat triangular fingers with ribbed backs on OpenArm's link7" width="560"></p>
+
+`hardware/v5/` is in the style of the flat black fingers on compact parallel grippers. It's one plain printed part
+per finger, left and right, on OpenArm's printed finger base.
+
+- **Gripping face:** one flat triangle, 61 mm wide at the mounting plate and tapering over 95 mm to a rounded tip.
+  The fingers close flat on each other, 0.2 mm apart. You can stick a friction pad (1 mm rubber or grip tape) on it.
+- **Back:** a wedge, the full height of the mounting plate at the root, sloping down to 4 mm thick at the tip.
+- **Cells:** at the root, the back is opened into four cells separated by 3 mm ribs, with side walls along the
+  outline. They're open to the back and run out through its slope. The two middle cells sit over the screw columns,
+  with their floor just under the lower screw heads, so all four heads are open at the bottom of the cells and a hex
+  key reaches them along the cell.
+- **Strength:** 1.7× what's needed for 200 N at the tip with a 1.5 safety factor.
+- **Weight:** each finger is 60.1 cm³ (about 76 g in PETG).
+
+<p align="center"><img src="docs/img/v5_finger.png" alt="One V5 finger from the back: the four cells at the root, between the ribs" width="520"></p>
+
+| File | Material | Per gripper |
+|---|---|---|
+| `hardware/v5/STL/v5_finger_left.stl`, `v5_finger_right.stl` | PETG (or PLA) | 1 + 1 |
+
+
 ## Files
 
 | Path | What |
@@ -217,6 +241,7 @@ as the gripping face.
 | `cad/openarm_v2.py`, `hardware/v2/` | V2, the flat fingers: generator, STEP and STL |
 | `cad/openarm_v3.py`, `hardware/v3/` | V3, V1 in one material: generator, STEP and STL |
 | `cad/openarm_v4.py`, `hardware/v4/`, `cad/source/arx_x5/` | V4, the flat ARX-X5-style blade on OpenArm's base: generator, STEP, STL, and the HandUMI tip its outline is measured from |
+| `cad/openarm_v5.py`, `hardware/v5/` | V5, flat triangular fingers with a ribbed back: generator, STEP, STL |
 | `cad/openarm_base.py`, `hardware/base/` | The base on its own (mounting plate, four M2.5 holes with counterbores, rib), left and right, as a starting block for your own fingers |
 | `docs/img/` | Renders |
 
