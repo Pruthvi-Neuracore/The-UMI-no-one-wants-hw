@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# the fine-tip source STEPs (third-party, licence unknown): kept local, not published
+cad/source/fine_tip/
