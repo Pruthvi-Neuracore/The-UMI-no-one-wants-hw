@@ -1,4 +1,4 @@
-# The UMI no one wants
+# HandUMI · D405
 
 <p align="center">
   <img src="docs/img/hero.png" alt="The UMI no one wants: hand-worn gripper with an Intel RealSense D405 wrist camera" width="900">
