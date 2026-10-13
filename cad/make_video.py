@@ -68,7 +68,7 @@ def main():
                                         "  ·  ".join(v for k, v in kits.items() if (HERE / k).exists())], 3.0)
         clips += [tmp / f"{s}.mp4" for _, s in ORDER]
         end = tmp / "end.mp4"
-        card(end, "Chopstick · Parallel · Hand", ["one interface for every gripper and every robot",
+        card(end, "Chop-UMI · Para-UMI · Hand", ["one interface for every gripper and every robot",
                                                  "OpenArm  ·  UR  ·  ABB GoFa  ·  FANUC CRX"], 3.0)
         clips.append(end)
         # chain crossfades

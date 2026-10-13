@@ -54,7 +54,7 @@ SERVO_LABEL = "Servo"
 MODULES = [
     ("frame", ("x5_", "chopstick_clip_")),           # the X5 frames and the clips that tie them to a base
     ("pod", ("pg_pod",)),
-    ("hand", ("pg_wrist",)),
+    ("hand", ("pg_wrist", "palm_button")),
     ("mounts", ("openarm_adapter", "iso_flange_plate")),
     ("chopstick", ("chopstick_base", "jaw_", "tip_tpu", "sleeve_")),
 ]

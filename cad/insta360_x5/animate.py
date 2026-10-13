@@ -301,9 +301,9 @@ def t_parallel(out, title, sub, seconds=4.5, keys=12):
 
 
 SEGMENTS = {
-    "x5_chopstick": lambda root, out, P: handheld(out, "chopstick_right", "Insta360 X5 · Chopstick",
+    "x5_chopstick": lambda root, out, P: handheld(out, "chopstick_right", "Insta360 X5 · Chop-UMI",
                                                   "pinch the geared jaws; the 360° camera rides on top", P),
-    "x5_parallel": lambda root, out, P: t_parallel(out, "Insta360 X5 · Parallel",
+    "x5_parallel": lambda root, out, P: t_parallel(out, "Insta360 X5 · Para-UMI",
                                                    "the HandUMI T-plate gripper with swappable tips; the X5 on its camera post"),
     "x5_docking": lambda root, out, P: docking(out, root, "chopstick", P),
     "x5_hand": lambda root, out, P: hand(out, P),
