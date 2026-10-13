@@ -8,7 +8,9 @@ so the camera tilts: loosen the M4 x 30 bolt, set the angle, tighten the nyloc n
   front: the X5 frame's base interface, unchanged (the 8 mm slab and tongue that key into the base, with the two
          M3 x 55 clamp screws at (x, z) = (48.05, ±12.5)), so it fits the handheld and the robot base alike,
   back:  a plate with the robot mounts' four M3 holes at (y, z) = (±9, ±26.9), so on the robot the OpenArm adapter or
-         the ISO 50 plate bolts straight on; a central web joins it to the front,
+         the ISO 50 plate bolts straight on,
+  join:  a U-channel from the back plate to the front: a central web, two 3 mm side walls on the back plate's edges
+         and a 3 mm floor, all kept below the cup's swing, so the head can't twist or bend on one thin rib,
   top:   the hinge knuckle, on top of the back plate, axis along the gripper's Y at HINGE.
 
 TILT_DEG is the camera's view direction below horizontal (35° default: the jaws and tips sit in the D405's 7-50 cm
@@ -36,6 +38,7 @@ BACK = dict(x=(0.0, 6.0), y=15.5, z=(-33.0, 31.0))
 INSERTS = [(9.0, 26.9), (-9.0, 26.9), (9.0, -26.9), (-9.0, -26.9)]
 WEB_Y = 4.0
 WEB_TOP = 8.0                    # kept low so the cup's floor and gussets swing clear over the whole tilt range
+WALL_T, FLOOR_T = 3.0, 3.0       # the web is boxed in: two side walls and a floor make a U-channel (stiff in twist)
 
 
 def cam_matrix(tilt_deg=TILT_DEG):
@@ -81,18 +84,24 @@ def camera_envelope(tilt_deg=TILT_DEG):
     return box.apply_transform(cam_matrix(tilt_deg))
 
 
-def build():
+def build(hand=False):
+    """The frame. hand=True: the wrist-worn head's frame (d405_frame_hand), just the back plate and the knuckle, since
+    nothing needs to sit in front of the camera there."""
     lite = load_raw()["x5_lite_frame"]
     interface = lite & (Pos(39.5 + 5, 0, 0) * Box(10, 80, 120))              # slab + tongue, x >= 39.5
     x0, x1 = BACK["x"]
     z0, z1 = BACK["z"]
     back = Pos((x0 + x1) / 2, 0, (z0 + z1) / 2) * Box(x1 - x0, 2 * BACK["y"], z1 - z0)
-    web = Pos((x1 + 40.0) / 2, 0, (z0 + 4 + WEB_TOP) / 2) * Box(40.0 - x1 + 0.5, 2 * WEB_Y, WEB_TOP - z0 - 4)
+    L, zb = 40.0 - x1 + 0.5, z0 + 4
+    web = Pos((x1 + 40.0) / 2, 0, (zb + WEB_TOP) / 2) * Box(L, 2 * WEB_Y, WEB_TOP - zb)
+    for sy in (-1, 1):                                                       # side walls
+        web += Pos((x1 + 40.0) / 2, sy * (BACK["y"] - WALL_T / 2), (zb + WEB_TOP) / 2) * Box(L, WALL_T, WEB_TOP - zb)
+    web += Pos((x1 + 40.0) / 2, 0, zb + FLOOR_T / 2) * Box(L, 2 * BACK["y"], FLOOR_T)  # floor
     hx, hz = HINGE
     r = KNUCKLE_OD / 2
     knuckle = Pos(hx, 0, hz) * Rot(90, 0, 0) * Cylinder(r, KNUCKLE_W)
     neck = Pos(hx, 0, (z1 + hz) / 2) * Box(KNUCKLE_OD, KNUCKLE_W, hz - z1 + 0.5)     # knuckle onto the back plate
-    body = interface + back + web + neck + knuckle
+    body = back + neck + knuckle if hand else interface + back + web + neck + knuckle
     body -= Pos(hx, 0, hz) * Rot(90, 0, 0) * Cylinder(BOLT_D / 2, KNUCKLE_W + 2)
     for y, z in INSERTS:
         body -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(1.7, x1 - x0 + 2)
@@ -103,6 +112,7 @@ def main():
     from restyle import restyle
     p = restyle("d405_frame", build())
     save_part("d405_frame", p)
+    save_part("d405_frame_hand", restyle("d405_frame", build(hand=True)))
     cup().export(part_path("d405_cup", "stl"))                # the HandUMI cup, placed at TILT_DEG, gripper frame
     bb = p.bounding_box()
     print(f"d405_frame {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, {p.volume / 1e3:.1f} cm3, "

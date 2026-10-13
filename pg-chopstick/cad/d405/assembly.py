@@ -36,7 +36,7 @@ def colour_of(name):
         return COLOURS["tpu"]
     if name == "d405_envelope":
         return COLOURS["camera"]
-    if name == "quest_controller_envelope":
+    if name.startswith("quest_controller_envelope"):
         return "#3b3f45"
     if name.startswith("servo"):
         return COLOURS["servo"]
@@ -102,7 +102,8 @@ def link7_in_gripper(openarm_dir):
 
 # pairs that touch by design: the servo in its pocket
 EXPECTED = [({"chopstick_base_sa", "servo_envelope"}),
-            ({"quest_cradle", "quest_controller_envelope"}),
+            ({"quest_support_right", "quest_controller_envelope"}),
+            ({"quest_support_left", "quest_controller_envelope_left"}),
             ({"d405_cup", "d405_envelope"})]   # the camera's stand-in body in the HandUMI cup (made for the real D405)
 
 

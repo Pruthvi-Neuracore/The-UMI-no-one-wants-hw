@@ -69,6 +69,17 @@ def shot(p, path, pos, focal, up=(0, 0, 1), zoom=1.0, aspect=1.6):
     print("wrote", path.relative_to(ROOT) if ROOT in path.parents else path)
 
 
+def framed(p, path, pos, focal, up=(0, 0, 1), view_angle=30.0):
+    """Like shot(), but the camera is set exactly and not fitted to the scene, so long scenery (the forearm and its
+    sleeve) runs out of the picture instead of ending in it; no crop."""
+    p.camera_position = [pos, focal, up]
+    p.camera.view_angle = view_angle
+    p.reset_camera_clipping_range()
+    p.screenshot(str(path))
+    p.close()
+    print("wrote", path.relative_to(ROOT) if ROOT in path.parents else path)
+
+
 def gripper(build, frac, parts):
     """A build opened `frac` of a typical working opening (0 closed, 1 = 45 deg per chopstick jaw / full stroke)."""
     return assemble(build, frac, parts)
@@ -137,15 +148,23 @@ def wrist(parts):
 
 
 def hand(parts):
-    """The D405 head on the wrist saddle, strapped to a forearm, looking over a relaxed hand."""
+    """The D405 head on the wrist saddle, strapped to a forearm, looking over a relaxed hand; the thumb strap with the
+    palm button, from above (hand.png) and from the palm side (hand_palm.png)."""
     import ebox as E
     import wrist_scene as W
-    p = plotter((1600, 1100))
-    place(p, assemble("hand", 0.0, parts))
     T, k = wrist(parts)
-    for m, c in W.human(T, r_saddle=E.R_ARM, **k):
-        add(p, m, c)
-    shot(p, IMG / "hand.png", (420, 380, 260), (60, 0, -30), zoom=1.25)
+    wire_to = (-8.0, -(E.Y - E.WALL / 2), E.Z0 + 10.0)        # the box's button-wire hole on the hand's outer side
+    scene = W.human(T, r_saddle=E.R_ARM, wire_to=wire_to, **k)
+    # views in the saddle's arm frame (s along the arm to the hand, n up), so both kits are framed alike
+    arm = lambda q: tuple((T @ [*q, 1.0])[:3])
+    for name, pos, focal, angle in (("hand", (371.5, 330.0, 154.1), (5.5, 0.0, 24.4), 36.0),
+                                    ("hand_palm", (157.1, -60.0, -337.1), (64.7, 0.0, -63.9), 34.0)):
+        pos, focal = arm(pos), arm(focal)
+        p = plotter((1600, 1100))
+        place(p, assemble("hand", 0.0, parts))
+        for m, c in scene:
+            add(p, m, c)
+        framed(p, IMG / f"{name}.png", pos, focal, view_angle=angle)
 
 
 def plates(parts):
@@ -165,7 +184,7 @@ def exploded(parts):
     rows = [["chopstick_base_dc", "chopstick_clip_dc", "d405_frame", "jaw_left_dc", "jaw_right_dc_button",
              "tip_tpu_left", "tip_tpu_right", "sleeve_button_cover_right"],
             ["chopstick_base_sa", "chopstick_clip_sa", "jaw_left_sa", "jaw_right"],
-            ["ebox", "ebox_lid", "ebox_wrist_saddle", "quest_cradle", "openarm_adapter", "iso_flange_plate"]]
+            ["ebox", "ebox_lid", "ebox_wrist_saddle", "quest_arm_right", "quest_support_right", "openarm_adapter", "iso_flange_plate"]]
     p = plotter((2000, 1200))
     for r, group in enumerate(rows):
         x = 0.0
