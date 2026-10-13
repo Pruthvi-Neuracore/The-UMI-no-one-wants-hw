@@ -6,13 +6,13 @@ One soft part and one hard part per finger, as in Open-ENPIRE:
   * `hardshell_finger_<side>` (PETG / PLA), the hard part:
       - Open-ENPIRE's OpenArm mount (pgeedh/Open-ENPIRE-Gripper): a 5.1 mm plate with four M3 holes and the key rib
         behind it, where the stock finger's base goes;
-      - a solid base, lofted from nearly the plate's full front face into the shell, with the four screw bores
-        through it;
-      - the shell: every cross-section of the soft part grown by SHELL_T and lofted, so it is shaped exactly like
-        the soft finger, with the soft part's exact shape cut into it. The soft face stands PROUD of its rim; past the
-        soft part's end a TIP_T hard tip.
-The soft part drops into the shell and is glued in. The upper two screws are reached through the base's sloped face
-with the finger glued; the lower two sit in line with the finger, so fit them before gluing the pad in.
+      - a straight, prismatic jaw: the intersection of two straight-sided outlines (side view and plan), each the
+        convex envelope of the soft part with a margin plus a solid base block square to the plate; rounded long
+        edges, a chamfered tip, and a 1.5 mm hard tip past the soft part's end;
+      - a pocket: the soft part's exact shape with straight walls up to its face, which stands PROUD of the rim.
+The soft part drops into the pocket and is glued in. The upper two screws sit above the base block, reachable with
+the finger glued; the lower two are in straight bores through the block, so fit them before gluing the pad in.
+Strength: check_strength.py.
 
 Finger frame (mm; Open-ENPIRE's OpenArm jaw frame): x along the finger from the mount plate's front face, y across the
 plate (its height), z through the finger, the gripping face at low z. The right finger is the mirror image in y (as in
@@ -83,117 +83,84 @@ def soft_part():
     return tip.moved(_loc(R, t)), math.degrees(th)
 
 
-N_SECTIONS, N_POINTS = 30, 96
+BASE = dict(x=12.0, half=15.5, back=43.0)   # the solid base block: length in front of the plate, half-width, back z
+BACK_MARGIN, SIDE_MARGIN = 3.0, 2.5         # hard material behind and beside the soft part
+EDGE_R = 1.5
 
 
-def _ring(poly, x, scale=1.0, centre=None):
-    """A closed spline in the plane x through `poly`'s outline (optionally scaled about `centre`), resampled to
-    N_POINTS from the top of its back (max z), the same way round, so successive sections loft cleanly."""
-    from build123d import Spline, Wire
-    from shapely.geometry.polygon import orient
-    ring = orient(poly, 1.0).exterior
-    pts = np.array([ring.interpolate(d).coords[0] for d in np.linspace(0, ring.length, 600, endpoint=False)])
-    if centre is not None:
-        pts = centre + (pts - centre) * scale
-    k = np.argmax(pts[:, 1] - 0.05 * np.abs(pts[:, 0] - pts[:, 0].mean()))
-    pts = np.roll(pts, -k, axis=0)
-    seg = np.linalg.norm(np.diff(np.vstack([pts, pts[:1]]), axis=0), axis=1)
-    d = np.r_[0, np.cumsum(seg)]
-    s = np.linspace(0, d[-1], N_POINTS, endpoint=False)
-    ys = np.interp(s, d, np.r_[pts[:, 0], pts[0, 0]])
-    zs = np.interp(s, d, np.r_[pts[:, 1], pts[0, 1]])
-    return Wire([Spline(*[(x, y, z) for y, z in zip(ys, zs)], periodic=True)])
-
-
-def _soft_sections(m):
-    """The soft part's cross-sections (x, polygon in (y, z)) along its length."""
+def _silhouette(m, axes):
+    """The soft part's outline projected on two axes (0 = x, 1 = y, 2 = z), as one polygon."""
     from shapely.geometry import Polygon
-    x0, x1 = m.bounds[0][0], m.bounds[1][0]
-    out = []
-    for x in np.linspace(x0 + 0.3, x1 - 0.3, N_SECTIONS):
-        sec = m.section([1, 0, 0], [x, 0, 0])
-        loop = max(sec.discrete, key=lambda l: Polygon(l[:, 1:]).area)[:, 1:]
-        out.append((x, Polygon(loop).buffer(0)))
-    return out
+    from shapely.ops import unary_union
+    tris = m.vertices[m.faces][:, :, axes]
+    return unary_union([Polygon(t) for t in tris if Polygon(t).area > 1e-6]).buffer(0.05).simplify(0.15)
 
 
-def _rim(m):
-    """The rim along x: PROUD behind the soft face, following its deepest points so it never covers the face,
-    smoothed; over the hard tip, TIP_BACK behind the face."""
-    xs, xe = m.bounds[0][0], m.bounds[1][0]
-    grid = np.arange(xs - SHELL_T - 1, xe + TIP_T + 1.01, 1.0)
-    face = np.array([m.section([1, 0, 0], [float(np.clip(x, xs + 0.3, xe - 0.3)), 0, 0]).vertices[:, 2].min()
-                     for x in grid])
-    face = np.array([face[max(0, i - 7):i + 8].max() for i in range(len(face))])
-    face = np.convolve(np.pad(face, 4, mode="edge"), np.ones(9) / 9, mode="valid")
-    return grid, np.array([f + (TIP_BACK if x > xe - 0.5 else PROUD) for x, f in zip(grid, face)])
-
-
-SPINE_HALF = (13.0, 0.0)   # the spine's half-width at the base end and the tip (never less than the grown soft part)
-SPINE_BACK = (52.0, 3.0)   # its back: z at the base end, and how far behind the soft part's back at the tip
-
-
-def _spine(p, x, m):
-    """One section of the hard part: the soft part's section grown by SHELL_T, joined to a solid spine behind it
-    (tapering from the base to the tip), as one rounded convex outline. The soft part is cut out later, so the hard part
-    carries the load in a solid section rather than a thin skin."""
-    from shapely.geometry import box
-    x0, x1 = m.bounds[0][0], m.bounds[1][0]
-    t = (x - x0) / (x1 - x0)
-    g = p.buffer(SHELL_T, join_style=1)
-    y0, z0, y1, z1 = g.bounds
-    yc = (y0 + y1) / 2
-    half = max((y1 - y0) / 2, SPINE_HALF[0] + (SPINE_HALF[1] - SPINE_HALF[0]) * t)
-    back = max(z1, SPINE_BACK[0] + ((z1 + SPINE_BACK[1]) - SPINE_BACK[0]) * t)
-    spine = box(yc - half, z0, yc + half, back)
-    return g.union(spine).convex_hull.buffer(-2.0).buffer(2.0, join_style=1)
+def _prism(poly, axes, lo=-200.0, hi=200.0):
+    """Extrude a 2D polygon drawn on two axes along the third, from lo to hi."""
+    from build123d import Polyline, make_face
+    third = ({0, 1, 2} - set(axes)).pop()
+    pts = []
+    for a, b in list(poly.exterior.coords)[:-1]:
+        q = [0.0, 0.0, 0.0]
+        q[axes[0]], q[axes[1]], q[third] = a, b, lo
+        pts.append(tuple(q))
+    d = [0, 0, 0]
+    d[third] = 1
+    return extrude(make_face(Polyline(*pts, close=True)), hi - lo, dir=tuple(d))
 
 
 def holder(soft):
-    """The hard shell: every cross-section of the soft part grown by SHELL_T and lofted, closed at the base and over
-    the tip (TIP_T past the soft part's end), the gripping side trimmed to the rim; and the solid base from the mount
-    plate to the shell. (The soft part is cut out in build().)"""
-    from build123d import Polyline, loft, make_face
-    from shapely.geometry import Polygon
-    m = _mesh(soft, 0.03)
-    grown = [(x, _spine(p, x, m)) for x, p in _soft_sections(m)]
-    xb, pb = grown[0]
-    xe, pe = grown[-1]
-    c = np.array(pe.centroid.coords[0])
-    wires = [_ring(pb, xb - 0.3 - SHELL_T)] + [_ring(p, x) for x, p in grown] + \
-            [_ring(pe, xe + 0.3 + TIP_T, 0.8, c)]
-    body = loft([make_face(w) for w in wires])
-    grid, rim = _rim(m)
-    keep = Polygon(list(zip(grid, rim)) + [(grid[-1], 200), (grid[0], 200)]).buffer(0).simplify(0.1)
-    pts = [(x, -60.0, z) for x, z in list(keep.exterior.coords)[:-1]]
-    body &= extrude(make_face(Polyline(*pts, close=True)), 120.0, dir=(0, 1, 0))
-    # the solid base: a loft from the plate's front face (nearly its full size) into the shell's base section, so the
-    # finger grows out of the plate as one solid
-    from shapely.geometry import box as sbox
-    (py0, py1), (pz0, pz1) = PLATE["y"], PLATE["z"]
-    face0 = sbox(py0 + 3.0, max(pz0, float(rim[0])), py1 - 3.0, pz1 - 1.0).buffer(-3.0).buffer(3.0, join_style=1)
-    x_join = xb - 0.3 - SHELL_T
-    base = loft([make_face(_ring(face0, 0.0)), make_face(_ring(pb, x_join + 0.8))])
-    return body + base
+    """The hard jaw: the intersection of two straight-sided outlines, the side view (x, z) and the plan view (x, y),
+    each the convex envelope of the soft part with a margin and the solid base block. Flat faces and straight tapers,
+    a 1.5 mm hard tip past the soft part's end, edges rounded. The soft part's pocket is cut in build()."""
+    from shapely.geometry import box
+    m = _mesh(soft, 0.05)
+    xs, xe = m.bounds[0][0], m.bounds[1][0]
+    face = m.bounds[0][2]                                                  # the soft face's lowest point
+    rim = face + PROUD
+    side = _silhouette(m, [0, 2]).buffer(BACK_MARGIN).union(box(0.0, rim, BASE["x"], BASE["back"])).convex_hull
+    side = side.intersection(box(0.0, rim, xe + TIP_T, 200)).union(
+        side.intersection(box(xe - 2.0, face + TIP_BACK, xe + TIP_T, 200)))
+    side = side.convex_hull.intersection(box(0.0, face + TIP_BACK, xe + TIP_T, 200)).difference(
+        box(0.0, face + TIP_BACK - 1, xe - 2.0, rim))                    # the rim, and the tip's lip below it
+    plan = _silhouette(m, [0, 1]).buffer(SIDE_MARGIN).union(box(0.0, -BASE["half"], BASE["x"], BASE["half"]))
+    plan = plan.convex_hull.intersection(box(0.0, -100, xe + TIP_T, 100))
+    body = _prism(side, [0, 2]) & _prism(plan, [0, 1])
+    for edges in (body.edges(), body.edges().filter_by(Axis.X)):          # round what rounds cleanly
+        try:
+            b = fillet(edges, EDGE_R)
+            if b.is_valid:
+                return b
+        except Exception:
+            pass
+    print("  (jaw edges left sharp)")
+    return body
+
+
+def pocket(soft):
+    """The soft part's seat: its exact shape, plus straight walls from its outline up to past its face, so the whole
+    soft face is exposed."""
+    m = _mesh(soft, 0.05)
+    plan = _silhouette(m, [0, 1])
+    lo, hi = m.bounds[0][2] - 5.0, m.bounds[0][2] + PROUD + 6.0
+    return soft + (_prism(plan, [0, 1], lo, hi) & (Pos(0, 0, (lo + hi) / 2) * Box(600, 600, hi - lo)))
 
 
 def build():
-    """(shell, soft, turn)."""
+    """(jaw, soft, turn)."""
     soft, th = soft_part()
-    xb = soft.bounding_box().min.X
-    shell = holder(soft)
-    # the mount
+    jaw = holder(soft)
     (x0, x1), (y0, y1), (z0, z1) = PLATE["x"], PLATE["y"], PLATE["z"]
     plate = Pos((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2) * Box(x1 - x0, y1 - y0, z1 - z0)
     plate = fillet(plate.edges().filter_by(Axis.X), PLATE["r"])
     (rx0, rx1), (ry0, ry1), (rz0, rz1) = RIB["x"], RIB["y"], RIB["z"]
     rib = Pos((rx0 + rx1) / 2 + 0.25, (ry0 + ry1) / 2, (rz0 + rz1) / 2) * Box(rx1 - rx0 + 0.5, ry1 - ry0, rz1 - rz0)
-    shell = plate + rib + shell - soft
-    xc = xb + 0.5                     # the screw-head bores run through the solid base (the lower two into the seat)
-    for y, z in HOLES:
-        shell -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(HOLE_D / 2, x1 - x0 + 2)
-        shell -= Pos((xc - HEAD_SEAT) / 2, y, z) * Rot(0, 90, 0) * Cylinder(HEAD_D / 2, xc + HEAD_SEAT)
-    return shell, soft, th
+    jaw = plate + rib + jaw - pocket(soft)
+    for y, z in HOLES:      # M3 through the plate, a head seat, and a straight head bore through the base block
+        jaw -= Pos((x0 + x1) / 2, y, z) * Rot(0, 90, 0) * Cylinder(HOLE_D / 2, x1 - x0 + 2)
+        jaw -= Pos(BASE["x"] / 2, y, z) * Rot(0, 90, 0) * Cylinder(HEAD_D / 2, BASE["x"] + 2 * HEAD_SEAT)
+    return jaw, soft, th
 
 
 def on_openarm(assets, meshes, q):
