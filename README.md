@@ -189,6 +189,7 @@ Print the plates lying flat on their side: no supports, and the layers run along
 | `hardware/spoon/` | The spoon fingers' STEP and STL |
 | `cad/openarm_v2.py`, `hardware/v2/` | V2, the flat fingers: generator, STEP and STL |
 | `cad/openarm_v3.py`, `hardware/v3/` | V3, V1 in one material: generator, STEP and STL |
+| `cad/openarm_base.py`, `hardware/base/` | The base on its own (mounting plate, four M2.5 holes with counterbores, rib), left and right, as a starting block for your own fingers |
 | `docs/img/` | Renders |
 
 Licences and sources: [NOTICE.md](NOTICE.md).
