@@ -129,7 +129,7 @@ def camera_box():
     (xo, zo), f, n = _cam_frame()
     t = TILT
     c = (xo + (D435[1] / 2 + FIT / 2) * f[0] + D435[2] / 2 * n[0], zo + (D435[1] / 2 + FIT / 2) * f[1] + D435[2] / 2 * n[1])
-    return Pos(c[0], 0, c[1]) * Rot(0, t, 0) * Box(D435[1], D435[0], D435[2])
+    return Pos(c[0], 0, c[1]) * Rot(0, -t, 0) * Box(D435[1], D435[0], D435[2])
 
 
 def core(z0=-120.0, z1=120.0):
@@ -160,8 +160,9 @@ def render(h, mount):
         p.close()
         print("wrote", path.name)
     plot(IMG / "chest_camera.png", items, (-1.0, -0.8, 0.35))
-    plot(IMG / "chest_camera_back.png", items[:2] + items[2:3], (1.0, -0.6, -0.25))
-    plot(IMG / "d435_mount.png", [(H._mesh(mount, 0.03), "#e9edf1")], (-0.8, -1.0, 0.6), size=(1400, 1000), zoom=1.2)
+    plot(IMG / "chest_camera_side.png", items, (0.0, -1.0, 0.0), size=(1100, 1500))       # the 45 deg tilt, side on
+    plot(IMG / "d435_mount.png", [(H._mesh(mount, 0.03), "#e9edf1"), (H._mesh(camera_box(), 0.1), "#55595f")],
+         (-0.6, -1.0, 0.25), size=(1400, 1000), zoom=1.2)
 
 
 def main():

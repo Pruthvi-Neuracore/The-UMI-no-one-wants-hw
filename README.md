@@ -260,7 +260,7 @@ the root. One broad side is flat, and the other is opened into ribbed cells.
 
 ## Chest camera: a D435 mast on OpenArm's core
 
-<p align="center"><img src="docs/img/chest_camera.png" alt="The chest camera mast bolted to OpenArm's 60 x 60 core, with a D435 on its arm, looking 45° down" width="420"></p>
+<p align="center"><img src="docs/img/chest_camera.png" alt="The chest camera mast bolted to OpenArm's 60 x 60 core, with a D435 on its arm" width="360"> <img src="docs/img/chest_camera_side.png" alt="Side view: the D435 on top of the mast, looking forward and 45° down, away from the core" width="300"></p>
 
 `hardware/chest_camera/` raises the chest camera on a mast for a wider view. It's two printed parts.
 
