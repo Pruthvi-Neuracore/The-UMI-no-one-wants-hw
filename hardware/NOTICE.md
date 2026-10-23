@@ -30,4 +30,4 @@ Changes in this repository:
   patterns) and a record-button pocket with a TPU cover (`button_cover_tpu`).
 - `d405_wrist_mount`: a D405 cup with Ø12 / M4 hinge lugs and gussets, replacing `camera_mount`.
 - Every printed part carries a small engraved PG logo; the gripper tips do not.
-- The original bill of materials, hardware README and the gripper tips for other robots were removed; `docs/bom.md` is new.
+- The original bill of materials, hardware README and the gripper tips for other robots were removed; `BOM.md` and `bom.csv` are new.

@@ -106,7 +106,7 @@ tips from `hardware/STL/gripper_tips/`. STEP files for every part are in `hardwa
 
 ## Hardware
 
-Everything to buy is in [docs/bom.md](docs/bom.md). Notes:
+Everything to buy is in [BOM.md](BOM.md) ([bom.csv](bom.csv) for ordering). Notes:
 
 - **Camera:** Intel RealSense D405. Fix it with 2× M3×5 screws into its rear holes (2× M3×0.5, 20 mm apart, 4 mm max thread depth).
 - **Camera hinge:** 1× M4×30 bolt with a nyloc nut.
@@ -121,7 +121,7 @@ Everything to buy is in [docs/bom.md](docs/bom.md). Notes:
 | `hardware/STL` | Printable parts: `right/`, `left/` and `gripper_tips/` |
 | `hardware/STEP` | The same parts as STEP, for editing in CAD |
 | `assembly/` | Full assembly as GLB and STL |
-| `docs/bom.md` | Bill of materials |
+| `BOM.md`, `bom.csv` | Bill of materials |
 | `docs/electronics.md` | Electronics, wiring and power |
 
 ## Strength

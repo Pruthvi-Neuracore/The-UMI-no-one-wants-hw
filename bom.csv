@@ -1,0 +1,47 @@
+category,part,used_for,material_or_spec,per_device,per_pair
+printed,main_support.stl,Main support (T-plate with camera post),PLA/PETG,1,2
+printed,end_cover.stl,End cover,PLA/PETG,1,2
+printed,d405_wrist_mount.stl,D405 cup on the M4 hinge,PLA/PETG,1,2
+printed,electronics_box.stl,Electronics box,PLA/PETG,1,2
+printed,electronics_lid.stl,Electronics lid,PLA/PETG,1,2
+printed,*_thumb_link.stl,Thumb link,PLA/PETG,1,2
+printed,*_index_middle_finger_link.stl,Index/middle finger link,PLA/PETG,1,2
+printed,crank_mechanism_plate.stl,Crank mechanism plate,PLA/PETG,1,2
+printed,connecting_link_1.stl,Connecting link 1,PLA/PETG,1,2
+printed,connecting_link_2.stl,Connecting link 2,PLA/PETG,1,2
+printed,hand_support_base.stl,Hand support base,PLA/PETG,1,2
+printed,*_controller_support.stl,Controller support,PLA/PETG,1,2
+printed,button_cover_tpu.stl,Record-button cover,TPU 95A,1,2
+tips (Piper),Agile-X-Piper-LEFT/RIGHT-Gripper.stl,AgileX Piper tips,PLA/PETG,1+1,2+2
+tips (Open-ENPIRE),ENPIRE-LEFT/RIGHT-Jaw.stl,OpenArm tips,PLA/PETG,1+1,2+2
+tips (Open-ENPIRE),ENPIRE-LEFT/RIGHT-Soft-Insert.stl,OpenArm tip inserts,TPU 95A,1+1,2+2
+tips (Hand-E),Hand-E-Finger.stl,Robotiq Hand-E tips,PLA/PETG,2,4
+mechanical,MR63ZZ bearing,Crank and links,3 x 6 x 2.5 mm,4,8
+mechanical,LM4UU linear bearing,Finger links on the rods,4 x 8 x 12 mm,4,8
+mechanical,Stainless rod,Linear guide,Ø4 x 135 mm,2,4
+mechanical,Feetech STS3215 servo,Jaw-width encoder (torque off),,1,2
+mechanical,Hook-and-loop strap,Hand and finger straps,15 cm,4,8
+fastener,M4x30 bolt,Camera hinge,,1,2
+fastener,M4 nyloc nut,Camera hinge,,1,2
+fastener,M3x5 screw,D405 into its cup,,2,4
+fastener,M3x20 screw,Mechanism,,2,4
+fastener,M3x12 screw,Mechanism,,4,8
+fastener,M3x15 screw,Mechanism,,4,8
+fastener,M3x8 screw,Electronics box to arm,,2,4
+fastener,M3x6 screw,Lid to box,,4,8
+fastener,M3 heat-set insert,Box and lid,Ø4.0 x 5,6,12
+fastener,M2x4 self-tapping screw,Pico to lid standoffs,,4,8
+fastener,M2 self-tapping screw,Tips to flange,,8,16
+fastener,M2 screws + nuts (assorted),Mechanism,,~12,~24
+fastener (optional),M3 heat-set insert,M3 tip pattern,Ø4.0 x 5,12,24
+fastener (optional),M4 heat-set insert,M4 tip pattern,Ø5.6 x 7,4,8
+electronics,Intel RealSense D405,Wrist depth camera,,1,2
+electronics,Raspberry Pi Pico 2,IMU / button / servo bus,,1,2
+electronics,BNO085 IMU breakout,Motion,28 x 24 mm pocket,1,2
+electronics,USB 3 hub board (USB-C upstream),One cable to laptop,fits 38 x 42 x 14 mm,1,2
+electronics,6 x 6 mm tactile switch,Record button,~250-320 gf,1,2
+electronics,74LVC1G125 buffer or 1 kOhm resistor,Servo bus,,1,2
+electronics,2-core wire,Button to Pico,~30 cm,1,2
+cable,USB-C to USB-A (USB 3),D405 to hub,~15 cm,1,2
+cable,Micro-USB to USB-A,Pico to hub,~10 cm,1,2
+cable,USB-C cable (USB 3),Device to laptop,,1,2
