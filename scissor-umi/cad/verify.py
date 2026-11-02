@@ -4,7 +4,10 @@
      with no tooth interference and only the designed backlash (sections of the real parts at each layer's mid-plane);
   2. jaws: the handheld's 2F-140 replica parts against Robotiq's own meshes on the robot at the same q (surface
      distance), and the pads' boxes;
-  3. clearance: assembly.check() (interference between all parts over the stroke, head / Quest vs both builds).
+  3. camera: the handheld's camera tab (tab_mast STEP) against the robot's camera plate tab (ur_camera_plate STEP,
+     placed on the gripper), measured from the two STEP files: the tab faces' normals and the six hole centres, and
+     so the D405's pose on each;
+  4. clearance: assembly.check() (interference between every pair of parts over the stroke).
 
     python verify.py
 """
@@ -66,10 +69,60 @@ def jaws(qs=(0.0, 0.35, 0.7)):
         print(f"  q = {q:.2f}: " + "; ".join(rows))
 
 
+def _tab_measure(shape):
+    """The tab face (plane with the tab's normal that carries the M3 pattern) and the hole centres on it, in G."""
+    from build123d import GeomType
+    from OCP.BRepAdaptor import BRepAdaptor_Surface
+    import head
+    n0 = head.tab_frame()[:3, 2]
+    holes = []
+    for f in shape.faces():
+        if f.geom_type == GeomType.CYLINDER:
+            c = BRepAdaptor_Surface(f.wrapped).Cylinder()
+            if abs(c.Radius() - 1.7) < 0.01:
+                d = c.Axis().Direction()
+                if abs(abs(np.dot([d.X(), d.Y(), d.Z()], n0)) - 1) < 1e-3:
+                    l = c.Location()
+                    holes.append((np.array([l.X(), l.Y(), l.Z()]), np.array([d.X(), d.Y(), d.Z()])))
+    faces = [f for f in shape.faces() if f.geom_type == GeomType.PLANE
+             and np.dot([f.normal_at().X, f.normal_at().Y, f.normal_at().Z], n0) > 1 - 1e-4]
+    # the tab face is the forward-facing plane the hole axes pierce at the largest w
+    best = max(faces, key=lambda f: np.dot([f.center().X, f.center().Y, f.center().Z], n0))
+    p0 = np.array([best.center().X, best.center().Y, best.center().Z])
+    nrm = np.array([best.normal_at().X, best.normal_at().Y, best.normal_at().Z])
+    pts = []
+    for L, D in holes:
+        t = np.dot(p0 - L, nrm) / np.dot(D, nrm)
+        pts.append(L + t * D)
+    return nrm, np.array(pts)
+
+
+def camera():
+    from build123d import import_step
+    import head
+    rn, rp = _tab_measure(import_step(str(S.STEP_DIR / "_ur_camera_plate.step")))
+    hn, hp = _tab_measure(import_step(str(S.STEP_DIR / "tab_mast.step")))
+    tol_hole = 0.05
+    d = [np.min(np.linalg.norm(hp - p, axis=1)) for p in rp]
+    hp_on_tab = [p for p, dd in zip(rp, d) if dd < tol_hole]
+    ang = math.degrees(math.acos(min(1.0, abs(float(np.dot(rn, hn))))))
+    off = abs(float(np.dot(hp.mean(0) - rp.mean(0), rn))) if len(hp) else 99
+    ok = len(rp) == 6 and len(hp_on_tab) == 6 and ang < 0.01 and off < 0.01
+    print(f"  robot plate tab: {len(rp)} holes; handheld tab: {len(hp)} holes ({len(hp_on_tab)} on the robot's "
+          f"pattern, worst {max(d):.3f} mm); tab faces {ang:.4f} deg apart, {off:.3f} mm apart  {'OK' if ok else 'FAIL'}")
+    T = head.camera_pose()
+    view = T[:3, 2]
+    print(f"  D405 (both builds): optical centre {np.round(T[:3, 3], 1)} mm in G, view {np.round(view, 3)} "
+          f"({math.degrees(math.atan2(-view[0], view[2])):.1f} deg in towards the axis)")
+    return ok
+
+
 if __name__ == "__main__":
     print("1. gears over the stroke")
     gears()
     print("2. jaws vs the robot's 2F-140 (Robotiq meshes)")
     jaws()
-    print("3. clearance")
+    print("3. camera on the handheld vs on the robot")
+    camera()
+    print("4. clearance")
     A.check()

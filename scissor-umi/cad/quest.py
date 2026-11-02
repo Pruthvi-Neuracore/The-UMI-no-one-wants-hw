@@ -1,6 +1,6 @@
 """The Quest Touch Pro controller on the head: its pose in G and the cradle's bore.
 
-The controller stands upright on the gripper's centre plane (y = 0) behind the D405, its handle along G x (up) and its
+The controller stands upright on the gripper's centre plane (y = 0) right behind the D405, its handle along G x (up) and its
 face (thumbstick, buttons, front cameras) looking forward along +z, over the jaws. The cradle is a split collar around
 the straight part of the handle (24 mm of it), bored to the handle's own section, clamped with one M3 screw.
 
@@ -17,8 +17,8 @@ HERE = Path(__file__).resolve().parent
 QUEST_STL = HERE / "source" / "quest" / "MetaQuestTouchPro_Right.stl"
 SECTION_JSON = HERE / "source" / "quest" / "handle_section.json"
 
-HANDLE_Z = -12.0                  # G z of the handle's centre: right above the camera, on the centre plane
-HANDLE_X0 = 112.0                 # G x of the handle's bottom end (just above the cradle)
+HANDLE_Z = -48.0                  # G z of the handle's centre: behind the camera, on the centre plane
+HANDLE_X0 = 90.0                  # G x of the handle's bottom end (clear above the hand)
 COLLAR_DZ = (6.0, 30.0)           # the collar grips the handle from 6 to 30 mm above its bottom end
 FIT = 0.4                         # radial clearance in the bore (the clamp closes it)
 K = np.array([[0, 0, 1.0], [0, -1.0, 0], [1.0, 0, 0]])   # kit frame (X face, Y left, Z up the handle) -> G

@@ -15,9 +15,9 @@ The handheld adds two parts on its tab:
   d405_hood    an open frame round the camera (no floor, so the camera sits on the tab exactly as on the robot),
                screwed from behind the mast into the tab's two outer holes (±22.5 mm). The camera itself is fixed to
                the tab as on the robot plate; the hood guards it and carries the Quest arm.
-  quest_arm    closes the hood's top (2 x M3 into the hood's ears) and rises to a split collar bored to the Touch
-               Pro's handle (quest.py). The controller stands upright on the centre plane right above the camera,
-               face forward. One M3 clamps the collar.
+  quest_arm    a pad on the back of the mast, above the camera (4 x M3 from the mast's front into inserts in the
+               pad), and a split collar bored to the Touch Pro's handle (quest.py), clamped with one M3. The
+               controller stands upright on the centre plane right behind the camera, face forward, above the hand.
 
 Frames: M = the plate's STEP frame (z from the flange, the tab along +y). G = kin.py's gripper frame
 (robotiq_arg2f_base_link). The tab frame T has u along the tab (away from the axis), v = G y and w = the tab's
@@ -95,8 +95,7 @@ WALL = 2.6
 BASE_T = 0.0                      # the camera's back sits on the tab face itself
 WALL_H = CAM[2] - 4.0             # walls stop 4 mm short of the camera's face, so the glass stands proud
 FLANGE = 4.0                      # the hood's flange on the tab face, outside the camera
-EAR = dict(v=(CAM[1] / 2 + CAM_CLR + WALL - 0.01, 31.0), u=(16.0, CAM[0] / 2 + CAM_CLR + WALL), w=(FLANGE, WALL_H))
-EAR_HOLE_W = (FLANGE + WALL_H) / 2
+HOOD_U = CAM[0] / 2 + CAM_CLR + WALL      # the hood's top edge (u)
 
 
 def _box(u, v, w):
@@ -110,10 +109,6 @@ def hood_local():
     flange = fillet(flange.edges().filter_by(lambda e: abs(e.tangent_at(0).Z) > 0.99), 4.0)
     walls = _box((-ou, ou), (-ov, ov), (0, WALL_H))
     body = flange + walls - _box((-hu, hu + 10), (-hv, hv), (-1, WALL_H + 1))            # no floor: open to the tab
-    for s in (-1, 1):                                                   # ears for the quest arm's screws
-        v0, v1 = EAR["v"]
-        body += _box(EAR["u"], (v0, v1) if s > 0 else (-v1, -v0), EAR["w"])
-        body -= Pos(EAR["u"][1], s * (v0 + v1) / 2, EAR_HOLE_W) * Rot(0, 90, 0) * Cylinder(2.0, 12.0)   # M3 insert
     for u, v in TAB_HOLES_UV:
         if abs(v) > 20:                                                 # the outer pair: M3 self-tapping from behind
             body -= Pos(u, v, 0) * Cylinder(1.25, 2 * 8.0)
@@ -149,9 +144,10 @@ def d405_mesh():
 
 
 # ---- Quest arm + collar --------------------------------------------------------------------------------------------
-CAP_U = (EAR["u"][1], EAR["u"][1] + 5.0)          # the cap plate closing the hood's top
 COLLAR_WALL = 4.0
 CLAMP_GAP = 1.6
+PAD = dict(u=(HOOD_U + 2.0, 40.0), v=17.0, t=6.0)       # the Quest arm's pad on the mast's back (tab frame); its top stays below the collar's
+PAD_HOLES = [(29.5, 11.0), (29.5, -11.0), (37.0, 11.0), (37.0, -11.0)]   # (u, v): M3 from the mast's front
 
 
 def _poly_solid(pts_yz, x0, x1):
@@ -171,31 +167,27 @@ def _hull3d(pts):
 
 
 def quest_arm(side="right"):
-    """Cap on the hood's top + neck + split collar for the Touch Pro's handle."""
+    """Pad on the mast's back + split collar for the Touch Pro's handle, right behind the camera."""
     x0 = Q.HANDLE_X0 + Q.COLLAR_DZ[0]
     x1 = Q.HANDLE_X0 + Q.COLLAR_DZ[1]
     bore = Q.outline_g(Q.FIT)
     outer = Q.outline_g(Q.FIT + COLLAR_WALL)
     collar = _poly_solid(outer, x0, x1)
-    # cap plate on the hood's top, in the tab frame
-    v1 = EAR["v"][1]
-    cap = in_tab(_box(CAP_U, (-v1, v1), (0.0, WALL_H)))
-    for s in (-1, 1):
-        cap -= in_tab(Pos(CAP_U[0], s * (EAR["v"][0] + v1) / 2, EAR_HOLE_W) * Rot(0, 90, 0) * Cylinder(1.7, 30))
-        cap -= in_tab(Pos(CAP_U[1], s * (EAR["v"][0] + v1) / 2, EAR_HOLE_W) * Rot(0, 90, 0) * Cylinder(3.1, 5.0))
-    # neck: the hull of the cap's top face and the collar's foot, minus room for the handle's end
     T = tab_frame()
-    cap_top = [(T @ [CAP_U[1], s * (v1 - 3.0), w, 1])[:3] for s in (-1, 1) for w in (2.0, WALL_H - 2.0)]
-    cap_top += [(T @ [CAP_U[0] + 1.0, s * (v1 - 3.0), w, 1])[:3] for s in (-1, 1) for w in (2.0, WALL_H - 2.0)]
-    foot = [(x0 + 4.0, y, z) for y, z in outer[::2]]
-    neck = _hull3d(np.vstack([cap_top, foot]))
-    arm = cap + neck + collar
-    arm -= _poly_solid(bore, Q.HANDLE_X0 - 3.0, x1 + 1.0)
+    w0, w1 = -MAST_T - PAD["t"], -MAST_T
+    pad = in_tab(_box(PAD["u"], (-PAD["v"], PAD["v"]), (w0, w1)))
+    # bridge: the hull of the pad's back face and the collar's front half
+    back = [(T @ [u, v, w0 + 0.5, 1])[:3] for u in PAD["u"] for v in (-PAD["v"] + 2, PAD["v"] - 2)]
+    zc = Q.HANDLE_Z
+    front = [(x, y, z) for x in (x0 + 0.5, x1 - 0.5) for y, z in outer if z > zc]
+    arm = pad + _hull3d(np.vstack([back, front])) + collar
+    arm -= _poly_solid(bore, Q.HANDLE_X0 - 3.0, x1 + 20.0)
+    for u, v in PAD_HOLES:                                               # M3 heat-set inserts, from the pad's face
+        arm -= in_tab(Pos(u, v, w1) * Cylinder(2.0, 12.0))
     # split clamp at the back (-z) with two ears and an M3 across
     zb = min(z for _, z in outer)
     xc = (x0 + x1) / 2
-    ear = Pos(xc, 0, zb - 5.0) * Box(x1 - x0, 2 * 7.0 + CLAMP_GAP, 12.0)
-    arm += ear
+    arm += Pos(xc, 0, zb - 5.0) * Box(x1 - x0, 2 * 7.0 + CLAMP_GAP, 12.0)
     arm -= Pos(xc, 0, zb - 2.0) * Box(x1 - x0 + 2, CLAMP_GAP, 22.0)
     arm -= Pos(xc, 0, zb - 6.0) * Rot(90, 0, 0) * Cylinder(1.7, 40)
     arm -= Pos(xc, 7.5 + CLAMP_GAP / 2, zb - 6.0) * Rot(90, 0, 0) * Cylinder(3.1, 3.0)
@@ -226,11 +218,14 @@ def tab_mast(top_x):
     fix from behind as on the robot plate); a foot on the top plate and two gussets behind it."""
     T = tab_frame()
     u_lo = (top_x - T[0, 3]) / T[0, 0] - 2.0                          # where the plane meets the top plate
-    u_hi = EAR["u"][1] + 2.0
+    u_hi = PAD["u"][1] + 2.0
     plate = in_tab(_box((u_lo, u_hi), (-MAST_V, MAST_V), (-MAST_T, 0.0)))
     for u, v in TAB_HOLES_UV:
         plate -= in_tab(Pos(u, v, 0) * Cylinder(1.7, 4 * MAST_T))
         plate -= in_tab(Pos(u, v, -MAST_T) * Cylinder(3.1, 2 * 3.0))
+    for u, v in PAD_HOLES:                                             # the Quest arm: M3 from the front
+        plate -= in_tab(Pos(u, v, 0) * Cylinder(1.7, 4 * MAST_T))
+        plate -= in_tab(Pos(u, v, 0) * Cylinder(3.1, 2 * 3.0))
     # cut the plate flat on the top plate
     plate = plate & Pos(top_x + 200, 0, 0) * Box(400, 400, 400)
     foot = Pos(top_x + 3.0, 0, sum(FOOT["z"]) / 2) * Box(6.0, 2 * MAST_V, FOOT["z"][1] - FOOT["z"][0])

@@ -77,12 +77,25 @@ P1L, P2L, H = pivots()
 P1R, P2R = P1L * [-1, 1], P2L * [-1, 1]
 
 # ---- handles -------------------------------------------------------------------------------------------------------
-LOOP_DIST = 90.0                  # axle -> thumb ring centre / finger bow centre
-LOOP_GAP_CLOSED = 38.0            # thumb ring to finger bow, centre to centre, with the jaws closed
-RING_ID, RING_WALL = 26.0, 7.0    # thumb ring (handle B)
-BOW_ID = (26.0, 46.0)             # finger bow (handle A): two fingers, long axis along the handle
-LOOP_H = 14.0                     # ring / bow height (x); every edge rounded R 3.4
-LOOP_X = {"a": (-19.5, -5.5), "b": (5.5, 19.5)}
+LOOP_DIST = 90.0                  # with LOOP_GAP_CLOSED: sets the handles' angles (where the old loops met when closed)
+LOOP_GAP_CLOSED = 38.0
+# Grips, after a spring-action garden scissor (Fiskars Easy Action): handle B is a solid palm bar that swells in the
+# middle, handle A a long D-loop the four fingers go through and wrap round. Both are 26 mm tall (x), every edge
+# rounded, with a soft TPU face where the hand pushes and pulls. Hold it from below, palm up: the palm on B, the
+# fingers up through A's window and round its outer bar, the index finger on the record button under the base.
+GRIP_X = (-13.0, 13.0)
+GRIP_R = 5.0                      # edge rounding of the grips
+TPU_X = (-9.5, 9.5)               # the soft inserts' height
+# (s along the handle from the axle, n outwards, away from the other handle), mm
+PALM_OUT = [(34, 6.5), (50, 10.0), (65, 14.0), (80, 16.5), (95, 16.0), (110, 13.5), (121, 9.5)]
+PALM_IN = [(121, -5.0), (100, -5.5), (75, -6.0), (50, -6.0), (34, -6.0)]
+PALM_TIP = (127.0, 2.0)
+PALM_TPU = 3.0                    # the palm insert's thickness, on the outer face, s 50 .. 116
+LOOP_OUT = [(34, 6.5), (46, 16.0), (56, 30.0), (68, 39.0), (85, 43.0), (105, 43.0), (122, 40.0), (134, 32.0)]
+LOOP_IN = [(140, 4.0), (128, -5.0), (100, -6.0), (70, -6.0), (34, -6.0)]
+LOOP_TIP = (143.0, 18.0)
+WINDOW = dict(s=(58.0, 128.0), n=(7.0, 31.0))   # the finger window (rounded slot): 70 x 24 mm
+FINGER_TPU = dict(s=(70.0, 118.0), t=2.6)      # soft strip on the finger bar's inner face
 STOP_R = 18.0                     # handle A's stop pin (M3) from the axle; it runs in an arc slot in the bottom plate
 HUB_H_R = 5.0                     # handle A's lower hub: bearing in the bottom plate, hex end into the servo coupler
 HEX_AF = 7.5
@@ -210,9 +223,9 @@ def motion(name, q):
     if name.startswith(("inner_finger", "pad_core", "pad_skin")):
         d = j["B"] - j0["B"]
         return Pos(0, float(d[0]) * (1 if side == "left" else -1), float(d[1]))
-    if name in ("handle_a", "stop_pin", "servo_coupler"):
+    if name in ("handle_a", "stop_pin", "servo_coupler", "grip_tpu_a"):
         return rot_about(H, a * R_K / R_H)
-    if name == "handle_b":
+    if name in ("handle_b", "grip_tpu_b"):
         return rot_about(H, -a * R_K / R_H)
     return Location()
 
@@ -276,14 +289,6 @@ def _unit(deg):
     return np.array([math.cos(math.radians(deg)), math.sin(math.radians(deg))])
 
 
-def _rounded(solid, r=3.4):
-    """Round every edge of a ring / bow (all its edges are the four loops round its faces)."""
-    try:
-        return fillet(solid.edges(), r)
-    except Exception:                                   # noqa: BLE001
-        return solid
-
-
 def _section(c2, d2, x_mid, w, h, r):
     """A rounded-rectangle section on the plane through the (y, z) point c2 normal to the in-plane direction d2:
     width w across the handle (in the plane), height h along G x."""
@@ -294,59 +299,93 @@ def _section(c2, d2, x_mid, w, h, r):
     return Plane(origin=o, x_dir=xdir, z_dir=zdir) * RectangleRounded(w, h, r)
 
 
-def handle(which="a"):
-    """Scissor handle. A (L1, the -y side): a two-finger bow with a finger rest, meshes the left knuckle gear, carries
-    the servo's hex drive and the stop screw. B (L3, +y): the thumb ring, meshes the right knuckle gear.
-    Squeezing ring and bow together closes the jaws.
+def _handle_frame(which):
+    """Handle-local (s, n) -> G (y, z) at q = 0: s along the handle from the axle, n outwards."""
+    opened, _ = handle_angles()
+    tail = opened if which == "a" else 180 - opened
+    t = _unit(tail)
+    o = _unit(tail - 90.0) if which == "a" else _unit(tail + 90.0)
+    return lambda sn: H + sn[0] * t + sn[1] * o, t
 
-    Ergonomics and strength: the ring and the bow are 14 mm tall with every edge rounded (R 3.4) and 7 mm walls; the
-    arm leaves the gear as a 16 mm wide web in its layer and is lofted, rounded, to the ring's full height (14 mm),
-    so the section grows where the bending moment does."""
+
+def _sn_face(f, outer, tip, inner):
+    """Closed face from an outer spline, a rounded tip and an inner spline, in handle-local (s, n)."""
+    from build123d import Line, Spline, Wire, make_face
+    P = lambda pts: [tuple(map(float, f(p))) for p in pts]      # noqa: E731
+    po, pi_ = P(outer), P(inner)
+    pt = tuple(map(float, f(tip)))
+    w = Wire([Spline(*po), Spline(po[-1], pt, pi_[0]), Spline(*pi_), Line(pi_[-1], po[0])])
+    return make_face(w)
+
+
+def _round_all(solid, r, only=None):
+    """Round the top and bottom edges of an extruded grip (largest radius from r down that works), except the flat
+    joint face where the arm joins. only: round just these edges."""
+    from build123d import GeomType
+    joint = [f for f in solid.faces() if f.geom_type == GeomType.PLANE and abs(f.normal_at().X) < 1e-6]
+    es = only if only is not None else [e for e in solid.edges() if abs(e.tangent_at(0.5).X) < 1e-6
+                                        and not any(e.is_same(x) for f in joint for x in f.edges())]
+    for rr in np.arange(r, 1.4, -0.5):
+        try:
+            return fillet(es, float(rr))
+        except Exception:                               # noqa: BLE001
+            continue
+    return solid
+
+
+def grip(which):
+    """The grip body of a handle (without the web and the gear), full and its TPU insert, at q = 0."""
+    f, _ = _handle_frame(which)
+    if which == "b":
+        body = slab(_sn_face(f, PALM_OUT, PALM_TIP, PALM_IN), GRIP_X)
+        body = _round_all(body, GRIP_R)
+        from build123d import Line, Spline, Wire, make_face
+        P = lambda pts: [tuple(map(float, f(p))) for p in pts]      # noqa: E731
+        lo = P([(50, 0.0)] + [(sv, nv - PALM_TPU) for sv, nv in PALM_OUT[1:-1]] + [(116, 0.0)])
+        out = P([(50, 40.0), (116, 40.0)])
+        w = Wire([Spline(*lo[1:-1]), Line(lo[-2], out[1]), Line(out[1], out[0]), Line(out[0], lo[1])])
+        tpu = body & slab(make_face(w), TPU_X)
+    else:
+        body = _round_all(slab(_sn_face(f, LOOP_OUT, LOOP_TIP, LOOP_IN), GRIP_X), 6.0)
+        (s0, s1), (n0, n1) = WINDOW["s"], WINDOW["n"]
+        from build123d import SlotCenterToCenter
+        c = f(((s0 + s1) / 2, (n0 + n1) / 2))
+        _, t = _handle_frame(which)
+        win = Pos(*c) * Rot(0, 0, _deg(t)) * SlotCenterToCenter(s1 - s0 - (n1 - n0), n1 - n0)
+        cut = slab(win, (GRIP_X[0] - 1, GRIP_X[1] + 1))
+        body = body - cut
+        wedges = [e for e in body.edges() if abs(e.tangent_at(0.5).X) < 1e-6
+                  and (cut & Pos(*e.center()) * Box(0.5, 0.5, 0.5)).volume > 0]   # the window's rims
+        body = _round_all(body, 4.0, only=wedges)
+        (a0, a1), tt = FINGER_TPU["s"], FINGER_TPU["t"]
+        cc = f(((a0 + a1) / 2, n1 + tt / 2 - 0.5))
+        strip = Pos(*cc) * Rot(0, 0, _deg(t)) * SlotCenterToCenter(a1 - a0 - tt - 1, tt + 1)
+        tpu = body & slab(strip, TPU_X)
+    return body, tpu
+
+
+def handle(which="a"):
+    """Scissor handle: gear sector and web in its layer, a rounded loft up to the grip, and the grip (grip()), less
+    its soft insert. A (L1, -y side): the finger loop; meshes the left knuckle gear, carries the servo's hex drive
+    and the stop screw. B (L3, +y): the palm bar; meshes the right knuckle gear. Squeezing closes the jaws."""
     from build123d import loft
     ph = phases()
     lay = L1 if which == "a" else L3
-    s = 1 if which == "a" else -1
+    sg = 1 if which == "a" else -1
     opened, _ = handle_angles()
-    tail = opened if which == "a" else 180 - opened
-    d = _unit(tail)
+    f, t = _handle_frame(which)
     full = gear_sketch(HANDLE_TEETH, H, ph["ha"] if which == "a" else ph["hb"], clearance=True)
     to_k = _deg((P2L if which == "a" else P2R) - H)
-    turn = math.degrees(kin.g()["q_max"]) * R_K / R_H * s
+    turn = math.degrees(kin.g()["q_max"]) * R_K / R_H * sg
     lo, hi = sorted((to_k, to_k - turn))
     sector = full & wedge(H, R_H + 3 * MODULE, lo - 10, hi + 10)
-    D_WEB = 34.0                                                          # the in-layer web ends here (from H)
-    web = sector + C(H, 9.5) + hull(C(H, 8.0), C(H + d * D_WEB, 8.0))
+    D_WEB = 30.0
+    web = sector + C(H, 9.5) + hull(C(H, 8.0), C(H + t * D_WEB, 7.0))
     p = slab(web, lay)
-    # loop
-    lx = LOOP_X[which]
-    xm, h = sum(lx) / 2, lx[1] - lx[0]
-    if which == "b":
-        c = H + d * LOOP_DIST
-        ro = RING_ID / 2 + RING_WALL
-        ring = xcyl(c, ro, lx) - xcyl(c, RING_ID / 2, (lx[0] - 1, lx[1] + 1))
-        loop = _rounded(ring)
-        d_join = LOOP_DIST - ro + 3.0
-    else:
-        c = H + d * (LOOP_DIST + (BOW_ID[1] - BOW_ID[0]) / 2)
-        from build123d import SlotCenterToCenter
-        L = BOW_ID[1] - BOW_ID[0]
-        ang = tail
-        outer = Pos(*c) * Rot(0, 0, ang) * SlotCenterToCenter(L, BOW_ID[0] + 2 * RING_WALL)
-        inner = Pos(*c) * Rot(0, 0, ang) * SlotCenterToCenter(L, BOW_ID[0])
-        loop = _rounded(slab(outer, lx) - slab(inner, (lx[0] - 1, lx[1] + 1)))
-        d_join = LOOP_DIST - (BOW_ID[0] / 2 + RING_WALL) + 3.0
-        # finger rest: a rounded spur off the bow's far end, angled away from the other handle
-        far = c + d * (L / 2 + BOW_ID[0] / 2 + RING_WALL - 4.0)
-        tip = far + _unit(tail - 55.0) * 22.0
-        spur = _rounded(slab(hull(C(far, 5.0), C(tip, 4.5)), (lx[0] + 1.5, lx[1] - 1.5)), 2.8)
-        loop = loop + spur
-    # arm: loft from the web's end (in the layer) to the loop (its full height)
-    a0 = H + d * (D_WEB - 6.0)
-    a1 = H + d * d_join
-    arm = loft([_section(a0, d, sum(lay) / 2, 16.0, lay[1] - lay[0], 2.0),
-                _section(H + d * (D_WEB + 8.0), d, (sum(lay) / 2 + xm) / 2, 14.0, (lay[1] - lay[0] + h) / 2 - 1, 3.0),
-                _section(a1, d, xm, 12.5, h - 1.0, 3.5)])
-    p = p + arm + loop
+    arm = loft([_section(f((D_WEB - 6.0, 0.0)), t, sum(lay) / 2, 14.0, lay[1] - lay[0], 2.0),
+                _section(f((44.0, 1.0)), t, sum(GRIP_X) / 2, 14.0, GRIP_X[1] - GRIP_X[0] - 6.0, 4.0)])
+    body, tpu = grip(which)
+    p = p + arm + body - tpu
     p -= xcyl(H, PIN_BORE / 2 if which == "b" else 1.6, (-30, 30))
     if which == "a":
         p -= xcyl(H, 2.8, (L1[1] - 8, L1[1] + 0.1))                      # M4 heat-set insert, axle bolt from the top
@@ -355,6 +394,10 @@ def handle(which="a"):
         sp = H + STOP_R * _unit(opened + 8)
         p -= xcyl(sp, 2.0, (L1[0] - 0.1, L1[0] + 5))                      # M3 heat-set insert for the stop screw
     return p
+
+
+def grip_tpu(which):
+    return grip(which)[1]
 
 
 def stop_arc():
@@ -528,6 +571,7 @@ PARTS = {
     "base_bottom": base_bottom, "base_top": base_top, "tab_mast": tab_mast,
     "knuckle_gear_left": lambda: knuckle_gear("left"), "knuckle_gear_right": lambda: knuckle_gear("right"),
     "handle_a": lambda: handle("a"), "handle_b": lambda: handle("b"),
+    "grip_tpu_a": lambda: grip_tpu("a"), "grip_tpu_b": lambda: grip_tpu("b"),
     "servo_coupler": servo_coupler,
     "ebox_cover": ebox_cover,
 }

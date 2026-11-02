@@ -20,6 +20,10 @@ the PC.
 | IMU SDA / SCL, VIN / GND | Pico GP4 / GP5, 3V3(OUT) / GND |
 | Button | GP15 and GND |
 
-* **Reading q.** The servo turns with handle A, which turns half as far as the jaws: q = 2 × (servo angle − its
-  angle at the open stop). Calibrate at the open stop (q = 0) and with the pads touching (q = 0.7).
+* **Firmware.** [`firmware/pico/main.py`](../firmware/pico/main.py) (MicroPython) turns the servo's torque off, reads
+  its present position at 100 Hz and streams JSON lines over USB: raw counts, q (the 2F-140's `finger_joint`), the pad
+  width in mm and the record flag. Calibrate once with `python tools/read_gripper.py --calibrate` (open stop, then
+  pads touching).
+* **Why one servo.** The two jaws are geared to each other, so one encoder on the scissor axle gives both. Handle A
+  turns half as far as the jaws; the two-point calibration takes care of the ratio and the direction.
 * **The robot needs no electronics here.** The 2F-140 reports its own position and the D405 plugs into the robot PC.

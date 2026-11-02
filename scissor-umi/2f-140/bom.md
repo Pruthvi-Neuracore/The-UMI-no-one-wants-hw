@@ -13,15 +13,16 @@ TPU 95A for the pad faces.
 | `pad_core_2f140` | 2 | PETG | The back 5.1 mm of the 2F-140 pad, with 2 × M3 heat-set inserts. |
 | `pad_skin_2f140` | 2 | TPU 95A | The 2 mm grip face, glued to the core. |
 | `knuckle_gear_left`, `knuckle_gear_right` | 1 + 1 | PETG | 20-tooth sector gears (m 1.27), half a tooth out of phase with each other. |
-| `handle_a` | 1 | PETG | Finger bow with finger rest, 40-tooth sector (meshes the left gear), hub with a hex end for the servo, inserts for the axle bolt and the stop screw. Print on its side for strong rings. |
-| `handle_b` | 1 | PETG | Thumb ring, 40-tooth sector (meshes the right gear). |
+| `handle_a` | 1 | PETG | Four-finger loop grip, 40-tooth sector (meshes the left gear), hub with a hex end for the servo, inserts for the axle bolt and the stop screw. |
+| `handle_b` | 1 | PETG | Palm bar grip, 40-tooth sector (meshes the right gear). |
+| `grip_tpu_a`, `grip_tpu_b` | 1 + 1 | TPU 95A | Soft inserts: the finger bar's inner face and the palm bar's outer face. Glue them in. |
 | `servo_coupler` | 1 | PETG | Between handle A's hex end and the STS3215 horn (4 × M2). |
 | `base_bottom` | 1 | PETG | Five standoff columns, pivot spacers, the stop slot, the button pod. |
 | `base_top` | 1 | PETG | Pivot spacers; 4 × M3 inserts for the mast's foot. |
 | `ebox_cover` | 1 | PETG | Box under the bottom plate: the STS3215 on its floor (4 × M2), Pico 2 standoffs, the hub bay, vents. |
-| `tab_mast` | 1 | PETG / PA-CF | Copy of the camera plate's tab face, with the same six holes and pose; foot and gussets. |
-| `d405_hood` | 1 | PETG | Open frame round the D405 on the tab; ears for the Quest arm. |
-| `quest_arm_right` (or `_left`) | 1 | PETG | Cap on the hood + neck + split collar for the Touch Pro's handle. |
+| `tab_mast` | 1 | PETG / PA-CF | Copy of the camera plate's tab face, with the same six holes and pose; extends up behind the camera for the Quest arm; foot and gussets. |
+| `d405_hood` | 1 | PETG | Open frame round the D405 on the tab. |
+| `quest_arm_right` (or `_left`) | 1 | PETG | Pad on the mast's back + split collar for the Touch Pro's handle, behind the camera. |
 
 ## Robot side
 
@@ -51,7 +52,7 @@ TPU 95A for the pad faces.
 | M3 × 10 + M3 heat-set inserts | 5 + 5 | – | Plates (standoffs). |
 | M3 × 12 + M3 heat-set inserts | 4 + 4 | – | Mast foot to the top plate. |
 | M3 × 12 self-tapping | 2 | – | Hood to the tab, from behind. |
-| M3 × 10 + M3 heat-set inserts | 2 + 2 | – | Quest arm to the hood's ears. |
+| M3 × 16 + M3 heat-set inserts | 4 + 4 | – | Quest arm to the mast, from the mast's front into the pad. |
 | M3 × 20 + M3 nut | 1 | – | Quest collar clamp. |
 | M3 × 50 + M3 heat-set inserts | 4 + 4 | – | Electronics box to the bottom plate. |
 | M6 screws, 7 mm longer than the coupling's own | – | 4 | Coupling + camera plate to the UR flange. |

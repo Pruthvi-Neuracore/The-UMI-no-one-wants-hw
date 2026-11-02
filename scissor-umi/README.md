@@ -19,7 +19,8 @@ the real gripper, our camera plate and the D405.
 
 <p align="center"><img src="2f-140/img/camera_views.png" alt="What the D405 sees on the handheld (left) and on the 2F-140 (right) at the same q" width="880"></p>
 
-What the D405 sees on the handheld (left) and on the robot (right) at the same q: the jaws and pads are identical.
+What the D405 sees on the handheld (left) and on the robot (right) at the same q: the jaws and pads are identical. The
+handheld's camera tab and the robot plate's tab match to 0.000 mm and 0.000° (measured from the STEP files).
 
 ## Mechanism
 
@@ -29,9 +30,16 @@ What the D405 sees on the handheld (left) and on the robot (right) at the same q
 
 <p align="center"><img src="2f-140/img/stroke.png" alt="The stroke from open to closed" width="880"></p>
 
-Rounded finger bow and thumb ring drive two meshed 20-tooth knuckle gears through 40-tooth sectors (2:1). The jaws
-are printed copies of the 2F-140's jaw parts on its own joint positions, so they look and move exactly like the
-robot's. An STS3215 under the base, on the scissor axle, reads the jaw angle. Details, BOM and wiring are in
+Garden-scissor grips (a palm bar and a four-finger loop, soft TPU inserts) drive two meshed 20-tooth knuckle gears
+through 40-tooth sectors (2:1). The jaws are printed copies of the 2F-140's jaw parts on its own joint positions, so
+they look and move exactly like the robot's. An STS3215 on the scissor axle reads the opening, and a Pico 2 streams it
+([`firmware/`](firmware/README.md)).
+
+| Holding it | Electronics |
+|---|---|
+| <img src="2f-140/img/grip.png" alt="The grip from the operator's side" width="420"> | <img src="2f-140/img/electronics.png" alt="STS3215, Pico 2, hub and IMU under the base" width="420"> |
+
+Details, BOM and wiring are in
 [`2f-140/README.md`](2f-140/README.md).
 
 ## Grippers
@@ -48,7 +56,7 @@ The code is in `cad/` (build123d, bd_warehouse, trimesh, pyvista; the same envir
 ```
 cd scissor-umi/cad
 python package.py          # parts -> ../<gripper>/STEP, clearance check, URDFs, renders -> ../<gripper>/img
-python verify.py           # gears over the stroke, jaws vs the robot's 2F-140, interference
+python verify.py           # gears over the stroke, jaws vs the robot's 2F-140, camera tab vs the robot plate, interference
 ```
 
 The renders need two models that aren't in the repository. Put Meta's Touch Pro STL in `cad/source/quest/` and

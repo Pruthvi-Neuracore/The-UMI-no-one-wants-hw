@@ -34,7 +34,8 @@ for _s in ("left", "right"):
                      f"inner_finger_{_s}": ("inner_finger_2f140", "robotiq"),
                      f"pad_core_{_s}": ("pad_core_2f140", "robotiq"),
                      f"pad_skin_{_s}": ("pad_skin_2f140", "tpu")})
-HANDHELD.update({"servo_coupler": ("servo_coupler", "white"), "tab_mast": ("tab_mast", "blue")})
+HANDHELD.update({"servo_coupler": ("servo_coupler", "white"), "tab_mast": ("tab_mast", "blue"),
+                 "grip_tpu_a": ("grip_tpu_a", "blue"), "grip_tpu_b": ("grip_tpu_b", "blue")})
 
 
 def _hex(c):
@@ -75,6 +76,7 @@ def handheld(q, side="right", quest=True):
     for n, (step, col) in HANDHELD.items():
         out[n] = _place(n, step, col, _T(S.motion(n, q)))
     out["servo"] = servo_mesh()
+    out.update(electronics())
     out["d405_hood"] = _place("d405_hood", "d405_hood", "blue", np.eye(4))
     out["d405"] = d405_mesh()
     if quest:
@@ -88,6 +90,33 @@ def d405_mesh():
     m = head.d405_mesh()
     m.visual.face_colors = _hex("camera")
     return m
+
+
+def _board(size, centre, colour, axis_normal):
+    """A board as a box: size (along G x, along the board's other in-plane axis, thickness), placed with its normal
+    along G y (axis_normal = 'y') or G x ('x')."""
+    sx, sl, t = size
+    m = trimesh.creation.box([sx, t, sl] if axis_normal == "y" else [t, sl, sx])
+    m.apply_translation(centre)
+    m.visual.face_colors = _hex(colour)
+    return m
+
+
+def electronics():
+    """Pico 2, USB 3 hub and IMU in the box (stand-ins at their places, for the renders and the checks)."""
+    (x0, x1), y, (z0, z1), w = S.EBOX["x"], S.EBOX["y"], S.EBOX["z"], S.EBOX["wall"]
+    xm, zm = (x0 + x1) / 2, (z0 + z1) / 2
+    yp = y - w - S.PICO["standoff"] - 0.8                       # the Pico's board on its standoffs (+y wall)
+    pico = _board((21.0, 51.0, 1.6), [xm, yp, zm], "#1b6e3a", "y")
+    chip = _board((7.0, 7.0, 1.0), [xm, yp - 1.3, zm + 4.0], "#202020", "y")
+    usb = _board((8.0, 6.0, 3.0), [xm, yp - 2.3, zm + 25.5 - 3.0], "#b9bec5", "y")
+    hub = _board((36.0, 42.0, 1.6), [xm, -(y - w - 6.0), zm], "#24364d", "y")
+    hub_parts = _board((24.0, 30.0, 8.0), [xm, -(y - w - 6.0) + 4.8, zm], "#3a4a62", "y")
+    imu = trimesh.creation.box([1.6, 11.0, 20.0])
+    imu.apply_translation([x0 + w + 0.8 + 0.6, 19.0, 30.0])
+    imu.visual.face_colors = _hex("#5b3f8c")
+    return {"pico": trimesh.util.concatenate([pico, chip, usb]),
+            "usb_hub": trimesh.util.concatenate([hub, hub_parts]), "imu": imu}
 
 
 def servo_mesh():
@@ -180,7 +209,9 @@ def _overlap(a, b):
 MOVING_PAIRS_SKIP = set()
 
 
-CONTACT_OK = {frozenset(p) for p in (("pad_skin_left", "pad_skin_right"),)}   # the pads meet at q_max
+# the pads meet at q_max; the soft grip inserts are bonded into their handles (coincident curved faces)
+CONTACT_OK = {frozenset(p) for p in (("pad_skin_left", "pad_skin_right"), ("handle_a", "grip_tpu_a"),
+                                     ("handle_b", "grip_tpu_b"))}
 
 
 def check(steps=8):
@@ -205,7 +236,7 @@ def check(steps=8):
                         bad.append((q, "robot:" + e, k, round(v, 1)))
     real = [b for b in bad if frozenset(b[1:3]) not in CONTACT_OK]
     for b in bad:
-        print("overlap", b, "(expected: pads meet)" if b not in real else "")
+        print("overlap", b, "(expected contact)" if b not in real else "")
     print(f"{len(real)} unexpected overlapping pairs over {steps} poses")
     gaps = {q: kin.pad_gap(q) for q in (0.0, kin.g()["q_max"])}
     print("pad gap open / closed:", {k: round(float(v), 1) for k, v in gaps.items()})

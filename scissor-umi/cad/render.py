@@ -145,7 +145,24 @@ def camera_views():
     print("wrote", OUT / "camera_views.png")
 
 
-ALL = dict(hero=hero, robot=robot, twins=twins, top=top, stroke=stroke, camera_views=camera_views)
+def electronics():
+    """From below with the box's cover hidden: the STS3215 on the scissor axle, the Pico 2, the hub and the IMU."""
+    p = plotter((1600, 1100))
+    m = A.handheld(0.25, quest=False)
+    m.pop("ebox_cover", None)
+    place(p, m)
+    shot(p, "electronics.png", (-420, -260, 120), (-40, 0, 40), up=(1, 0, 0), zoom=1.5)
+
+
+def hand_view():
+    """The grip from the operator's side (behind and below): the palm bar, the finger loop and the button pod."""
+    p = plotter((1600, 1100))
+    place(p, A.handheld(0.35))
+    shot(p, "grip.png", (-190, -330, -330), (0, 0, -40), up=(1, 0, 0), zoom=1.25)
+
+
+ALL = dict(hero=hero, robot=robot, twins=twins, top=top, stroke=stroke, camera_views=camera_views,
+           electronics=electronics, grip=hand_view)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

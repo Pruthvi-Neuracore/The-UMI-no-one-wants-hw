@@ -28,6 +28,7 @@ def main():
     import verify
     verify.gears()
     verify.jaws()
+    verify.camera()
     assembly.check()
     urdf.main()
     if "--no-render" not in sys.argv:
