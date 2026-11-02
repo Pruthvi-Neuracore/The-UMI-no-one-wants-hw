@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!-- The D405 on the team's UR camera plate (ur_camera_plate), on a Robotiq 2f-140: include after the gripper's
+     own URDF/xacro. The plate puts the coupling 7 mm further from the UR flange:
+     add 0.007 m to the flange -> coupling joint (the flange face is at
+     z = -0.0220 m in robotiq_arg2f_base_link). The handheld's d405_optical_frame is at the same transform. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="scissor_umi_camera" params="prefix:='' parent:=robotiq_arg2f_base_link">
+  <link name="${prefix}d405_optical_frame"/>
+  <joint name="${prefix}d405_optical_joint" type="fixed">
+    <parent link="${parent}"/><child link="${prefix}d405_optical_frame"/>
+    <origin xyz="0.07463 0.00000 0.00915" rpy="-0.13963 -0.00000 -1.57080"/>
+  </joint>
+  </xacro:macro>
+</robot>

@@ -1,5 +1,6 @@
-# Quest Touch Pro controller (renders and checks only)
+# Quest Touch Pro controller (renders, checks and the collar's bore)
 
-`assembly.controller()` stands `MetaQuestTouchPro_Right.stl` upright in HandUMI's controller support, facing forward,
-as in the PG Chopstick D405 builds. The model is Meta's (posted from a Unity project by MrTasselhof) and is not
-redistributed here: put the STL in this folder to rebuild. Without it a capsule stand-in of the same size is used.
+`quest.py` stands `MetaQuestTouchPro_Right.stl` upright above the D405, facing forward, and measures its handle's
+outline over the collar's height into `handle_section.json` (an outline only), which `quest_arm` is bored to. Meta's
+model is not redistributed: put the STL in this folder to re-measure or to render. Without it the cached outline is used
+for the part and a capsule stand-in for renders.

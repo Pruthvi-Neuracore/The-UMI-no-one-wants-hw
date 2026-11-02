@@ -34,8 +34,7 @@ for _s in ("left", "right"):
                      f"inner_finger_{_s}": ("inner_finger_2f140", "robotiq"),
                      f"pad_core_{_s}": ("pad_core_2f140", "robotiq"),
                      f"pad_skin_{_s}": ("pad_skin_2f140", "tpu")})
-HEAD = {"head": ("head_{side}", "blue")}
-ROBOT = {"robot_collar_iso50": ("robot_collar_iso50", "blue")}
+HANDHELD.update({"servo_coupler": ("servo_coupler", "white"), "tab_mast": ("tab_mast", "blue")})
 
 
 def _hex(c):
@@ -75,80 +74,32 @@ def handheld(q, side="right", quest=True):
     out = {}
     for n, (step, col) in HANDHELD.items():
         out[n] = _place(n, step, col, _T(S.motion(n, q)))
-    out.update(head_meshes(side, quest))
-    return out
-
-
-def head_meshes(side="right", quest=True):
-    out = {"head": _place("head", f"head_{side}", "blue", np.eye(4))}
-    cup = step_mesh("_d405_cup").copy() if (S.STEP_DIR / "_d405_cup.step").exists() else None
-    if cup is not None:
-        cup.visual.face_colors = _hex("blue")
-        out["d405_cup"] = cup
-    out["d405"] = d405_envelope()
+    out["servo"] = servo_mesh()
+    out["d405_hood"] = _place("d405_hood", "d405_hood", "blue", np.eye(4))
+    out["d405"] = d405_mesh()
     if quest:
-        sup = step_mesh(f"_quest_support_{side}").copy()
-        sup.visual.face_colors = _hex("blue")
-        out["quest_support"] = sup
+        out["quest_arm"] = _place("quest_arm", f"quest_arm_{side}", "blue", np.eye(4))
         out["quest_controller"] = controller(side)
     return out
 
 
-def d405_envelope(tilt=S.TILT_DEG):
-    from shapely.geometry import box as rect
-    outline = rect(-16.75, -16.75, 16.75, 16.75).buffer(4.0)
-    m = trimesh.creation.extrude_polygon(outline, S.CAM_DEPTH - 0.6)
-    m.apply_translation([0, 0, S.CUP_FLOOR + 0.6])
-    m.apply_transform(S.cup_matrix(tilt))
+def d405_mesh():
+    import head
+    m = head.d405_mesh()
     m.visual.face_colors = _hex("camera")
     return m
 
 
-def _ring_mesh(side):
-    return step_mesh(f"_quest_support_{side}")
+def servo_mesh():
+    m = step_mesh("_sts3215").copy()
+    m.apply_transform(S.servo_matrix())
+    m.visual.face_colors = _hex("#26282c")
+    return m
 
 
 def controller(side="right"):
-    """The Touch Pro standing in HandUMI's ring, face forward (as in pg-chopstick d405 ebox.controller_envelope, here
-    in G: the ring's axis is G x)."""
-    f = QUEST_DIR / "MetaQuestTouchPro_Right.stl"
-    if f.exists():
-        m = trimesh.load(f)
-        v = m.vertices
-        h = v[v[:, 1] > 15.0] - v[v[:, 1] > 15.0].mean(0)
-        a = np.linalg.eigh(h.T @ h)[1][:, -1]
-        a = a if a[2] > 0 else -a
-        fwd = np.array([0.0, 1.0, 0.0])
-        fwd = fwd - fwd.dot(a) * a
-        fwd /= np.linalg.norm(fwd)
-        R = np.eye(4)
-        R[:3, :3] = np.column_stack([fwd, np.cross(a, fwd), a]).T     # -> kit frame: X forward, Z up the handle
-        m.apply_transform(R)
-        z0 = m.bounds[0, 2]
-        c = []
-        for dz in np.arange(20.0, 51.0, 5.0):
-            loop = max(m.section([0, 0, 1], [0, 0, z0 + dz]).discrete, key=lambda l: np.ptp(l[:, 0]) * np.ptp(l[:, 1]))
-            c.append([z0 + dz, (loop[:, 0].max() + loop[:, 0].min()) / 2, (loop[:, 1].max() + loop[:, 1].min()) / 2])
-        c = np.array(c)
-        d = np.array([np.polyfit(c[:, 0], c[:, 1], 1)[0], np.polyfit(c[:, 0], c[:, 2], 1)[0], 1.0])
-        m.apply_transform(trimesh.geometry.align_vectors(d / np.linalg.norm(d), [0, 0, 1.0]))
-    else:
-        m = trimesh.creation.capsule(height=70.0, radius=17.0)
-        m.apply_translation([0, 0, 35])
-    K4 = np.eye(4)
-    K4[:3, :3] = S.K
-    m.apply_transform(K4)                                              # kit -> G (handle along G x)
-    ring = step_mesh("_quest_support_right")
-    T = S.t_support()
-    cy, cz = (T @ [*S.RING_C, 0, 1])[[1, 2]]
-    x_lo, x_hi = ring.bounds[:, 0]
-    m.apply_translation([x_lo - 12.0 - m.vertices[:, 0].min(), 0, 0])
-    for _ in range(3):
-        b = m.vertices[(m.vertices[:, 0] > x_lo) & (m.vertices[:, 0] < x_hi)]
-        m.apply_translation([0, cy - (b[:, 1].min() + b[:, 1].max()) / 2, cz - (b[:, 2].min() + b[:, 2].max()) / 2])
-    if side == "left":
-        m.apply_transform(np.diag([1.0, -1.0, 1.0, 1.0]))
-        m.invert()
+    import quest
+    m = quest.controller_mesh(side)
     m.visual.face_colors = _hex("quest")
     return m
 
@@ -197,20 +148,24 @@ def robotiq(q):
     return out
 
 
-def robot(q, side="right", quest=True):
+def robot(q, side="right", quest=False):
+    """The real gripper with the team's UR camera plate and the D405 straight on its tab (no Quest on the robot)."""
     out = robotiq(q)
-    out["robot_collar_iso50"] = _place("robot_collar_iso50", "robot_collar_iso50", "blue", np.eye(4))
-    out.update(head_meshes(side, quest))
+    m = step_mesh("_ur_camera_plate").copy()
+    m.visual.face_colors = _hex("#8d96a3")
+    out["ur_camera_plate"] = m
+    out["d405"] = d405_mesh()
     return out
 
 
 def export_refs():
-    """Placed reference parts (HandUMI cup, controller support) as STEP so the assemblies can mesh them."""
-    from build123d import export_step
+    """Reference parts as STEP in build/ so the assemblies can mesh them: the camera plate (placed in G) and the
+    STS3215 (its own frame)."""
+    import head
+    from build123d import export_step, import_step
     S.STEP_DIR.mkdir(parents=True, exist_ok=True)
-    export_step(S.cup(), str(S.STEP_DIR / "_d405_cup.step"))
-    for side in ("right", "left"):
-        export_step(S.quest_support(side), str(S.STEP_DIR / f"_quest_support_{side}.step"))
+    export_step(head.robot_plate(), str(S.STEP_DIR / "_ur_camera_plate.step"))
+    export_step(import_step(str(S.SERVO_STEP)), str(S.STEP_DIR / "_sts3215.step"))
 
 
 # ---- checks --------------------------------------------------------------------------------------------------------
@@ -225,36 +180,36 @@ def _overlap(a, b):
 MOVING_PAIRS_SKIP = set()
 
 
+CONTACT_OK = {frozenset(p) for p in (("pad_skin_left", "pad_skin_right"),)}   # the pads meet at q_max
+
+
 def check(steps=8):
-    names = list(HANDHELD)
+    """Interference between every pair of parts of the handheld (Quest included) over the stroke, and of the robot
+    build's camera and plate with the gripper."""
     bad = []
     for q in np.linspace(0, kin.g()["q_max"], steps):
-        a = handheld(q, quest=False)
-        a = {k: v for k, v in a.items() if k in names or k == "head"}
+        a = handheld(q)
         keys = list(a)
         for i in range(len(keys)):
             for k in keys[i + 1:]:
                 v = _overlap(a[keys[i]], a[k])
                 if v > 1.0:
-                    bad.append((round(q, 3), keys[i], k, round(v, 1)))
-    for b in bad:
-        print("overlap", b)
-    print(f"{len(bad)} overlapping pairs over {steps} poses")
-    # head and controller vs the robot gripper and the handheld
-    for build, f in (("robot", robot), ("handheld", handheld)):
-        for q in (0.0, kin.g()["q_max"]):
-            a = f(q)
-            extras = [k for k in a if k.startswith(("quest", "d405"))]
-            for e in extras:
-                for k, m in a.items():
-                    if k in extras or k in ("head",):
-                        continue
-                    v = _overlap(a[e], m)
+                    bad.append((round(float(q), 3), keys[i], k, round(v, 1)))
+    for q in (0.0, kin.g()["q_max"]):
+        r = robot(q)
+        for e in ("d405", "ur_camera_plate"):
+            for k, m in r.items():
+                if k != e and not (e == "ur_camera_plate" and k == "d405"):
+                    v = _overlap(r[e], m)
                     if v > 1.0:
-                        print(f"{build} q={q}: {e} overlaps {k} by {v:.0f} mm3")
+                        bad.append((q, "robot:" + e, k, round(v, 1)))
+    real = [b for b in bad if frozenset(b[1:3]) not in CONTACT_OK]
+    for b in bad:
+        print("overlap", b, "(expected: pads meet)" if b not in real else "")
+    print(f"{len(real)} unexpected overlapping pairs over {steps} poses")
     gaps = {q: kin.pad_gap(q) for q in (0.0, kin.g()["q_max"])}
-    print("pad gap open / closed:", {k: round(v, 1) for k, v in gaps.items()})
-    print("camera pose (G, mm):\n", S.camera_pose().round(3))
+    print("pad gap open / closed:", {k: round(float(v), 1) for k, v in gaps.items()})
+    return real
 
 
 if __name__ == "__main__":
@@ -262,7 +217,7 @@ if __name__ == "__main__":
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--refs", action="store_true")
     a = ap.parse_args()
-    if a.refs or not (S.STEP_DIR / "_d405_cup.step").exists():
+    if a.refs or not (S.STEP_DIR / "_sts3215.step").exists():
         export_refs()
     if a.check:
         check()

@@ -1,18 +1,19 @@
 # Scissor-UMI
 
 FOMI-style scissor grippers ([robbyant-research.github.io/FOMI](https://robbyant-research.github.io/FOMI/)) whose
-jaws are printed copies of a real robot gripper's jaws, with a RealSense D405 and a Meta Quest Touch Pro controller on top. The
-robot twin is the real gripper with the same head on a flange collar.
+jaws are printed copies of a real robot gripper's jaws. The D405 sits exactly where our camera plate puts it on the
+robot, a Feetech STS3215 on the scissor axle reads the jaw angle, and a Meta Quest Touch Pro stands on top. On the robot:
+the real gripper, our camera plate and the D405.
 
 <p align="center"><img src="2f-140/img/hero.png" alt="Scissor-UMI for the Robotiq 2F-140: scissor handles, geared four-bar jaws, a D405 on a tilting hinge and a Quest Touch Pro on top" width="760"></p>
 
 ## Handheld and robot twin
 
-<p align="center"><img src="2f-140/img/twins.png" alt="The handheld and the Robotiq 2F-140 with the same D405 + Quest head, seen from behind at the same jaw angle" width="880"></p>
+<p align="center"><img src="2f-140/img/twins.png" alt="The handheld and the Robotiq 2F-140 on its camera plate, seen from behind at the same jaw angle" width="880"></p>
 
-| Handheld | Robot twin (real Robotiq 2F-140) |
+| Handheld | Robot (real 2F-140, our camera plate, D405) |
 |---|---|
-| <img src="2f-140/img/hero.png" alt="Scissor-UMI handheld" width="420"> | <img src="2f-140/img/robot_2f140.png" alt="Robotiq 2F-140 with the collar, D405 and Quest" width="420"> |
+| <img src="2f-140/img/hero.png" alt="Scissor-UMI handheld" width="420"> | <img src="2f-140/img/robot_2f140.png" alt="Robotiq 2F-140 with the UR camera plate and the D405" width="420"> |
 
 ## Same view on both
 
@@ -28,8 +29,9 @@ What the D405 sees on the handheld (left) and on the robot (right) at the same q
 
 <p align="center"><img src="2f-140/img/stroke.png" alt="The stroke from open to closed" width="880"></p>
 
-Scissor handles drive two meshed 20-tooth knuckle gears through 40-tooth sectors (2:1). The jaws are printed copies
-of the 2F-140's jaw parts on its own joint positions, so they look and move exactly like the robot's. Details, BOM and wiring are in
+Rounded finger bow and thumb ring drive two meshed 20-tooth knuckle gears through 40-tooth sectors (2:1). The jaws
+are printed copies of the 2F-140's jaw parts on its own joint positions, so they look and move exactly like the
+robot's. An STS3215 under the base, on the scissor axle, reads the jaw angle. Details, BOM and wiring are in
 [`2f-140/README.md`](2f-140/README.md).
 
 ## Grippers

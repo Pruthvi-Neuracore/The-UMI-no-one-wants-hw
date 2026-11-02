@@ -1,15 +1,25 @@
 # Scissor-UMI · 2F-140: electronics (handheld)
 
+This is the same as HandUMI ([`handumi/docs/electronics.md`](../../handumi/docs/electronics.md)): one USB-C cable to
+the PC.
+
 ```
- D405 ──USB-C──┐
-               ├── USB 3 hub ──USB-C── PC
+ D405 ──USB 3──┐
+               ├── USB 3 hub (in the box) ══ one USB-C cable ══ PC
  Pico 2 ──USB──┘
-   ├─ SPI ── AS5047P (under the handle axle, magnet in handle A's hub)   CSn GP17, CLK GP18, MOSI GP19, MISO GP16
-   └─ GP15 ── record button (12 × 12 tactile, green) ── GND, internal pull-up
- Quest Touch Pro: its own battery and tracking; paired with the headset (buttons unused)
+   ├── UART (half-duplex) ── STS3215 on the scissor axle (jaw encoder, torque off)
+   ├── I2C ── IMU (BNO085-class)
+   └── GP15 ── record button (12 × 12 tactile, green) ── GND, internal pull-up
+ Quest Touch Pro: its own battery and tracking, paired with the headset (buttons unused)
 ```
 
-* q, the robot's `finger_joint`, is 2 × the handle angle: the knuckle gears have 20 teeth and the handle sectors 40.
-  Calibrate it with the jaws closed (pads touching, q = 0.7) and against the open stop (q = 0).
-* The robot twin needs no electronics: the 2F-140 reports its own position, the D405 plugs into the robot PC, and the
-  Quest controller tracks itself.
+| From | To |
+|---|---|
+| Servo bus data | Pico GP0 (TX) through the buffer or 1 kΩ, and GP1 (RX) direct |
+| Servo V+ / GND | Hub 5 V / GND. It is only read, so 5 V is enough |
+| IMU SDA / SCL, VIN / GND | Pico GP4 / GP5, 3V3(OUT) / GND |
+| Button | GP15 and GND |
+
+* **Reading q.** The servo turns with handle A, which turns half as far as the jaws: q = 2 × (servo angle − its
+  angle at the open stop). Calibrate at the open stop (q = 0) and with the pads touching (q = 0.7).
+* **The robot needs no electronics here.** The 2F-140 reports its own position and the D405 plugs into the robot PC.

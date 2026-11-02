@@ -80,7 +80,7 @@ def hero():
 
 def robot():
     p = plotter()
-    place(p, A.robot(0.25))
+    place(p, A.robot(0.25))                     # the real gripper, the team's camera plate and the D405
     shot(p, "robot_2f140.png", tuple(np.array([60, 0, 60]) + VIEW * 1.4), (60, 0, 60), zoom=1.25)
 
 
@@ -98,7 +98,7 @@ def top():
     for q, name in ((0.0, "top_open.png"), (Q_MAX, "top_closed.png")):
         p = plotter((1400, 1600))
         m = A.handheld(q, quest=False)
-        for k in ("head", "d405_cup", "d405", "base_top"):
+        for k in ("tab_mast", "d405_hood", "d405", "quest_arm", "base_top"):
             m.pop(k, None)
         place(p, m)
         shot(p, name, (600, 0, 60), (0, 0, 60), up=(0, 0, 1), zoom=1.1, aspect=0.9)
@@ -109,7 +109,7 @@ def stroke():
     qs = (0.0, Q_MAX / 3, 2 * Q_MAX / 3, Q_MAX)
     for i, q in enumerate(qs):
         m = A.handheld(q, quest=False)
-        for k in ("head", "d405_cup", "d405", "base_top"):
+        for k in ("tab_mast", "d405_hood", "d405", "quest_arm", "base_top"):
             m.pop(k, None)
         place(p, m, tr([0, 0, -i * 330]) @ trimesh.transformations.rotation_matrix(math.pi / 2, [1, 0, 0]))
     shot(p, "stroke.png", (700, 0, -495), (0, 0, -495), up=(0, 1, 0), zoom=1.7, aspect=2.6)
@@ -126,7 +126,7 @@ def camera_views():
         p = plotter((1280, 720))
         p.disable_ssao() if hasattr(p, "disable_ssao") else None
         m = f(0.3, quest=False)
-        for k in ("d405", "d405_cup"):
+        for k in ("d405", "d405_hood"):
             m.pop(k, None)
         place(p, m)
         p.camera_position = [tuple(eye), tuple(eye + view * 100), tuple(-down)]
