@@ -98,7 +98,7 @@ def top():
     for q, name in ((0.0, "top_open.png"), (Q_MAX, "top_closed.png")):
         p = plotter((1400, 1600))
         m = A.handheld(q, quest=False)
-        for k in ("head", "d405_cup", "d405", "ebox_cover", "base_top"):
+        for k in ("head", "d405_cup", "d405", "base_top"):
             m.pop(k, None)
         place(p, m)
         shot(p, name, (600, 0, 60), (0, 0, 60), up=(0, 0, 1), zoom=1.1, aspect=0.9)
@@ -109,7 +109,7 @@ def stroke():
     qs = (0.0, Q_MAX / 3, 2 * Q_MAX / 3, Q_MAX)
     for i, q in enumerate(qs):
         m = A.handheld(q, quest=False)
-        for k in ("head", "d405_cup", "d405", "ebox_cover", "base_top"):
+        for k in ("head", "d405_cup", "d405", "base_top"):
             m.pop(k, None)
         place(p, m, tr([0, 0, -i * 330]) @ trimesh.transformations.rotation_matrix(math.pi / 2, [1, 0, 0]))
     shot(p, "stroke.png", (700, 0, -495), (0, 0, -495), up=(0, 1, 0), zoom=1.7, aspect=2.6)

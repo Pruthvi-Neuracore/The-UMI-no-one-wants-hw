@@ -1,7 +1,7 @@
 # Scissor-UMI
 
 FOMI-style scissor grippers ([robbyant-research.github.io/FOMI](https://robbyant-research.github.io/FOMI/)) whose
-jaws copy a real robot gripper's linkage, with a RealSense D405 and a Meta Quest Touch Pro controller on top. The
+jaws are printed copies of a real robot gripper's jaws, with a RealSense D405 and a Meta Quest Touch Pro controller on top. The
 robot twin is the real gripper with the same head on a flange collar.
 
 <p align="center"><img src="2f-140/img/hero.png" alt="Scissor-UMI for the Robotiq 2F-140: scissor handles, geared four-bar jaws, a D405 on a tilting hinge and a Quest Touch Pro on top" width="760"></p>
@@ -18,8 +18,7 @@ robot twin is the real gripper with the same head on a flange collar.
 
 <p align="center"><img src="2f-140/img/camera_views.png" alt="What the D405 sees on the handheld (left) and on the 2F-140 (right) at the same q" width="880"></p>
 
-What the D405 sees on the handheld (left) and on the robot (right) at the same q: the pads are in the same place in
-the image.
+What the D405 sees on the handheld (left) and on the robot (right) at the same q: the jaws and pads are identical.
 
 ## Mechanism
 
@@ -29,8 +28,8 @@ the image.
 
 <p align="center"><img src="2f-140/img/stroke.png" alt="The stroke from open to closed" width="880"></p>
 
-Scissor handles drive two meshed 20-tooth knuckle gears through 40-tooth sectors (2:1). The jaws are the 2F-140's own
-parallelogram four-bar, so the pads trace the robot's path. Details, BOM and wiring are in
+Scissor handles drive two meshed 20-tooth knuckle gears through 40-tooth sectors (2:1). The jaws are printed copies
+of the 2F-140's jaw parts on its own joint positions, so they look and move exactly like the robot's. Details, BOM and wiring are in
 [`2f-140/README.md`](2f-140/README.md).
 
 ## Grippers
@@ -47,7 +46,7 @@ The code is in `cad/` (build123d, bd_warehouse, trimesh, pyvista; the same envir
 ```
 cd scissor-umi/cad
 python package.py          # parts -> ../<gripper>/STEP, clearance check, URDFs, renders -> ../<gripper>/img
-python assembly.py --check # interference over the stroke only
+python verify.py           # gears over the stroke, jaws vs the robot's 2F-140, interference
 ```
 
 The renders need two models that aren't in the repository. Put Meta's Touch Pro STL in `cad/source/quest/` and

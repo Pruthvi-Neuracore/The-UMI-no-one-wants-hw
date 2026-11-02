@@ -1,6 +1,6 @@
 """Build everything for the gripper in kin.GRIPPER into ../<gripper>/: STEP (printed parts), URDFs and renders.
 
-    python package.py            # parts + check + urdf + renders
+    python package.py            # parts + verification + urdf + renders
     python package.py --no-render
 """
 import shutil
@@ -18,10 +18,14 @@ DST = S.HERE.parent / kin.GRIPPER
 def main():
     S.build_all()
     assembly.export_refs()
+    shutil.rmtree(DST / "STEP", ignore_errors=True)
     (DST / "STEP").mkdir(parents=True, exist_ok=True)
     for f in sorted(S.STEP_DIR.glob("*.step")):
         if not f.name.startswith("_"):                  # placed HandUMI references stay in build/
             shutil.copy(f, DST / "STEP" / f.name)
+    import verify
+    verify.gears()
+    verify.jaws()
     assembly.check()
     urdf.main()
     if "--no-render" not in sys.argv:

@@ -3,20 +3,22 @@
 ## Printed: handheld
 
 STEP for every part is in [`STEP/`](STEP/). The material shown is a suggestion: PETG or PLA+ for the mechanism and
-TPU 95A for the pads.
+TPU 95A for the pad faces.
 
 | Part | Qty | Material | Notes |
 |---|---|---|---|
-| `base_bottom` | 1 | PETG | Five standoff columns (M3 heat-set inserts in their tops). Also carries the AS5047P pocket, the stop slot and the button pod. Print upside down. |
-| `base_top` | 1 | PETG | The mast to the head (4× M3 inserts at its top) and the floor of the electronics box. |
-| `knuckle_gear_left` | 1 | PETG | Inner link + 20-tooth sector gear (m 1.27). Teeth in L1 and L2. |
-| `knuckle_gear_right` | 1 | PETG | Teeth in L2 and L3, half a tooth out of phase with the left gear. |
-| `outer_link` | 4 | PETG | Guide links: two per jaw, one above and one below. |
-| `finger_left`, `finger_right` | 1 + 1 | PETG | The couplers. A T-slot runs along each for the pad. |
-| `pad_tpu` | 2 | TPU 95A | The robot pad's size (27 × 65 × 7.5 mm) and position. Slide it into the finger's T-slot from the tip and add a drop of CA. |
-| `handle_a` | 1 | PETG | L1. 40-tooth sector meshing the left gear, the loop on the −y side, the encoder magnet in its lower hub, and an M3 insert for the stop screw. |
+| `outer_link_2f140` | 2 | PETG | 2F-140 outer knuckle + outer finger, one piece. The same part on both jaws (turned 180°). |
+| `inner_knuckle_2f140` | 2 | PETG | 2F-140 inner knuckle. Its base clevis holds the knuckle gear, keyed with 2 × M3 through one prong. |
+| `inner_finger_2f140` | 2 | PETG | 2F-140 inner finger. 2 × M3 counterbored holes for the pad core. |
+| `pad_core_2f140` | 2 | PETG | The back 5.1 mm of the 2F-140 pad, with 2 × M3 heat-set inserts. |
+| `pad_skin_2f140` | 2 | TPU 95A | The 2 mm grip face, glued to the core (CA or contact cement). |
+| `knuckle_gear_left` | 1 | PETG | 20-tooth sector gear (m 1.27): drive teeth in L1, sync teeth in L2, 2 × M3 inserts for the key screws. |
+| `knuckle_gear_right` | 1 | PETG | Drive teeth in L3, half a tooth out of phase with the left gear. |
+| `handle_a` | 1 | PETG | L1. 40-tooth sector meshing the left gear, the loop on the −y side, the encoder magnet in its lower hub, and inserts for the axle bolt and the stop screw. |
 | `handle_b` | 1 | PETG | L3. 40-tooth sector meshing the right gear, the loop on the +y side. |
-| `ebox_cover` | 1 | PETG | Covers the Pico 2 and the USB hub on the top plate, with the USB-C cable exit on the +y side. |
+| `base_bottom` | 1 | PETG | Five standoff columns, pivot spacers, the stop slot and the button pod. Print upside down. |
+| `base_top` | 1 | PETG | Pivot spacers and the mast to the head (4 × M3 inserts at its top). |
+| `ebox_cover` | 1 | PETG | Box under the bottom plate for the Pico 2, the USB hub and the AS5047P. |
 | `head_right` (or `head_left`) | 1 | PETG | D405 tilt knuckle plus a copy of HandUMI's main-support arm end for the Quest ring. Shared with the robot. |
 
 ## Printed: robot twin (on the real Robotiq 2F-140)
@@ -40,13 +42,16 @@ TPU 95A for the pads.
 | Intel RealSense D405 | 1 | 1 | |
 | Meta Quest Touch Pro controller | 1 | 1 | Tracking only. Right or left. |
 | Robotiq 2F-140 + its coupling | – | 1 | |
-| Ø4 × 32 mm steel dowel pins | 4 | – | At the outer and inner pivots: press fit in both plates, running fit (Ø4.2) in the links. |
-| Ø4 × 20 mm steel dowel pins | 4 | – | Finger joints (B, E). |
-| M4 × 35 bolt + M4 heat-set insert | 1 | – | Handle axle. Through the top plate and handle B into handle A's insert, with threadlocker. |
-| M3 × 8 button head + M3 heat-set insert | 1 | – | Stop pin. Fits from below through the bottom plate's arc slot into handle A. The slot ends are the open and closed stops. |
+| Ø4 × 50 mm steel dowel pins | 4 | – | Base pivots (outer and inner knuckles): press fit in both plates. |
+| Ø4 × 25 mm steel dowel pins | 4 | – | Finger joints (outer finger and inner knuckle to the inner finger). |
+| M4 × 35 bolt + M4 heat-set insert | 1 | – | Handle axle: through the top plate and handle B into handle A's insert, with threadlocker. |
+| M3 × 20 button head + M3 heat-set insert | 1 | – | Stop screw: from below through the bottom plate's arc slot into handle A. |
+| M3 × 10 + M3 heat-set inserts | 4 + 4 | – | Gear keys: through the inner knuckle's prong into the knuckle gear. |
+| M3 × 10 + M3 heat-set inserts | 4 + 4 | – | Pads: through the inner finger into the pad core. |
 | M3 × 10 + M3 heat-set inserts | 5 + 5 | – | Plates (standoffs). |
 | M3 × 10 + M3 heat-set inserts | 4 + 4 | 4 + 4 | Head onto the mast or the collar. |
-| M3 × 8 + M3 heat-set inserts | 4 + 4 | – | Ebox cover. |
+| M2 × 6 + M2 heat-set inserts | 2 + 2 | – | AS5047P board, under handle A's hub. |
+| M3 × 25 + M3 heat-set inserts | 4 + 4 | – | Ebox, into the bottom plate. |
 | M3 × 25 + nuts | 2 | 2 | Quest ring to the head. |
 | M4 × 30 + nyloc | 1 | 1 | D405 tilt hinge. |
 | M6 screws, 6 mm longer than the coupling's own | – | 4 | Coupling + collar to the flange. |

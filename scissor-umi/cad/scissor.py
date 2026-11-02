@@ -5,16 +5,21 @@ flange collar, so the camera, the controller and the pads are in the same place 
 The mechanism follows FOMI (robbyant-research.github.io/FOMI): scissor handles on the operator's side, meshed sector
 gears that keep the two jaws symmetric, and parallelogram finger links, so the operator feels the grasp directly
 through the handles. Here the finger links copy the Robotiq gripper's own four-bar (kin.py), so the handheld's pads
-move exactly like the robot's for the same q.
+move exactly like the robot's for the same q, and the jaws themselves are printed copies of the 2F-140's jaw parts
+(replica.py): outer knuckle + outer finger, inner knuckle, inner finger and pad.
 
 Frame and layers (mm): gripper frame G from kin.py (z approach, y opening, x up). The mechanism is a sandwich of
 layers stacked along x:
 
-  bottom plate  x -16 .. -11   (encoder, stop slot, record button)
-  L1            x -10.5 .. -4  handle A + its sector gear, the left knuckle gear's lower teeth, outer links
-  L2            x -3.5 .. 3.5  the two knuckle gears' sync teeth and the inner links
-  L3            x 4 .. 10.5    handle B + its sector gear, the right knuckle gear's upper teeth, outer links
-  top plate     x 11 .. 16     the mast to the head, the electronics box
+  bottom plate  x -25.5 .. -20.5  encoder, stop slot, record button; the electronics box hangs under it
+  L1            x -11.5 .. -4.2   handle A + its sector gear, the left knuckle gear's drive teeth
+  L2            x -3.7 .. 3.7     the two knuckle gears' sync teeth
+  L3            x 4.2 .. 11.5     handle B + its sector gear, the right knuckle gear's drive teeth
+  top plate     x 20.5 .. 25.5    the mast to the head
+
+The 2F-140 jaw parts sit at their own x (centred, up to ±19.6 mm for the inner knuckle) between the plates. The
+knuckle gears sit inside the inner knuckles' base clevis (its prongs at |x| 12.2 .. 19.5) and are screwed to one prong
+each, so gear and knuckle turn as one.
 
 Gear train: the inner (knuckle) links carry 20-tooth sector gears (module 1.27, pitch radius 12.7 mm: they mesh with
 each other exactly on the robot gripper's inner pivots, 25.4 mm apart). Both scissor handles turn on one axle H behind
@@ -39,17 +44,17 @@ BUILD = HERE.parent / "build" / kin.GRIPPER
 STEP_DIR = BUILD / "STEP"
 
 # ---- layers (G x) --------------------------------------------------------------------------------------------------
-BOT = (-16.0, -11.0)
-L1 = (-10.5, -4.0)
-L2 = (-3.5, 3.5)
-L3 = (4.0, 10.5)
-TOP = (11.0, 16.0)
+BOT = (-25.5, -20.5)
+L1 = (-11.5, -4.2)
+L2 = (-3.7, 3.7)
+L3 = (4.2, 11.5)
+TOP = (20.5, 25.5)
+CLEVIS = 12.2                     # the inner knuckle's prongs start at |x| = 12.2 (its base end)
 CLR = 0.5                         # radial clearance around moving parts
 
-PIN_D = 4.0                       # Ø4 x 32 mm steel dowel / M4 shoulder bolt at every pivot
+PIN_D = 4.0                       # Ø4 x 50 mm steel dowels at the base pivots
 PIN_BORE = 4.2                    # running fit in the moving parts
-BOSS_R = 7.0                      # link end bosses
-BAR_W = 12.0                      # link bars
+P1_SPACER = 5.2                   # the plates' bosses on the outer pivot reach in to the outer knuckle's hub (±4.9)
 
 # ---- gears ---------------------------------------------------------------------------------------------------------
 MODULE = 1.27
@@ -88,7 +93,7 @@ HEAD_HOLES = [(12.0, -9.0), (-12.0, -9.0), (12.0, 13.0), (-12.0, 13.0)]   # (y, 
 HINGE = (58.0, 13.0)              # D405 tilt hinge axis (x, z), along y: HandUMI's Ø12 x 10 knuckle, M4 bolt
 TILT_DEG = 30.0                   # view below the approach axis; the pads sit in the middle of the image
 KNUCKLE_OD, KNUCKLE_W = 12.0, 10.0
-EBOX = dict(x=(TOP[1], 40.0), y=29.0, z=(22.0, 70.0), wall=2.4)
+EBOX = dict(x=(BOT[0] - 22.0, BOT[0]), y=29.0, z=(4.0, 72.0), wall=2.4)   # under the bottom plate
 # The Quest Touch Pro stands behind the camera in HandUMI's controller support (its ring), the controller's face looking
 # forward, like on the D405 PG Chopstick builds.
 QUEST_ARM_AT = (-34.0, 64.0)      # (z, x) of the support's arm-end centre in G (on the centre line)
@@ -156,8 +161,15 @@ def rot_about(p, deg):
     return Pos(0, float(p[0]), float(p[1])) * Rot(deg, 0, 0) * Pos(0, -float(p[0]), -float(p[1]))
 
 
-def gear_sketch(teeth, centre, phase_deg):
-    return Pos(float(centre[0]), float(centre[1])) * Rot(0, 0, phase_deg) * (Sketch() + SpurGearPlan(MODULE, teeth, 20))
+FLANK_CLR = 0.08                  # each tooth flank thinned by this (printed gears: ~0.16 mm backlash per mesh)
+
+
+def gear_sketch(teeth, centre, phase_deg, clearance=False):
+    g = Sketch() + SpurGearPlan(MODULE, teeth, 20)
+    if clearance:                     # thin both flanks: the gear turned +d and -d, intersected (d = FLANK_CLR at the
+        d = math.degrees(FLANK_CLR / (MODULE * teeth / 2))       # pitch circle); keeps the involutes exact
+        g = (Rot(0, 0, d) * g) & (Rot(0, 0, -d) * g)
+    return Pos(float(centre[0]), float(centre[1])) * Rot(0, 0, phase_deg) * g
 
 
 def _deg(v):
@@ -191,21 +203,19 @@ def phases():
 # motion: each part's rigid motion at q (applied to the part as built at q = 0)
 # ====================================================================================================================
 def motion(name, q):
-    """build123d Location for a part at q."""
+    """build123d Location for a part at q (parts as built at q = 0; the right jaw's replica parts are turned 180°
+    about z first, see jaw_base())."""
     j0, j = kin.joints(0.0), kin.joints(q)
     a = math.degrees(q)
-    if name in ("knuckle_gear_left", "outer_link_left_lo", "outer_link_left_hi"):
-        piv = P2L if name.startswith("knuckle") else P1L
-        return rot_about(piv, -a)
-    if name in ("knuckle_gear_right", "outer_link_right_lo", "outer_link_right_hi"):
-        piv = P2R if name.startswith("knuckle") else P1R
-        return rot_about(piv, a)
-    if name in ("finger_left", "pad_left"):
+    side = "left" if name.endswith("_left") else "right" if name.endswith("_right") else None
+    sgn = -1 if side == "left" else 1
+    if name.startswith(("knuckle_gear", "inner_knuckle")):
+        return rot_about(P2L if side == "left" else P2R, sgn * a)
+    if name.startswith("outer_link"):
+        return rot_about(P1L if side == "left" else P1R, sgn * a)
+    if name.startswith(("inner_finger", "pad_core", "pad_skin")):
         d = j["B"] - j0["B"]
-        return Pos(0, float(d[0]), float(d[1]))
-    if name in ("finger_right", "pad_right"):
-        d = j["B"] - j0["B"]
-        return Pos(0, -float(d[0]), float(d[1]))
+        return Pos(0, float(d[0]) * (1 if side == "left" else -1), float(d[1]))
     if name in ("handle_a", "stop_pin"):
         return rot_about(H, a * R_K / R_H)
     if name == "handle_b":
@@ -213,19 +223,31 @@ def motion(name, q):
     return Location()
 
 
+def jaw_base(name):
+    """4 x 4 placing a jaw part's STEP (built for the left jaw) for `name`: identity, or 180° about z for the right."""
+    T = np.eye(4)
+    if name.endswith("_right") and name.startswith(("outer_link", "inner_knuckle", "inner_finger", "pad_")):
+        T[0, 0] = T[1, 1] = -1.0
+    return T
+
+
 # ====================================================================================================================
 # parts (each built in G at q = 0)
 # ====================================================================================================================
+KEY_INSERT = 6.0                  # M3 heat-set inserts in the gear's lobe, depth
+
+
 def knuckle_gear(side="left"):
-    """Inner link + sector gear, one piece. Left: teeth in L1 (handle A) and L2 (sync); right: L2 and L3 (handle B)."""
+    """Sector gear in the inner knuckle's base clevis, screwed to one prong (2 x M3 through the prong into inserts).
+    Left: drive teeth in L1 (handle A), sync teeth in L2, keyed to the lower prong. Right: L3 / L2, upper prong."""
+    import replica
     ph = phases()
     s = 1 if side == "left" else -1
-    P2, E = (P2L, kin.joints(0.0)["E"]) if side == "left" else (P2R, kin.joints(0.0, "right")["E"])
+    P2 = P2L if side == "left" else P2R
     phase = ph["kl"] if side == "left" else ph["kr"]
-    full = gear_sketch(KNUCKLE_TEETH, P2, phase)
+    full = gear_sketch(KNUCKLE_TEETH, P2, phase, clearance=True)
     qd = math.degrees(kin.g()["q_max"])
-    # sync teeth: towards the other knuckle gear; the gear turns by -s*q, so the arc that meets the contact line runs
-    # over [contact, contact + s*qd] in the gear's q = 0 pose
+
     def arc(world_deg):
         lo, hi = sorted((world_deg, world_deg + s * qd))
         return wedge(P2, R_K + 3 * MODULE, lo - 12, hi + 12)
@@ -233,90 +255,19 @@ def knuckle_gear(side="left"):
     to_handle = _deg(H - P2)
     sync = (full & arc(to_other)) + C(P2, HUB_R)
     drive = (full & arc(to_handle)) + C(P2, HUB_R)
-    link = bar(P2, E, BAR_W) + C(E, BOSS_R)
+    # lobe along the knuckle's arm (inside the clevis, up to where its web starts), carrying the key inserts
+    a0 = kin.link_angle(0.0)
+    arm = np.array([math.cos(a0), math.sin(a0)]) * np.array([s, 1])        # local +y of the knuckle, in (y, z)
+    lobe = bar(P2, P2 + arm * (replica.KEY_AT[1] + 2.0), 11.0)   # ends 1.3 mm short of the knuckle's web
     lay_drive = L1 if side == "left" else L3
-    part = slab(sync + link, L2) + slab(drive, lay_drive)
-    # web joining the layers over the hub (the gap between layers is filled)
-    part += slab(C(P2, HUB_R), (min(L2[0], lay_drive[0]), max(L2[1], lay_drive[1])))
-    for p in (P2, E):
-        part -= xcyl(p, PIN_BORE / 2, (-20, 20))
+    xr = (-CLEVIS + 0.25, L2[1]) if side == "left" else (L2[0], CLEVIS - 0.25)
+    part = slab(sync, L2) + slab(drive, lay_drive) + slab(C(P2, HUB_R) + lobe, xr)
+    part -= xcyl(P2, PIN_BORE / 2, (-30, 30))
+    face = xr[0] if side == "left" else xr[1]
+    for k in replica.KEY_AT:
+        c = P2 + arm * k
+        part -= xcyl(c, 2.0, (face - s * 0.01, face + s * KEY_INSERT) if side == "left" else (face - KEY_INSERT, face + 0.01))
     return part
-
-
-def outer_link():
-    """Outer (guide) link: a straight bar, P1 -> B, used four times (left/right, L1/L3)."""
-    j = kin.joints(0.0)
-    sk = bar(j["P1"], j["B"], BAR_W) + C(j["P1"], BOSS_R) + C(j["B"], BOSS_R)
-    p = slab(sk, L1)
-    for c in (j["P1"], j["B"]):
-        p -= xcyl(c, PIN_BORE / 2, (-20, 20))
-    return p
-
-
-def _swept_bar(centre, other_end_dir_degs, w, length):
-    sk = C(centre, w / 2 + CLR + 1.0)
-    for a in other_end_dir_degs:
-        d = np.array([math.cos(math.radians(a)), math.sin(math.radians(a))])
-        sk += bar(centre, centre + d * length, w + 2 * CLR)
-    return sk
-
-
-PAD_SLOT = dict(neck=8.0, head=16.0, neck_d=2.0, head_d=2.5)    # T-slot in the finger, the pad's tongue slides in
-FINGER_BACK = 8.0                                               # finger wall behind the pad
-
-
-def finger(side="left"):
-    """The coupler: pinned to the outer links (L1, L3) at B and the inner link (L2) at E, carries the pad."""
-    j = kin.joints(0.0)
-    B, E, pad = j["B"], j["E"], j["pad"]
-    pw, pl, pt = kin.g()["pad_size"]
-    back = pad[0] - pt / 2                                      # pad's back face (y), left jaw
-    holder = rect(back - FINGER_BACK, back, pad[1] - pl / 2, pad[1] + pl / 2)
-    outline = hull(C(B, BOSS_R + 1), C(E, BOSS_R + 1), holder) & rect(back - 200, back, 0, 400)
-    body = slab(outline, (L1[0], L3[1])) + slab(holder, (-pw / 2, pw / 2))
-    # the links' swept envelopes relative to the finger (it only translates; the links turn from a0 to a0 - q_max)
-    # link direction from the far end back to its pivot, over the stroke
-    a0 = _deg(j["P1"] - j["B"])
-    jq = kin.joints(kin.g()["q_max"])
-    a1 = _deg(jq["P1"] - jq["B"])
-    back_dirs = list(np.linspace(a0, a1, 8))
-    body -= slab(_swept_bar(B, back_dirs, BAR_W, 60), (L1[0] - 1, L1[1] + CLR))
-    body -= slab(_swept_bar(B, back_dirs, BAR_W, 60), (L3[0] - CLR, L3[1] + 1))
-    body -= slab(_swept_bar(E, back_dirs, BAR_W, 60), (L2[0] - CLR, L2[1] + CLR))
-    for p in (B, E):
-        body -= xcyl(p, PIN_BORE / 2, (-20, 20))
-    # T-slot along z, open at the tip, for the pad's tongue
-    sl = PAD_SLOT
-    zt0, zt1 = pad[1] - pl / 2 + 4.0, pad[1] + pl / 2 + 1
-    neck = Pos(0, back - sl["neck_d"] / 2, (zt0 + zt1) / 2) * Box(sl["neck"], sl["neck_d"] + 0.01, zt1 - zt0)
-    head = Pos(0, back - sl["neck_d"] - sl["head_d"] / 2, (zt0 + zt1) / 2) * Box(sl["head"], sl["head_d"], zt1 - zt0)
-    body -= neck + head
-    if side == "right":
-        body = _rot_z180(body)
-    return body
-
-
-def pad(side="left"):
-    """TPU pad, the robot pad's size (27 x 65 x 7.5) and place, grooved face, T-tongue on the back."""
-    j = kin.joints(0.0)
-    c = j["pad"]
-    pw, pl, pt = kin.g()["pad_size"]
-    p = Pos(0, c[0], c[1]) * Box(pw, pt, pl)
-    face = c[0] + pt / 2
-    for z in np.arange(c[1] - pl / 2 + 5, c[1] + pl / 2 - 3, 3.0):   # 1 mm grooves across the face
-        p -= Pos(0, face, z) * Box(pw + 1, 1.6, 1.0)
-    sl, back = PAD_SLOT, c[0] - pt / 2
-    zt0, zt1 = c[1] - pl / 2 + 4.3, c[1] + pl / 2
-    p += Pos(0, back - sl["neck_d"] / 2, (zt0 + zt1) / 2) * Box(sl["neck"] - 0.4, sl["neck_d"] + 0.02, zt1 - zt0)
-    p += Pos(0, back - sl["neck_d"] - sl["head_d"] / 2 + 0.15, (zt0 + zt1) / 2) * \
-        Box(sl["head"] - 0.4, sl["head_d"] - 0.3, zt1 - zt0)
-    if side == "right":
-        p = _rot_z180(p)
-    return p
-
-
-def _rot_z180(s):
-    return s.moved(Location((0, 0, 0), (0, 0, 1), 180))
 
 
 def handle_angles():
@@ -336,7 +287,7 @@ def handle(which="a"):
     opened, _ = handle_angles()
     tail = opened if which == "a" else 180 - opened
     loop = H + LOOP_DIST * np.array([math.cos(math.radians(tail)), math.sin(math.radians(tail))])
-    full = gear_sketch(HANDLE_TEETH, H, ph["ha"] if which == "a" else ph["hb"])
+    full = gear_sketch(HANDLE_TEETH, H, ph["ha"] if which == "a" else ph["hb"], clearance=True)
     to_k = _deg((P2L if which == "a" else P2R) - H)
     turn = math.degrees(kin.g()["q_max"]) * R_K / R_H * s       # handle turns +s*q/2; contact arc runs backwards
     lo, hi = sorted((to_k, to_k - turn))
@@ -375,51 +326,63 @@ def plate_outline():
     return hull(*pts)
 
 
+def _plate_bosses(top):
+    """Spacer bosses from a plate inwards: to the outer knuckle's hub at P1, to the inner knuckle's prongs at P2 and
+    to the handles at H (top plate only; the bottom plate's is handle A's hub bearing)."""
+    sg = 1 if top else -1
+    face = TOP[0] if top else BOT[1]
+    b = None
+    for c, reach, r in ((P1L, P1_SPACER, 5.5), (P1R, P1_SPACER, 5.5), (P2L, 19.9, 5.5), (P2R, 19.9, 5.5),
+                        (H, (L3[1] + 0.3) if top else (-L1[0] + 0.3), 8.0)):
+        x = (reach, face + 0.01) if top else (face - 0.01, -reach)
+        bb = xcyl(c, r, x)
+        b = bb if b is None else b + bb
+    return b
+
+
 def base_bottom():
-    """Bottom plate with the standoff columns (M3 heat-set inserts in their tops), the encoder pocket, the stop slot
-    and the record button pod."""
-    out = plate_outline()
-    p = slab(out, BOT)
+    """Bottom plate with the standoff columns (M3 heat-set inserts in their tops), the pivot spacers, the stop slot,
+    the record button pod and the electronics box under it (AS5047P under handle A's hub)."""
+    out = plate_outline() + rect(-EBOX["y"], EBOX["y"], EBOX["z"][0], EBOX["z"][1])
+    p = slab(out, BOT) + _plate_bosses(top=False)
     for s in STANDOFFS:
         p += slab(C(s, STANDOFF_R), (BOT[1], TOP[0]))
         p -= xcyl(s, 2.0, (TOP[0] - 7, TOP[0] + 0.1))                   # M3 insert
     for c in (P1L, P1R, P2L, P2R):
-        p -= xcyl(c, PIN_D / 2 - 0.05, (BOT[0] - 1, BOT[1] + 1))       # press fit for the dowels
-    p -= xcyl(H, HUB_H_R + 0.25, (BOT[0] - 1, BOT[1] + 1))             # handle A's hub
-    # AS5047P board under the hub: 1 mm floor gap, pocket from below, closed by the encoder cover
-    p -= slab(rect(H[0] - 13, H[0] + 13, H[1] - 13, H[1] + 13), (BOT[0] - 1, BOT[0] + 2.5))
+        p -= xcyl(c, PIN_D / 2 - 0.05, (BOT[0] - 1, 30))                # press fit for the dowels
+    p -= xcyl(H, HUB_H_R + 0.25, (BOT[0] - 1, 0))                      # handle A's hub
+    for dy in (-10.5, 10.5):                                            # AS5047P board: 2 x M2 inserts, under the hub
+        p -= xcyl((H[0] + dy, H[1]), 1.6, (BOT[0] - 0.01, BOT[0] + 4))
     arc, _ = stop_arc()
     p -= slab(arc, (BOT[0] - 1, BOT[1] + 1))
+    for y, z in _ebox_holes():
+        p -= xcyl((y, z), 2.0, (BOT[0] - 0.01, BOT[0] + 4.5))
     # record button: a 12 x 12 tactile switch in a pod under the plate's back edge, the index finger's place
     bp = np.array([0.0, -10.0])
     pod = slab(rect(bp[0] - 9, bp[0] + 9, bp[1] - 9, bp[1] + 9), (BOT[0] - 9, BOT[0]))
     pod -= slab(rect(bp[0] - 6.2, bp[0] + 6.2, bp[1] - 6.2, bp[1] + 6.2), (BOT[0] - 9.1, BOT[0] - 4))
-    pod -= xcyl(bp, 3.0, (BOT[0] - 5, BOT[1] + 1))                     # wire
+    pod -= slab(rect(-2.5, 2.5, bp[1], EBOX["z"][0] + 6), (BOT[0] - 5, BOT[0] - 1.5))   # wire into the box
     p += pod
     return p
 
 
 def base_top():
-    """Top plate + the mast to the head (M3 inserts in its top face at x = 46) + the electronics box's floor."""
-    out = plate_outline() + rect(-MAST["y"], MAST["y"], MAST["z"][0], MAST["z"][1]) + \
-        rect(-EBOX["y"], EBOX["y"], EBOX["z"][0] - 2, EBOX["z"][1])
-    p = slab(out, TOP)
+    """Top plate, the pivot spacers and the mast to the head (M3 inserts in its top face at x = 46)."""
+    out = plate_outline() + rect(-MAST["y"], MAST["y"], MAST["z"][0], MAST["z"][1])
+    p = slab(out, TOP) + _plate_bosses(top=True)
     mast = slab(rect(-MAST["y"], MAST["y"], *MAST["z"]), MAST["x"])
-    # hollow it (cable run from the camera to the box): 3 mm walls
     mast -= slab(rect(-MAST["y"] + 3, MAST["y"] - 3, MAST["z"][0] + 3, MAST["z"][1] - 3), (TOP[1], MAST["x"][1] - 4))
+    mast -= slab(rect(-7, 7, MAST["z"][0] - 1, MAST["z"][0] + 3.01), (TOP[1] + 3, MAST["x"][1] - 6))  # cable out the back
     p += mast
-    p -= slab(rect(-8, 8, MAST["z"][1] - 4, EBOX["z"][0] + 6), (TOP[1] - 0.01, TOP[1] + 8))  # cable into the box
     for y, z in HEAD_HOLES:
         p -= xcyl((y, z), 2.0, (MAST["x"][1] - 7, MAST["x"][1] + 0.1))
     for s in STANDOFFS:
         p -= xcyl(s, 1.7, (TOP[0] - 1, TOP[1] + 1))
         p -= xcyl(s, 3.1, (TOP[1] - 1.5, TOP[1] + 1))                    # head recess
     for c in (P1L, P1R, P2L, P2R):
-        p -= xcyl(c, PIN_D / 2 - 0.05, (TOP[0] - 1, TOP[1] + 1))
-    p -= xcyl(H, 2.2, (TOP[0] - 1, TOP[1] + 1))                        # M4 axle bolt
+        p -= xcyl(c, PIN_D / 2 - 0.05, (-30, TOP[1] + 1))
+    p -= xcyl(H, 2.2, (0, TOP[1] + 1))                                 # M4 axle bolt
     p -= xcyl(H, 4.2, (TOP[1] - 3, TOP[1] + 1))
-    for y, z in _ebox_holes():
-        p -= xcyl((y, z), 2.0, (TOP[1] - 4.5, TOP[1] + 0.1))
     return p
 
 
@@ -429,17 +392,19 @@ def _ebox_holes():
 
 
 def ebox_cover():
-    """Cover over the Pico 2 + USB hub on the top plate. Open bottom, screwed down at the corners."""
+    """Box under the bottom plate for the Pico 2, the USB hub and the AS5047P. Open towards the plate, screwed up into
+    it at the corners."""
     (x0, x1), y, (z0, z1), w = EBOX["x"], EBOX["y"], EBOX["z"], EBOX["wall"]
     outer = slab(rect(-y, y, z0, z1), (x0, x1))
     outer = fillet(outer.edges().filter_by(Axis.X), 4.0)
-    inner = slab(rect(-y + w, y - w, z0 + w, z1 - w), (x0 - 1, x1 - w))
+    inner = slab(rect(-y + w, y - w, z0 + w, z1 - w), (x0 + w, x1 + 1))
     box = outer - inner
     for yy, zz in _ebox_holes():
-        box += slab(C((yy, zz), 4.0), (x0, x1 - w))
+        box += slab(C((yy, zz), 4.0), (x0 + w, x1))
         box -= xcyl((yy, zz), 1.7, (x0 - 1, x1 + 1))
-        box -= xcyl((yy, zz), 3.0, (x1 - 2.0, x1 + 1))
-    box -= Pos((x0 + x1) / 2 - 2, y, (z0 + z1) / 2) * Box(8.0, 3 * w, 13.0)       # USB-C out (to the PC), +y side
+        box -= xcyl((yy, zz), 3.0, (x0 - 1, x0 + 2.0))
+    box -= Pos((x0 + x1) / 2 + 2, y, (z0 + z1) / 2) * Box(8.0, 3 * w, 13.0)       # USB-C out (to the PC), +y side
+    box -= Pos((x0 + x1) / 2 + 2, 0, z0) * Box(8.0, 10.0, 3 * w)                  # D405 cable in (from the head)
     return box
 
 
@@ -594,14 +559,20 @@ def robot_collar():
 PARTS = {
     "base_bottom": base_bottom, "base_top": base_top,
     "knuckle_gear_left": lambda: knuckle_gear("left"), "knuckle_gear_right": lambda: knuckle_gear("right"),
-    "outer_link": outer_link,
-    "finger_left": lambda: finger("left"), "finger_right": lambda: finger("right"),
-    "pad_tpu": lambda: pad("left"),
     "handle_a": lambda: handle("a"), "handle_b": lambda: handle("b"),
     "ebox_cover": ebox_cover,
     "head_right": lambda: head("right"), "head_left": lambda: head("left"),
     "robot_collar_iso50": robot_collar,
 }
+
+
+def _replica(name):
+    import replica
+    return lambda: replica.part(name)
+
+
+for _n in ("outer_link", "inner_knuckle", "inner_finger", "pad_core", "pad_skin"):
+    PARTS[f"{_n}_2f140"] = _replica(_n)
 
 
 def build_all(names=None):

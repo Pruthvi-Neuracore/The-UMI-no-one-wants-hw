@@ -51,7 +51,7 @@ wiring and renders.
 | Chop-UMI · D405 | D405 + Quest Touch Pro | Geared chopsticks | [`pg-chopstick/d405/chop-umi/`](pg-chopstick/d405/chop-umi/) |
 | Para-UMI · D405 | D405 + Quest Touch Pro | HandUMI as-is | [`pg-chopstick/d405/para-umi/`](pg-chopstick/d405/para-umi/) |
 | Hand · D405 | D405 + Quest Touch Pro | Your hand (wrist mount, palm button) | [`pg-chopstick/d405/hand/`](pg-chopstick/d405/hand/) |
-| Scissor-UMI · 2F-140 | D405 + Quest Touch Pro | FOMI-style scissor handles, Robotiq 2F-140 jaw linkage; robot twin = the real 2F-140 | [`scissor-umi/2f-140/`](scissor-umi/2f-140/) |
+| Scissor-UMI · 2F-140 | D405 + Quest Touch Pro | FOMI-style scissor handles, printed Robotiq 2F-140 jaws; robot twin = the real 2F-140 | [`scissor-umi/2f-140/`](scissor-umi/2f-140/) |
 
 Each folder has a README with renders and build steps, a bill of materials (`bom.md`), the wiring
 (`electronics.md`), every part as STEP and STL, the assemblies and the URDFs.
