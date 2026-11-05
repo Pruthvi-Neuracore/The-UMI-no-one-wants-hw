@@ -15,7 +15,7 @@ handles.
 
 ## Handheld and robot
 
-<p align="center"><img src="img/twins.png" alt="The handheld and the Robotiq 2F-140 on its camera plate, seen from behind at the same q" width="880"></p>
+<p align="center"><img src="img/twins.png" alt="The handheld and the Robotiq 2F-140 on its camera plate, seen from in front at the same q" width="880"></p>
 
 | Handheld | Robot (2F-140 + UR camera plate + D405) |
 |---|---|
@@ -30,12 +30,26 @@ two STEP files, the handheld's tab face and the robot plate's tab face are 0.000
 holes coincide. The D405 sits 78 mm off the axis at the flange, looking forward and 8.0° in towards the axis. The jaws
 and pads are identical; only what sits behind them at the bottom edge of the image differs.
 
+## Assembly
+
+Step-by-step IKEA-style assembly drawings, made from the CAD: [`assembly/ASSEMBLY.md`](assembly/ASSEMBLY.md) (all pages as one PDF: [`assembly/assembly.pdf`](assembly/assembly.pdf)).
+
+<p align="center"><img src="assembly/step_08.png" alt="Assembly step 8: the top plate" width="640"></p>
+
 ## Grip and electronics
 
-<p align="center"><img src="img/hands.png" alt="The left-hand and right-hand builds side by side, seen from behind" width="880"></p>
+| In a right hand | In a left hand |
+|---|---|
+| <img src="img/held.png" alt="The right-hand build in a right hand" width="420"> | <img src="img/held_left.png" alt="The left-hand build in a left hand" width="420"> |
 
-Left-hand build (left) and right-hand build (right), seen from behind as you hold them: the grips and the Quest
-controller are mirrored, the mechanism, camera and electronics are the same.
+Held from below, palm up: the palm under the palm bar, the four fingers curled up through the loop, the index finger
+forward at the record button. (The hand is Meta's rigged hand model, posed on the grips; it is not redistributed, see
+`cad/source/hand/README.md`.)
+
+<p align="center"><img src="img/hands.png" alt="The left-hand and right-hand builds side by side" width="880"></p>
+
+Left-hand build (left) and right-hand build (right): the grips and the Quest controller are mirrored, the mechanism,
+camera and electronics are the same.
 
 | Right hand | Left hand | Electronics (box cover hidden) |
 |---|---|---|

@@ -1,4 +1,5 @@
-"""Build everything for the gripper in kin.GRIPPER into ../<gripper>/: STEP (printed parts), URDFs and renders.
+"""Build everything for the gripper in kin.GRIPPER into ../<gripper>/: STEP (printed parts), URDFs, renders and the
+assembly instructions.
 
     python package.py            # parts + verification + urdf + renders
     python package.py --no-render
@@ -35,6 +36,8 @@ def main():
         render.OUT.mkdir(parents=True, exist_ok=True)
         for f in render.ALL.values():
             f()
+        import instructions
+        instructions.main()
 
 
 if __name__ == "__main__":

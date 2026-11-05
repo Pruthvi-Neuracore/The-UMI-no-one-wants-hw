@@ -90,7 +90,7 @@ def twins():
     gap = 260.0
     place(p, A.handheld(0.3), tr([0, -gap / 2, 0]))
     place(p, A.robot(0.3), tr([0, gap / 2, 0]))
-    shot(p, "twins.png", (420, 0, -260), (60, 0, 60), zoom=1.5, aspect=2.0)
+    shot(p, "twins.png", (330, 0, 480), (60, 0, 40), zoom=1.45, aspect=2.0)
 
 
 def top():
@@ -155,25 +155,41 @@ def electronics():
 
 
 def hand_view():
-    """The grips from the operator's side (behind and below): the palm bar, the finger loop and the button pod, for
-    the right-hand build (grip.png) and the left-hand build, its mirror (grip_left.png)."""
+    """The grips from in front, below and to the side: the palm bar, the finger loop and the button pod, for the
+    right-hand build (grip.png) and the left-hand build, its mirror (grip_left.png)."""
     for side, name, sy in (("right", "grip.png", -1), ("left", "grip_left.png", 1)):
         p = plotter((1600, 1100))
         place(p, A.handheld(0.35, side))
-        shot(p, name, (-190, sy * 330, -330), (0, 0, -40), up=(1, 0, 0), zoom=1.25)
+        shot(p, name, (-300, sy * 330, 260), (0, 0, -40), up=(1, 0, 0), zoom=1.2)
 
 
 def hands():
-    """The right-hand and the left-hand builds side by side, seen from behind (as you hold them)."""
+    """The left-hand and the right-hand builds side by side, from in front and above."""
     p = plotter((1800, 1000))
-    gap = 260.0
+    gap = 300.0
     place(p, A.handheld(0.2, "left"), tr([0, -gap / 2, 0]))
     place(p, A.handheld(0.2, "right"), tr([0, gap / 2, 0]))
-    shot(p, "hands.png", (-260, 0, -620), (10, 0, -10), up=(1, 0, 0), zoom=1.05, aspect=1.8)
+    shot(p, "hands.png", (520, 0, 420), (30, 0, -10), up=(1, 0, 0), zoom=1.15, aspect=1.8)
+
+
+def held_view():
+    """Each build in its hand (Meta's rigged hand, posed on the grips; see held.py), from the loop's side
+    and below: the palm under the grips, the fingers curled up through the loop."""
+    import held
+    for side, name, sy in (("right", "held.png", 1), ("left", "held_left.png", -1)):
+        p = plotter((1600, 1100))
+        m = A.handheld(0.3, side)
+        try:
+            m.update(held.hand_on_grips(0.3, side))
+        except FileNotFoundError:                       # no hand model (source/hand/README.md): the handheld only
+            pass
+        place(p, m)
+        shot(p, name, (-380, sy * 60, 200), (-10, 0, -40), up=(1, 0, 0), zoom=1.4)
 
 
 ALL = dict(hero=hero, robot=robot, twins=twins, top=top, stroke=stroke, camera_views=camera_views,
-           electronics=electronics, grip=hand_view, hands=hands)
+           electronics=electronics, grip=hand_view, hands=hands,
+           held=held_view)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

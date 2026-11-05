@@ -11,3 +11,4 @@ __pycache__/
 # Scissor-UMI: reference meshes used only for renders/checks (see scissor-umi/cad/source/*/README.md)
 scissor-umi/cad/source/quest/*.stl
 scissor-umi/cad/source/robotiq_*/*.stl
+scissor-umi/cad/source/hand/*.glb

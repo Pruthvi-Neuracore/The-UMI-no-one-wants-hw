@@ -9,7 +9,7 @@ the real gripper, our camera plate and the D405.
 
 ## Handheld and robot twin
 
-<p align="center"><img src="2f-140/img/twins.png" alt="The handheld and the Robotiq 2F-140 on its camera plate, seen from behind at the same jaw angle" width="880"></p>
+<p align="center"><img src="2f-140/img/twins.png" alt="The handheld and the Robotiq 2F-140 on its camera plate, seen from in front at the same jaw angle" width="880"></p>
 
 | Handheld | Robot (real 2F-140, our camera plate, D405) |
 |---|---|
@@ -35,7 +35,11 @@ through 40-tooth sectors (2:1). The jaws are printed copies of the 2F-140's jaw 
 they look and move exactly like the robot's. An STS3215 on the scissor axle reads the opening, and a Pico 2 streams it
 ([`firmware/`](firmware/README.md)).
 
-<p align="center"><img src="2f-140/img/hands.png" alt="Left-hand and right-hand builds, seen from behind" width="880"></p>
+| Right hand | Left hand |
+|---|---|
+| <img src="2f-140/img/held.png" alt="The right-hand build in a right hand" width="420"> | <img src="2f-140/img/held_left.png" alt="The left-hand build in a left hand" width="420"> |
+
+<p align="center"><img src="2f-140/img/hands.png" alt="Left-hand and right-hand builds side by side" width="880"></p>
 
 There is a right-hand and a left-hand build: the grips (palm bar and finger loop swap sides) and the Quest controller
 are mirrored; everything else is shared.
@@ -43,6 +47,12 @@ are mirrored; everything else is shared.
 | Right hand | Left hand | Electronics |
 |---|---|---|
 | <img src="2f-140/img/grip.png" alt="Right-hand grip from the operator's side" width="290"> | <img src="2f-140/img/grip_left.png" alt="Left-hand grip from the operator's side" width="290"> | <img src="2f-140/img/electronics.png" alt="STS3215, Pico 2, hub and IMU under the base" width="290"> |
+
+## Assembly
+
+Step-by-step IKEA-style assembly drawings, made from the CAD: [`2f-140/assembly/ASSEMBLY.md`](2f-140/assembly/ASSEMBLY.md) (all pages as one PDF: [`2f-140/assembly/assembly.pdf`](2f-140/assembly/assembly.pdf)).
+
+<p align="center"><img src="2f-140/assembly/step_08.png" alt="Assembly step 8: the top plate" width="640"></p>
 
 Details, BOM and wiring are in
 [`2f-140/README.md`](2f-140/README.md).
