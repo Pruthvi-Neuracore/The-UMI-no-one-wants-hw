@@ -164,19 +164,32 @@ def outer_link():
     if M == "85":
         return outer_link_85()
     lj = _local_joints()
-    ok = mesh_solid(mesh("140_outer_knuckle"))
-    of = mesh_solid(mesh("140_outer_finger")).moved(Location((0, *lj["OF"])))
+    # Done on the meshes (manifold3d) and only then made a solid: OCC's booleans on the sewn mesh solids can fail
+    # silently (the pin cut and the fuse came back unchanged; found by the clearance check).
+    X = trimesh.transformations.rotation_matrix(math.pi / 2, [0, 1, 0])          # cylinder axis z -> x
+
+    def xcyl(y, z, r, h):
+        return trimesh.creation.cylinder(radius=r, height=h, sections=64, transform=_tr(y, z) @ X)
+
+    def box(T, ext):
+        return trimesh.creation.box(extents=ext, transform=T)
+    U = lambda *ms: trimesh.boolean.union([m for m in ms if len(m.faces)], engine="manifold")  # noqa: E731
+    I = lambda *ms: trimesh.boolean.intersection(list(ms), engine="manifold")   # noqa: E731
+    Df = lambda a, b: trimesh.boolean.difference([a, b], engine="manifold")    # noqa: E731
+    okm = closed(mesh("140_outer_knuckle"))
     # the drive lever behind the pivot (inside the gripper body): keep only what is in front of the line through the
     # pivot boss, perpendicular to the pivot -> finger-joint direction
     d = lj["OF"] / np.linalg.norm(lj["OF"])
-    ang = math.degrees(math.atan2(d[1], d[0]))
-    keep = Rot(ang, 0, 0) * Pos(0, 100 - 7.5, 0) * Box(60, 200, 200)      # local y' >= -7.5 along d
-    lever = Rot(ang, 0, 0) * Pos(0, -100 - 7.5, 0) * Box(60, 200, 200)
-    boss = Pos(0, 0, 0) * Rot(0, 90, 0) * Cylinder(6.5, 30)                # keep the pivot boss whole
-    ok = (ok & keep) + (ok & lever & boss)
-    ok -= _faces(0.0, 0.0, 4.9)                     # the modelled pin stubs past the hub (|x| > 4.9) at the pivot
-    p = ok + of
-    p -= _gap(*lj["B_outer"], 7.75)                 # the modelled pin between the finger-joint prongs
+    ang = math.atan2(d[1], d[0])
+    keep = box(_rx(ang) @ _tr(100 - 7.5, 0), (60, 200, 200))                   # local y' >= -7.5 along d
+    lever = box(_rx(ang) @ _tr(-100 - 7.5, 0), (60, 200, 200))
+    boss = xcyl(0, 0, 6.5, 30)                                                  # keep the pivot boss whole
+    okm = U(I(okm, keep), I(okm, lever, boss))
+    stubs = Df(xcyl(0, 0, 7.2, 60), box(np.eye(4), (2 * 4.9, 40, 40)))         # the modelled pin stubs past the hub
+    okm = Df(okm, stubs)
+    ofm = closed(mesh("140_outer_finger")).apply_translation([0, *lj["OF"]])
+    ofm = Df(ofm, xcyl(*lj["B_outer"], 6.6, 2 * 7.75))                         # the pin between the finger-joint prongs
+    p = mesh_solid(U(okm, ofm))
     # the mesh's pin sits in a slightly larger hole in the prongs: fill the prongs' hole before boring it to Ø4.2
     for sx in (-1, 1):
         p += Pos(sx * (7.75 + 12.2) / 2, *lj["B_outer"]) * Rot(0, 90, 0) * Cylinder(3.2, 12.2 - 7.75)

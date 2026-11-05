@@ -61,7 +61,27 @@ def step_mesh(name):
     if not p.exists() or p.stat().st_mtime < src.stat().st_mtime:
         CACHE.mkdir(parents=True, exist_ok=True)
         export_stl(import_step(str(src)), str(p), tolerance=0.03, angular_tolerance=0.15)
-    return trimesh.load(p)
+    return _closed(trimesh.load(p))
+
+
+def _closed(m):
+    """Weld and close a tessellated part (OCC's STL can leave split seams and tiny holes) so booleans can use it."""
+    if not m.is_volume:
+        m.merge_vertices()
+        m.update_faces(m.nondegenerate_faces())
+        m.remove_unreferenced_vertices()
+        trimesh.repair.fill_holes(m)
+        trimesh.repair.fix_normals(m)
+    if not m.is_volume:                                        # close the last seams (manifold3d's vertex merge)
+        import manifold3d as mf
+        mm = mf.Mesh(vert_properties=np.asarray(m.vertices, np.float32), tri_verts=np.asarray(m.faces, np.uint32))
+        mm.merge()
+        out = mf.Manifold(mm).to_mesh()
+        c = trimesh.Trimesh(out.vert_properties[:, :3], out.tri_verts)
+        if c.is_volume:
+            c.visual = m.visual if len(m.visual.face_colors) == len(c.faces) else c.visual
+            m = c
+    return m
 
 
 def _T(loc):
@@ -138,7 +158,7 @@ def servo_mesh():
 
 def controller(side="right"):
     import quest
-    m = quest.controller_mesh(side)
+    m = _closed(quest.controller_mesh(side))
     m.visual.face_colors = _hex("quest")
     return m
 
@@ -228,7 +248,7 @@ CONTACT_OK = {frozenset(p) for p in (("pad_skin_left", "pad_skin_right"), ("hand
 def check(steps=8):
     """Interference between every pair of parts of the handheld (Quest included) over the stroke, and of the robot
     build's camera and plate with the gripper."""
-    bad = []
+    bad, unchecked = [], set()
     for side in ("right", "left"):
         for q in np.linspace(0, kin.g()["q_max"], steps):
             a = handheld(q, side)
@@ -236,6 +256,12 @@ def check(steps=8):
             for i in range(len(keys)):
                 for k in keys[i + 1:]:
                     v = _overlap(a[keys[i]], a[k])
+                    if v != v:                                 # a mesh that is not a closed volume: say so
+                        lo = np.maximum(a[keys[i]].bounds[0], a[k].bounds[0])
+                        hi = np.minimum(a[keys[i]].bounds[1], a[k].bounds[1])
+                        if np.all(lo <= hi):
+                            unchecked.add((keys[i], k))
+                        continue
                     if v > 1.0:
                         bad.append((side, round(float(q), 3), keys[i], k, round(v, 1)))
     for q in (0.0, kin.g()["q_max"]):
@@ -246,6 +272,8 @@ def check(steps=8):
                     v = _overlap(r[e], m)
                     if v > 1.0:
                         bad.append(("robot", q, "robot:" + e, k, round(v, 1)))
+    if unchecked:
+        print("NOT CHECKED (a mesh is not a closed volume):", sorted(unchecked))
     real = [b for b in bad if frozenset(b[2:4]) not in CONTACT_OK]
     for b in bad:
         print("overlap", b, "(expected contact)" if b not in real else "")
