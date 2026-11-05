@@ -54,7 +54,8 @@ def gears(n=29):
               f"{'OK' if ok else 'FAIL'}")
 
 
-def jaws(qs=(0.0, 0.35, 0.7)):
+def jaws(qs=None):
+    qs = qs or (0.0, kin.g()["q_max"] / 2, kin.g()["q_max"])
     for q in qs:
         r, h = A.robotiq(q), A.handheld(q, quest=False)
         rows = []

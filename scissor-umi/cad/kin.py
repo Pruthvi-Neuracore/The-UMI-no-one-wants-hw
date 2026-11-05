@@ -40,6 +40,8 @@ GRIPPERS = {
         knuckle_arm=(1.0, 0.0),             # the inner knuckle's arm direction in its own (y, z)
         key_at=(12.0, 20.0),                # M3 keys along that arm through a prong into the knuckle gear
         p1_hub=4.9,                         # the outer knuckle's hub half-width at the outer pivot
+        open_extra=0.0,                     # handles' open angle past the 2F-140's (deg)
+        rear_standoff_z=2.0,                # the two rear standoffs at (±35, z)
     ),
     # Robotiq 2F-85, from robotiq_arg2f_85_model (finger_joint and left_inner_knuckle_joint at rpy z = pi, axis +x;
     # outer_finger (0, 31.5, -4.1), inner_finger (0, 6.1, 47.1); the pad mesh 20 x 35 x 5 mm at (0, -21.4, 31.0) in the
@@ -61,6 +63,10 @@ GRIPPERS = {
         knuckle_arm=(0.6580, 0.7530),       # towards its far joint E (37.6, 43.0)
         key_at=(10.0, 18.0),
         p1_hub=5.5,
+        # its longer finger_joint range closes the handles 3° further: the range moves 2.5° towards open (the grips
+        # then clear each other closed) and the rear standoffs 2.5 mm forward (they clear the open grips by 1 mm)
+        open_extra=2.5,
+        rear_standoff_z=4.5,
     ),
 }
 GRIPPER = os.environ.get("SCISSOR_GRIPPER", "2f-85")

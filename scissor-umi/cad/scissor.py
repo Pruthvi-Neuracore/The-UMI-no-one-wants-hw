@@ -105,7 +105,8 @@ HUB_H_R = 5.0                     # handle A's lower hub: bearing in the bottom 
 HEX_AF = 7.5
 
 # ---- plates, electronics, servo ------------------------------------------------------------------------------------
-STANDOFFS = [(0.0, 77.0), (-44.0, 40.0), (44.0, 40.0), (-35.0, 2.0), (35.0, 2.0)]
+_ZR = kin.g()["rear_standoff_z"]
+STANDOFFS = [(0.0, 77.0), (-44.0, 40.0), (44.0, 40.0), (-35.0, _ZR), (35.0, _ZR)]
 STANDOFF_R = 5.0
 EBOX = dict(x=(BOT[0] - 45.5, BOT[0]), y=34.5, z=(4.0, 72.0), wall=2.4)   # under the bottom plate
 # Feetech STS3215 as the jaw encoder (torque off), coaxial with the scissor axle under the bottom plate: its horn is
@@ -285,7 +286,7 @@ def handle_angles():
     angle is the 2F-140's (where the grips clear the standoffs and the box); a longer stroke closes further."""
     half = LOOP_GAP_CLOSED / 2
     closed140 = -180 + math.degrees(math.acos(half / LOOP_DIST))   # loop on the -y side, behind the axle
-    opened = closed140 - math.degrees(kin.g("2f-140")["q_max"]) * R_K / R_H
+    opened = closed140 - math.degrees(kin.g("2f-140")["q_max"]) * R_K / R_H - kin.g()["open_extra"]
     return opened, opened + math.degrees(kin.g()["q_max"]) * R_K / R_H
 
 

@@ -1,4 +1,4 @@
-"""Scissor-UMI · 2F-140 — Raspberry Pi Pico 2 firmware (MicroPython).
+"""Scissor-UMI (2F-85 or 2F-140, set GRIPPER below) — Raspberry Pi Pico 2 firmware (MicroPython).
 
 Reads the jaw opening from the Feetech STS3215 on the scissor axle (its built-in 12-bit magnetic encoder, torque off)
 and the record button, and streams one JSON line per sample over USB serial:
@@ -7,13 +7,13 @@ and the record button, and streams one JSON line per sample over USB serial:
 
   t    Pico time, ms
   raw  STS3215 present position (0..4095, 4096 per turn)
-  q    the 2F-140's finger_joint (rad): 0 open .. 0.7 closed, from the calibration below
+  q    the robot gripper's finger_joint (rad): 0 open .. Q_MAX closed (0.8 2F-85, 0.7 2F-140), from the calibration
   w    the distance between the pad faces (mm), from Robotiq's URDF (fit of kin.pad_gap)
   rec  1 while recording (the button toggles it)
 
 Commands (one per line, from the PC):
   open     store the current reading as q = 0     (handles against the open stop)
-  closed   store the current reading as q = 0.7   (pads touching)
+  closed   store the current reading as q = Q_MAX (handles against the closed stop)
   rate N   samples per second (default 100)
 
 Wiring: GP0 (UART0 TX) through a 1 kΩ resistor (or a 74LVC1G125) and GP1 (RX) direct, both to the servo's data line;
@@ -30,8 +30,11 @@ SERVO_ID = 1
 BAUD = 1_000_000
 ADDR_TORQUE_ENABLE = 40
 ADDR_PRESENT_POSITION = 56
-Q_MAX = 0.7
-W_POLY = (31.0586, -66.8619, -152.2784, 128.5506)          # pad gap (mm) vs q, cubic, < 0.01 mm from kin.pad_gap
+GRIPPER = "2f-85"
+# per gripper: finger_joint range and the pad gap (mm) vs q as a cubic (< 0.02 mm from cad/kin.py pad_gap)
+GRIPPERS = {"2f-85": (0.8, (17.9209, -39.1864, -85.7428, 88.5927)),
+            "2f-140": (0.7, (31.0646, -66.8771, -152.2703, 128.5496))}
+Q_MAX, W_POLY = GRIPPERS[GRIPPER]
 CALIB_FILE = "calib.json"
 
 uart = UART(0, baudrate=BAUD, tx=Pin(0), rx=Pin(1), timeout=4, timeout_char=2)
