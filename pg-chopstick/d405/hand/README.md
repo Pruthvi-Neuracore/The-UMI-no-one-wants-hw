@@ -26,7 +26,7 @@ There are no jaws: your own hand is the end effector.
 - **Pitch:** the saddle tilts the head 15° forward. Set the D405's own tilt on its hinge (15° to 65°) so it frames your
   fingers. The camera frame turns about the hinge axis at (2.4, 0, 37.2) mm.
 - **Tracking:** the Quest Touch Pro controller stands in HandUMI's controller support (on `quest_arm`, as on the
-  Chop-UMI head) behind the box, face forward, where its tracking cameras see the room. Its buttons are not used.
+  Chop-UMI head) behind the box, trigger forward as in a hand, where its tracking cameras see the room. Its buttons are not used.
 
 ## Thumb strap and palm button
 
@@ -79,7 +79,7 @@ your wrist. The robot then sees what you saw.
 3. **Box:** fit the electronics, bolt the box to the frame's back plate, and screw the saddle on in place of the lid.
    Add a thin foam pad under it.
 4. **Controller:** screw `quest_arm` to the box's back, bolt HandUMI's controller support to it, line the ring with
-   thin foam tape and push the controller's handle in, face forward.
+   thin foam tape and push the controller's handle in, trigger forward.
 5. **Palm button:** push the switch into the button's pocket through the slit at its wrist end, solder the wire, and
    lead it out of the wire channel. Thread the thumb strap through the button's tunnel.
 6. **Wear it:** strap the saddle on just behind the wrist with the 25 mm strap through its wings, the camera facing your

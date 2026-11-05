@@ -64,12 +64,29 @@ materials, wiring and renders.
 Each folder has a README with renders and build steps, a bill of materials (`bom.md`), the wiring
 (`electronics.md`), every part as STEP (and STL for HandUMI and PG Chopstick), and the URDFs.
 
+## Assembly guides
+
+IKEA-style, step by step, drawn from the CAD: each step shows the new parts pulled out along the way they go in and the
+hardware for it, to scale.
+
+| Device | Guide |
+|---|---|
+| HandUMI | [`handumi/docs/assembly_guide/`](handumi/docs/assembly_guide/ASSEMBLY.md) ([PDF](handumi/docs/assembly_guide/assembly.pdf)) |
+| Chop-UMI · D405 + Quest | [`pg-chopstick/d405/chop-umi/assembly_guide/`](pg-chopstick/d405/chop-umi/assembly_guide/ASSEMBLY.md) ([PDF](pg-chopstick/d405/chop-umi/assembly_guide/assembly.pdf)) |
+| Scissor-UMI · 2F-140 | [`scissor-umi/2f-140/assembly/`](scissor-umi/2f-140/assembly/ASSEMBLY.md) ([PDF](scissor-umi/2f-140/assembly/assembly.pdf)) |
+
+<p align="center"><img src="pg-chopstick/d405/chop-umi/assembly_guide/step_04.png" alt="Chop-UMI assembly, step 4: joining the jaws to the base" width="420"> <img src="handumi/docs/assembly_guide/step_03.png" alt="HandUMI assembly, step 3: the encoder and linkage" width="420"></p>
+
+The generators are in [`tools/assembly_guides/`](tools/assembly_guides/) (HandUMI and Chop-UMI, from their published
+GLB assemblies) and [`scissor-umi/cad/instructions.py`](scissor-umi/cad/instructions.py).
+
 ## Repository layout
 
 ```
 handumi/              HandUMI: hardware/ (STEP, STL, tips, NOTICE), assembly/, docs/ (BOM, wiring, renders)
 pg-chopstick/         PG Chopstick: insta360_x5/ and d405/ (chop-umi, para-umi, hand), tags/, docs/media/ (video),
                       NOTICE, LICENSE
+tools/                assembly_guides/: the IKEA-style guide generators for HandUMI and Chop-UMI
 scissor-umi/          Scissor-UMI: 2f-140/ (STEP, img, urdf, BOM, wiring, NOTICE), cad/ (build code), firmware/ (Pico),
                       tools/ (PC reader)
 ```

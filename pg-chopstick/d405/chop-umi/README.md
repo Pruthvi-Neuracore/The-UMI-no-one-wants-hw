@@ -45,10 +45,10 @@ The robot twin carries the same jaws and the same D405 at the same tilt.
   **`quest_arm`**:
   - `quest_arm` is a plate on the box's back wall (4 × M3 × 10 into its inserts) carrying a copy of HandUMI's
     main-support arm end. The support bolts on exactly as on HandUMI (2 × M3 × 25 + nuts).
-  - The controller's handle stands upright in the ring with its **face (thumbstick and buttons) forward**, over the
-    gripper. The ring's oval opening is set at an angle to HandUMI's arm, and the Touch Pro's handle fits it best turned
-    55° to the arm (0.4 mm all round). So the arm end on `quest_arm` is turned 55°, and the controller still faces
-    straight forward. Line the ring with thin foam tape for a snug fit.
+  - The controller's handle stands upright in the ring the way a hand holds it: **trigger and ring forward** over the
+    gripper, the face (thumbstick and buttons) back towards you. The ring's oval opening is set at an angle to HandUMI's
+    arm, so the arm end on `quest_arm` is turned 55°, and the handle sits a further 5.5° round in the ring, where it
+    clears it all round. Line the ring with thin foam tape for a snug fit.
   - **Left and right:** `quest_arm_left` and `quest_support_left` are the mirror images of the right-hand parts, for
     the left controller.
 
@@ -111,6 +111,9 @@ box.
 
 ## Build
 
+Step-by-step IKEA-style drawings: [`assembly_guide/ASSEMBLY.md`](assembly_guide/ASSEMBLY.md) (one PDF: [`assembly_guide/assembly.pdf`](assembly_guide/assembly.pdf)).
+
+
 1. **Print:** use blue PLA for the frame, base, clips, Quest arm and support, and plates, and white PLA for the jaws and box. Add the
    blue dot inlays to the jaws. Print the tips in white TPU and the button cover in green TPU (record, right hand) or red TPU (cancel, left hand).
 2. **Jaws:** build them as in the Insta360 kit: inserts, tips, bearings, button on the index jaw, rubber band, and gears
@@ -121,5 +124,5 @@ box.
    inserts), feed the D405 cable into its top slot and the button wire through the side hole, then close the lid.
 5. **Controller:** screw `quest_arm` to the box's back (4 × M3 × 10, from behind through its counterbores). Bolt
    HandUMI's controller support to its arm end (2 × M3 × 25 + nuts). Line the ring with thin foam tape and push the
-   controller's handle down through it, face forward.
+   controller's handle down through it, trigger forward.
 6. **Assemble:** join the frame to the base with the clip and two M3 × 55 screws, then fit the finger straps.

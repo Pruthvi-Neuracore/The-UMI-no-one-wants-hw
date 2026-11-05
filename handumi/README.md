@@ -68,6 +68,9 @@ Robot renders are made from the robots' published descriptions (sources in
 
 ## Assembly
 
+Step-by-step IKEA-style drawings: [`docs/assembly_guide/ASSEMBLY.md`](docs/assembly_guide/ASSEMBLY.md) (one PDF: [`docs/assembly_guide/assembly.pdf`](docs/assembly_guide/assembly.pdf)).
+
+
 The full assembled device (right hand, half open) is in [`assembly/`](assembly/), once per tip set:
 
 | File | Use |
