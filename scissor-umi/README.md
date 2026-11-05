@@ -35,10 +35,6 @@ through 40-tooth sectors (2:1). The jaws are printed copies of the 2F-140's jaw 
 they look and move exactly like the robot's. An STS3215 on the scissor axle reads the opening, and a Pico 2 streams it
 ([`firmware/`](firmware/README.md)).
 
-| Right hand | Left hand |
-|---|---|
-| <img src="2f-140/img/held.png" alt="The right-hand build in a right hand" width="420"> | <img src="2f-140/img/held_left.png" alt="The left-hand build in a left hand" width="420"> |
-
 <p align="center"><img src="2f-140/img/hands.png" alt="Left-hand and right-hand builds side by side" width="880"></p>
 
 There is a right-hand and a left-hand build: the grips (palm bar and finger loop swap sides) and the Quest controller

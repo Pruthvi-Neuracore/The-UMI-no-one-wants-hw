@@ -27,7 +27,7 @@ materials, wiring and renders.
 </tr>
 <tr>
 <td align="center"><a href="scissor-umi/README.md"><img src="scissor-umi/2f-140/img/hero.png" alt="Scissor-UMI for the Robotiq 2F-140: scissor handles, printed 2F-140 jaws, a D405 and a Quest Touch Pro" width="300"></a><br><b><a href="scissor-umi/README.md">Scissor-UMI · 2F-140</a></b><br>Garden-scissor handles drive printed copies of the Robotiq 2F-140's jaws. The D405 sits exactly where our camera plate puts it on the robot.</td>
-<td align="center"><a href="scissor-umi/2f-140/README.md"><img src="scissor-umi/2f-140/img/held.png" alt="The Scissor-UMI held in a right hand: palm under the grips, fingers curled through the loop" width="300"></a><br><b>In your hand</b><br>Held from below, palm up, fingers through the loop and your index finger on the record button. Left- and right-hand builds have mirrored grips.</td>
+<td align="center"><a href="scissor-umi/2f-140/README.md"><img src="scissor-umi/2f-140/img/hands.png" alt="Left-hand and right-hand Scissor-UMI builds side by side" width="300"></a><br><b>Left and right hand</b><br>Mirrored grips and the matching Quest controller for each hand. The mechanism, camera and electronics are shared.</td>
 <td align="center"><a href="scissor-umi/2f-140/electronics.md"><img src="scissor-umi/2f-140/img/electronics.png" alt="STS3215 encoder, Pico 2, USB hub and IMU under the Scissor-UMI's base" width="300"></a><br><b>Jaw encoder</b><br>A Feetech STS3215 on the scissor axle reads the opening, and a Pico 2 streams the jaw angle and width at 100 Hz.</td>
 </tr>
 </table>

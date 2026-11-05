@@ -172,24 +172,8 @@ def hands():
     shot(p, "hands.png", (520, 0, 420), (30, 0, -10), up=(1, 0, 0), zoom=1.15, aspect=1.8)
 
 
-def held_view():
-    """Each build in its hand (Meta's rigged hand, posed on the grips; see held.py), from the loop's side
-    and below: the palm under the grips, the fingers curled up through the loop."""
-    import held
-    for side, name, sy in (("right", "held.png", 1), ("left", "held_left.png", -1)):
-        p = plotter((1600, 1100))
-        m = A.handheld(0.3, side)
-        try:
-            m.update(held.hand_on_grips(0.3, side))
-        except FileNotFoundError:                       # no hand model (source/hand/README.md): the handheld only
-            pass
-        place(p, m)
-        shot(p, name, (-380, sy * 60, 200), (-10, 0, -40), up=(1, 0, 0), zoom=1.4)
-
-
 ALL = dict(hero=hero, robot=robot, twins=twins, top=top, stroke=stroke, camera_views=camera_views,
-           electronics=electronics, grip=hand_view, hands=hands,
-           held=held_view)
+           electronics=electronics, grip=hand_view, hands=hands)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
