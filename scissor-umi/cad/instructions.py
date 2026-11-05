@@ -507,7 +507,17 @@ def main(hand="right"):
     for f in OUT.glob("_*.png"):
         f.unlink()
     ims = [Image.open(p).convert("RGB").quantize(256) for p in pages]     # palette PDF (no JPEG codec needed)
-    ims[0].save(OUT / "assembly.pdf", save_all=True, append_images=ims[1:], resolution=150)
+    raw = OUT / "_raw.pdf"
+    ims[0].save(raw, save_all=True, append_images=ims[1:], resolution=150)
+    import shutil
+    import subprocess
+    if shutil.which("gs"):                              # the raw PDF is uncompressed: Flate-compress it (lossless)
+        subprocess.run(["gs", "-q", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite", "-dAutoFilterColorImages=false",
+                        "-dColorImageFilter=/FlateEncode", "-dDownsampleColorImages=false",
+                        f"-sOutputFile={OUT / 'assembly.pdf'}", str(raw)], check=True)
+        raw.unlink()
+    else:
+        raw.rename(OUT / "assembly.pdf")
     md = [f"# Scissor-UMI · {kin.GRIPPER}: assembly", "",
           "IKEA-style, drawn from the CAD: new parts in blue, pulled out along the way they go in; parts already "
           "built in grey; screws and dowels at their real holes, with the hardware for each step (to scale) at the "
