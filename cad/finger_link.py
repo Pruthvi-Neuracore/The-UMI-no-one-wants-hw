@@ -1,15 +1,11 @@
-"""Finger links with a universal tip flange.
+"""Finger links with a universal robot-finger flange.
 
 The original links carry tips on a 12 x 16 x 3 mm plate on a 12 x 6 mm neck. Here the plate and neck are
-replaced by a lofted neck flaring into a 20 x 30 x 5 mm flange with filleted edges. The front face stays at
-y = 0, so tips sit exactly where they did. Hole patterns on the flange (link frame: x across, z along the finger,
-holes along Y):
-
-    M2   4x  8 x 12 mm   existing tip library (self-tapping, as before)
-    M3   6x  12 x 24 mm rectangle + centre pair at z = ±12 (heat-set inserts, Ø4.0 x 5)
-    M4   2x  12 mm apart at z = 0 (heat-set inserts, Ø5.6 x 7); same spacing as Robotiq's M4 accessory holes
-
-Flange width is set so the two flanges keep a 3.6 mm gap at full close.
+replaced by a lofted neck flaring into a flange with filleted edges. The front face stays at y = 0, so tips sit
+exactly where they did. The flange carries every robot finger interface in finger_interfaces.py (AgileX Piper,
+Robotiq Hand-E, I2RT YAM, OpenArm v1), each with its own screw pattern, dowel and key slot, placed per link so the two
+jaws meet on the jaws' centre plane. Link frame: x along the closing axis, y out of the flange face (fingers at +y),
+z across. Edit the interfaces or the flange size there, not here.
 
 The index/middle link has a 6 x 6 mm tactile switch set flush into the inner wall of its sleeve, where the index finger
 pad rests: press with the finger to click (record start / stop, wired to the Pico).
@@ -20,12 +16,11 @@ from pathlib import Path
 
 from build123d import Axis, Box, Cylinder, Face, Polyline, Pos, Rot, Wire, fillet, import_step, loft
 
-FLANGE = (20.0, 5.0, 30.0)          # x, y (thickness), z
+import finger_interfaces as FI
+
 NECK_ROOT = (-6.0, 6.0, -9.0, 7.0)  # x0, x1, z0, z1 on the link body at y = NECK_Y
 NECK_Y = -12.4
-M2 = [(sx * 4.0, sz * 6.0) for sx in (-1, 1) for sz in (-1, 1)]
-M3 = [(x, sz * 12.0) for x in (-6.0, 0.0, 6.0) for sz in (-1, 1)]
-M4 = [(-6.0, 0.0), (6.0, 0.0)]
+FLANGE_R, FRONT_R = 3.0, 1.0        # flange corner radius (seen from the front), front-edge round
 
 
 def box(x0, x1, y0, y1, z0, z1):
@@ -128,27 +123,56 @@ def button_cover():
     return pad + nub + rim
 
 
+def flange(hand, link):
+    """The flange plate (y from -FLANGE_T to 0), before any holes."""
+    fx0, fx1 = FI.flange_x(hand, link)
+    fz0, fz1 = FI.flange_z(hand, link)
+    f = box(fx0, fx1, -FI.FLANGE_T, 0.0, fz0, fz1)
+    f = fillet(f.edges().filter_by(Axis.Y), FLANGE_R)
+    return fillet(f.edges().group_by(Axis.Y)[-1], FRONT_R)             # soften the front edges
+
+
+def interface_cuts(hand, link):
+    """Every hole, dowel hole and key slot of every robot interface on this link (finger_interfaces.features)."""
+    cuts = []
+    for f in FI.features(hand, link):
+        kind = f[0]
+        if kind in ("hole", "dowel"):
+            _, _, x, z, d, depth = f[:6]
+            cuts.append(hole_y(x, z, d, depth))
+        elif kind == "cbore":                                          # screws from behind: head + key access
+            _, _, x, z, d, depth = f
+            cuts.append(Pos(x, -FI.FLANGE_T - depth / 2, z) * Rot(90, 0, 0) * Cylinder(d / 2, depth))
+        elif kind == "pocket":
+            _, _, x0, x1, z0, z1, depth = f
+            cuts.append(box(x0, x1, -depth, 0.5, z0, z1))
+        elif kind == "relief":
+            _, _, x0, x1, z0, z1, y0, y1 = f
+            cuts.append(box(x0, x1, y0, y1 + 0.5, z0, z1))
+    return cuts
+
+
+def link_id(src):
+    """('right' | 'left', 'thumb' | 'index') from a source file name such as right_index_middle_finger_link.step."""
+    name = Path(str(src)).name
+    return ("left" if name.startswith("left") else "right"), ("thumb" if "thumb" in name else "index")
+
+
 def finger_link(src):
     s = import_step(str(src))
     s -= box(-6.6, 6.6, NECK_Y + 0.2, 0.6, -8.6, 8.6)                   # old 12 x 16 plate and 12 x 6 neck
-    fx, fy, fz = FLANGE
-    flange = box(-fx / 2, fx / 2, -fy, 0.0, -fz / 2, fz / 2)
-    flange = fillet(flange.edges().filter_by(Axis.Y), 3.0)
-    flange = fillet(flange.edges().group_by(Axis.Y)[-1], 1.0)          # soften the front edges
+    hand, link = link_id(src)
+    fx0, fx1 = FI.flange_x(hand, link)
+    fz0, fz1 = FI.flange_z(hand, link)
     x0, x1, z0, z1 = NECK_ROOT
     neck = loft([rect_y(NECK_Y - 1.0, x0, x1, z0, z1), rect_y(NECK_Y + 2.5, x0 - 0.5, x1 + 0.5, z0 - 1.5, z1 + 1.5),
-                 rect_y(-fy + 0.01, -fx / 2 + 1, fx / 2 - 1, -fz / 2 + 3, fz / 2 - 3)], ruled=False)
-    name = Path(str(src)).name
-    thumb = "thumb" in name
-    sx = (-1 if thumb else 1) * (-1 if name.startswith("left") else 1)
-    s = s + neck + flange + finger_hood(thumb, sx)
+                 rect_y(-FI.FLANGE_T + 0.01, fx0 + 1, fx1 - 1, fz0 + 3, fz1 - 3)], ruled=False)
+    thumb = link == "thumb"
+    sx = (-1 if thumb else 1) * (-1 if hand == "left" else 1)
+    s = s + neck + flange(hand, link) + finger_hood(thumb, sx)
     if not thumb:
         add, cut = button_parts(sx)
         s = s + add - cut
-    for x, z in M2:
-        s -= hole_y(x, z, 2.1, 6.0)
-    for x, z in M3:
-        s -= hole_y(x, z, 4.0, 5.0)
-    for x, z in M4:
-        s -= hole_y(x, z, 5.6, 7.0)
+    for c in interface_cuts(hand, link):
+        s -= c
     return s

@@ -10,7 +10,7 @@ servo boss, hinge tab, arm end); only non-functional geometry changes.
       * smooth blends where the bar meets the round servo boss
       * 45° chamfers on the top corners of the rod end wall and on the outer corners of both bar ends
       * PG logo engraved (0.2 mm) on the outside of the end wall
-      * a braced camera post blended into the plate, with a Ø12 / M4 hinge knuckle for the D405 mount (see hinge.py)
+      * a braced camera post blended into the plate, ending in a fixed tab the D405 screws onto (d405_mount.py)
       * two counterbored M3 holes in the arm for the electronics box
   main_support_cover_plate -> end_cover: matching 45° top and corner chamfers
   electronics_box / electronics_lid: Pico 2 + IMU + USB 3 hub enclosure (electronics_box.py)
@@ -24,7 +24,7 @@ from build123d import (Axis, Box, GeomType, Circle, Cylinder, Face, Location, Pl
                        SlotCenterToCenter, export_step, export_stl, extrude, fillet, import_step, loft)
 
 import electronics_box as EB
-import hinge as H
+import d405_mount as DM
 from finger_link import finger_link
 from logo import logo_face
 
@@ -54,19 +54,19 @@ def plate_prism(face2d, z0=PLATE_Z[0], z1=PLATE_Z[1]):
 
 
 def camera_post():
-    """Braced post from the plate underside to a Ø12 x 10 hinge knuckle: a racetrack root (60 x 5.6 mm, on the flat
-    part of the underside, flush with the servo pocket wall at x = -28.2) lofted into a racetrack just above the
-    knuckle. main_support() blends the root into the plate."""
-    ax, az = H.AXIS_M
-    yc, w = H.Y_CENTRE, H.CENTRE_W
-    zt = az + 7.0                                                        # top of the knuckle web
+    """Braced post from the plate underside to the camera tab: a racetrack root (60 x 5.6 mm, on the flat part of the
+    underside, flush with the servo pocket wall at x = -28.2) lofted into a racetrack just above the post's anchor,
+    a web down to the anchor, and the fixed D405 tab (d405_mount.tab_m). main_support() blends the root into the plate."""
+    ax, az = DM.ANCHOR_M
+    yc, w = DM.Y_CENTRE, DM.RIB_W
+    zt = az + 7.0                                                        # top of the web
     root = Plane.XY.offset(0.0) * Pos(-31.0, yc) * Rot(0, 0, 90) * SlotCenterToCenter(KEEL_LEN - 5.6, 5.6)
     tip = Plane.XY.offset(zt) * Pos(-31.95, yc) * Rot(0, 0, 90) * SlotCenterToCenter(w - 7.5 if w > 7.5 else 0.5, 7.5)
     fin = loft([root, tip])
-    knuckle = Pos(ax, yc, az) * Rot(90, 0, 0) * Cylinder(H.KNUCKLE_OD / 2, w)
-    web = box(ax - H.KNUCKLE_OD / 2, ax + H.KNUCKLE_OD / 2, yc - w / 2, yc + w / 2, az, zt + 0.5)
-    post = fin + knuckle + web
-    return post - Pos(ax, yc, az) * Rot(90, 0, 0) * Cylinder(H.BOLT_D / 2, w + 2)
+    web = box(ax - 6.0, ax + 6.0, yc - w / 2, yc + w / 2, az, zt + 0.5)
+    hood = DM._box(-DM.HALF, DM.HALF, -DM.HALF - 0.5, DM.TAB_Y1, DM.TAB_FACE, DM.TAB_FACE + 30)   # camera + hood space
+    post = fin + web - DM.to_m(hood)
+    return post + DM.tab_m()
 
 
 def end_wall(z0=8.0, z1=34.0, depth=10.0):
@@ -149,7 +149,7 @@ def flat_edges(shape, z, pred=lambda e: True):
             if abs(e.bounding_box().min.Z - z) < 0.01 and abs(e.bounding_box().max.Z - z) < 0.01 and pred(e)]
 
 
-def main_support():
+def main_support(logo=True):
     orig = import_step(str(SRC / "fisheye_camera_main_support.step"))
     z0, z1 = PLATE_Z
     # exact outline of the original plate (bar, arm, servo boss); its features are carried over below as voids
@@ -199,7 +199,8 @@ def main_support():
         x, y = EB.to_m(lx, ly)
         s -= Pos(x, y, 4.0) * Cylinder(1.7, 10)
         s -= Pos(x, y, 8.0 - 1.75) * Cylinder(3.25, 3.6)             # counterbore: head flush with the hand side
-    s -= logo_cut(LOGO_W, LOGO_DEPTH, (-18.0, 0.0, 17.0), Rot(90, 0, 0))   # outer face of the end wall (-Y)
+    if logo:
+        s -= logo_cut(LOGO_W, LOGO_DEPTH, (-18.0, 0.0, 17.0), Rot(90, 0, 0))   # outer face of the end wall (-Y)
     return s
 
 

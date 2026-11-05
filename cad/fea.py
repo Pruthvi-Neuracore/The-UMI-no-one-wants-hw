@@ -20,6 +20,7 @@ from skfem.models.elasticity import lame_parameters, linear_elasticity
 
 ROOT = Path(__file__).resolve().parents[1]
 R = ROOT / "hardware/STEP/right"
+SRC = ROOT / "cad/source"
 OUT = ROOT / "docs/img/fea"
 
 E, NU = 3000.0, 0.35            # printed PLA
@@ -50,6 +51,13 @@ def plane(axis, v, tol=0.15, **box):
     return f
 
 
+def in_cam(f):
+    """Apply a selector written in the D405 camera frame (d405_mount.py) to main-support points."""
+    import d405_mount as DM
+    R, t = DM.camera_pose()
+    return lambda p: f(R.T @ (p - t[:, None]))
+
+
 def any_of(*fs):
     return lambda p: np.any([f(p) for f in fs], axis=0)
 
@@ -74,14 +82,35 @@ class Part:
 
 # ---------------------------------------------------------------- mesh + solve
 def mesh_step(path, size):
-    gmsh.initialize()
-    gmsh.option.setNumber("General.Terminal", 0)
-    gmsh.model.occ.importShapes(str(path))
-    gmsh.model.occ.synchronize()
-    gmsh.option.setNumber("Mesh.MeshSizeMax", size)
-    gmsh.option.setNumber("Mesh.MeshSizeMin", size * 0.35)
-    gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 12)
-    gmsh.model.mesh.generate(3)
+    """Tet mesh of a STEP part (or of a build123d shape returned by a callable: the parts are meshed without their
+    0.2 mm engraved logo, whose letter faces gmsh can't mesh and which carry no load). If the surface mesh
+    self-intersects (small fillet slivers), retry with another surface algorithm (MeshAdapt), then a finer size."""
+    if callable(path):
+        import tempfile
+        from build123d import export_brep
+        tmp = Path(tempfile.mkdtemp()) / "part.brep"
+        export_brep(path(), str(tmp))
+        path = tmp
+    tries = [(size, 6, 12), (size, 1, 12), (size * 0.83, 6, 20)]      # (size, 2D algorithm, curvature points)
+    for k, (sz, algo, curv) in enumerate(tries):
+        gmsh.initialize()
+        gmsh.option.setNumber("General.Terminal", 0)
+        gmsh.model.occ.importShapes(str(path))
+        gmsh.model.occ.synchronize()
+        gmsh.option.setNumber("Mesh.MeshSizeMax", sz)
+        gmsh.option.setNumber("Mesh.MeshSizeMin", sz * 0.35)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", curv)
+        gmsh.option.setNumber("Mesh.Algorithm", algo)
+        try:
+            gmsh.model.mesh.generate(3)
+            if len(gmsh.model.mesh.getElementsByType(4)[0]) == 0:
+                raise RuntimeError("no tetrahedra")
+            break
+        except Exception as ex:
+            gmsh.finalize()
+            if k == len(tries) - 1:
+                raise
+            print(f"  mesh retry ({str(ex).splitlines()[0]}): size {tries[k + 1][0]:.2f}, 2D algorithm {tries[k + 1][1]}")
     _, coords, _ = gmsh.model.mesh.getNodes()
     tags, conn = gmsh.model.mesh.getElementsByType(4)
     ntags, _, _ = gmsh.model.mesh.getNodes()
@@ -169,29 +198,24 @@ def render(mesh, vm_el, title, out):
 # ---------------------------------------------------------------- parts and load cases
 G = 9.81
 ARM_HOLES = any_of(cyl("z", (69.0, 64.5), 1.6, -1, 9), cyl("z", (69.0, 80.5), 1.6, -1, 9))
-HINGE_M = cyl("y", (-29.7, -45.0), 2.2, 67.0, 78.0)
-CAM_SHOCK = 0.07 * 15 * G      # cup + D405 at 15 g
+CAM_SCREWS = in_cam(any_of(cyl("z", (-10.0, 0.0), 1.7, -2.5, 2.5), cyl("z", (10.0, 0.0), 1.7, -2.5, 2.5)))   # D405 on the tab
+CAM_SHOCK = 0.07 * 15 * G      # D405 + hood at 15 g
 
 
 def parts():
     return [
-        Part("main_support", R / "main_support.step", 1.8, [
-            Case("camera knock, vertical (15 g)", ARM_HOLES, HINGE_M, (0, 0, -CAM_SHOCK)),
-            Case("camera knock, sideways (15 g)", ARM_HOLES, HINGE_M, (0, CAM_SHOCK, 0)),
-            Case("camera knock, fore-aft (15 g)", ARM_HOLES, HINGE_M, (CAM_SHOCK, 0, 0)),
+        Part("main_support", lambda: __import__("restyle").main_support(logo=False), 1.8, [
+            Case("camera knock, vertical (15 g)", ARM_HOLES, CAM_SCREWS, (0, 0, -CAM_SHOCK)),
+            Case("camera knock, sideways (15 g)", ARM_HOLES, CAM_SCREWS, (0, CAM_SHOCK, 0)),
+            Case("camera knock, fore-aft (15 g)", ARM_HOLES, CAM_SCREWS, (CAM_SHOCK, 0, 0)),
             Case("tip push on rods, 2 x 30 N at the end wall", ARM_HOLES,
                  any_of(cyl("y", (-28.0, 29.0), 2.05, 4.5, 10.5), cyl("y", (-8.0, 29.0), 2.05, 4.5, 10.5)), (0, 0, 60.0)),
         ]),
-        Part("finger_link (right thumb)", R / "right_thumb_link.step", 1.3, [
+        Part("finger_link (right thumb)", lambda: __import__("finger_link").finger_link(SRC / "right_thumb_link.step"), 1.3, [
             Case("30 N grip on the tip, 70 mm lever", any_of(cyl("x", (-40.5, 1.5), 4.1), cyl("x", (-20.5, 1.5), 4.1)),
-                 plane("y", 0.0, x=(-10.5, 10.5), z=(-15.5, 15.5)), (30.0, 0, 0), moment=("x", "y", -30.0 * 70.0, 0.0)),
+                 plane("y", 0.0, x=(-12.5, 10.5), z=(-18.5, 18.5)), (30.0, 0, 0), moment=("x", "y", -30.0 * 70.0, 0.0)),
             Case("finger presses the paddle, 40 N", any_of(cyl("x", (-40.5, 1.5), 4.1), cyl("x", (-20.5, 1.5), 4.1)),
                  plane("x", 6.0, tol=0.3, y=(-49, -14), z=(-42, -14)), (-40.0, 0, 0)),
-        ]),
-        Part("d405_wrist_mount", R / "d405_wrist_mount.step", 1.3, [
-            Case("camera knock, along view (15 g)", cyl("x", (-29.5, 1.5), 2.2), plane("z", 2.0, tol=0.3, x=(-20, 20), y=(-20, 20)), (0, 0, -0.06 * 15 * G)),
-            Case("camera knock, sideways (15 g)", cyl("x", (-29.5, 1.5), 2.2), plane("z", 2.0, tol=0.3, x=(-20, 20), y=(-20, 20)), (0.06 * 15 * G, 0, 0)),
-            Case("camera knock, away from hinge (15 g)", cyl("x", (-29.5, 1.5), 2.2), plane("z", 2.0, tol=0.3, x=(-20, 20), y=(-20, 20)), (0, 0.06 * 15 * G, 0)),
         ]),
         Part("end_cover", R / "end_cover.step", 1.3, [
             Case("tip push on rods, 2 x 30 N", any_of(cyl("y", (-28.0, 4.0), 1.6), cyl("y", (-8.0, 4.0), 1.6)),

@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 import trimesh
 
-from assembly import ROOT, assemble, best_orientation
+from assembly import ROOT, assemble
 from tips import TIP_SETS
 
 OUT = ROOT / "assembly"
@@ -25,7 +25,7 @@ def to_mesh(shape, colour):
 
 
 def export(ts, opening):
-    parts = assemble(opening, tipset=(ts, best_orientation(ts)))
+    parts = assemble(opening, tipset=ts)
     meshes = {name: to_mesh(sh, col) for name, (sh, col) in parts.items()}
     stem = f"umi_right_{ts.folder.lower()}"
     merged = trimesh.util.concatenate(list(meshes.values()))

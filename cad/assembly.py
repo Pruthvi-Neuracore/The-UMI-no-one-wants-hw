@@ -20,9 +20,10 @@ from occ import overlap, place
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import electronics_box as EB  # noqa: E402
-from tips import TIP_SETS, link_transform, orientations  # noqa: E402
+from tips import TIP_SETS, link_transform  # noqa: E402
 import finger_link as FL  # noqa: E402
-import hinge as H  # noqa: E402
+import finger_interfaces as FI  # noqa: E402
+import d405_mount as DM  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 HW = ROOT / "hardware"
@@ -133,74 +134,37 @@ def assemble(opening=0.6, camera="wrist", tipset=None, support=None, crank_z=CRA
     for nm, b in boards.items():
         add(nm, b, T(RB, [cxy[0], cxy[1], 0.0]), PCB)
 
-    # D405 mount on the main support's camera post: Ø12 / M4 hinge, camera at the 65° pose in hinge.py
+    # D405 fixed on the tab at the end of the main support's camera post (d405_mount.py), with its hood
     if camera == "wrist":
-        Rc, tc = H.camera_pose()
-        add("camera_mount", step(R / "d405_wrist_mount.step"), T(Rc, tc), WHITE)
-        add("d405", d405_dummy(2.0), T(Rc, tc), DARK)
+        Rc, tc = DM.camera_pose()
+        add("camera_hood", step(R / "d405_hood.step"), T(Rc, tc), WHITE)
+        add("d405", d405_dummy(DM.TAB_FACE), T(Rc, tc), DARK)
 
-    # gripper tips on the finger-link flange (link y = 0 face); orientation from tips.fit_tipset()
-    ts, choice = tipset if tipset is not None else (TIP_SETS[0], None)
-    Rs, dus, thumb_side = choice or best_orientation(ts)
-    side_files = {"left": (ts.left, ts.centre_l), "right": (ts.right, ts.centre_r)}
-    index_side = "right" if thumb_side == "left" else "left"
-    for k, (nm, (files, centre), yc) in enumerate((("thumb", side_files[thumb_side], yt), ("index", side_files[index_side], yi))):
-        Tt = link_transform(Rs[k], centre, ts.axis, ts.face, dus[k])
-        TL = T(RL, [-48.5, yc, 30.5])
-        for k, fn in enumerate(files):
+    # gripper tips on the finger-link flange (link y = 0 face), each through its robot's interface (tips.py)
+    ts = tipset if tipset is not None else TIP_SETS[0]
+    for nm, yc in (("thumb", yt), ("index", yi)):
+        TL = T(RL, [-48.5, yc, 30.5]) @ link_transform(ts, "right", nm)
+        ff = ts.mirror if FI.uses_mirror(ts.itf, "right", nm) else ts.ref
+        for k, fn in enumerate(ff.files):
             col = "#e07020" if "Soft" in fn else DARK                     # compliant inserts in orange
-            add(f"tip_{nm}" + ("" if k == 0 else f"_{k}"), step(HW / "STEP/gripper_tips" / ts.folder / fn), TL @ Tt, col)
+            add(f"tip_{nm}" + ("" if k == 0 else f"_{k}"), step(HW / "STEP/gripper_tips" / ts.folder / fn), TL, col)
     return parts
 
 
-def best_orientation(ts, cache={}):
-    """Pick the shared jaw rotation where the jaws face each other: they get closest (smallest opening without
-    overlap, then smallest gap). Checked with meshes, so it's fast."""
-    import trimesh
-    if ts.name in cache:
-        return cache[ts.name]
-    RL = [[0, -1, 0], [-1, 0, 0], [0, 0, -1]]
-    files = {"left": (ts.left, ts.centre_l), "right": (ts.right, ts.centre_r)}
-    best = None
-    for Rs, dus, thumb_side in orientations(ts):
-        index_side = "right" if thumb_side == "left" else "left"
-        for op in np.arange(0.0, 0.5, 0.05):
-            _, _, _, yt, yi = link_positions(op)
-            placed = []
-            for k, (side, yc) in enumerate(((thumb_side, yt), (index_side, yi))):
-                fl, centre = files[side]
-                m = _tip_mesh(ts.folder, fl[0]).copy()
-                m.apply_transform(T(RL, [-48.5, yc, 30.5]) @ link_transform(Rs[k], centre, ts.axis, ts.face, dus[k]))
-                placed.append(m)
-            if all(m.is_volume for m in placed):
-                ov = trimesh.boolean.intersection(placed, engine="manifold").volume
-            else:                                                        # exact solids for non-watertight meshes
-                sol = [place(step(HW / "STEP/gripper_tips" / ts.folder / files[sd][0][0]),
-                             T(RL, [-48.5, yc, 30.5]) @ link_transform(Rs[k], files[sd][1], ts.axis, ts.face, dus[k]))
-                       for k, (sd, yc) in enumerate(((thumb_side, yt), (index_side, yi)))]
-                ov = overlap(sol[0], sol[1])
-            if ov < 0.5:
-                from scipy.spatial import cKDTree
-                gap = float(cKDTree(placed[1].vertices).query(placed[0].vertices)[0].min())
-                if best is None or (op, gap) < (best[0], best[1]):
-                    best = (op, gap, (Rs, dus, thumb_side))
-                break
-    cache[ts.name] = best[2]
-    return best[2]
-
-
-def _tip_mesh(folder, fname, cache={}):
-    import trimesh
-    key = (folder, fname)
-    if key not in cache:
-        stl = HW / "STL/gripper_tips" / folder / fname.replace(".step", ".stl")
-        if stl.exists():
-            cache[key] = trimesh.load(stl)
-        else:
-            sh = step(HW / "STEP/gripper_tips" / folder / fname)
-            v, f = sh.tessellate(0.1, 0.3)
-            cache[key] = trimesh.Trimesh(np.array([(q.X, q.Y, q.Z) for q in v]), np.array(f))
-    return cache[key]
+def tip_seat_check(ts, opening=0.5):
+    """Each tip against its own link. Only face contact is expected (keys sit in their slots, screws in their holes),
+    so the check reports how deep any overlap goes into the link: anything past a few hundredths of a millimetre (the
+    faceting of mesh-derived tips) is a fit problem. The flange face is normal to M x. Returns {link: depth in mm}."""
+    p = assemble(opening, tipset=ts)
+    out = {}
+    for nm in ("thumb", "index"):
+        depth = 0.0
+        for k in [k for k in p if k.startswith(f"tip_{nm}")]:
+            x = p[f"{nm}_link"][0] & p[k][0]
+            for sol in (x.solids() if x is not None else []):
+                depth = max(depth, sol.bounding_box().size.X)
+        out[nm] = round(depth, 3)
+    return out
 
 
 ALLOWED = [{"rod", "lm4uu"}, {"lm4uu", "thumb_link"}, {"lm4uu", "index_link"}, {"rod", "thumb_link"},
@@ -208,7 +172,7 @@ ALLOWED = [{"rod", "lm4uu"}, {"lm4uu", "thumb_link"}, {"lm4uu", "index_link"}, {
            # pin joints: Ø3 pins run through MR63 bearings in the connecting links (bearings not modelled)
            {"crank_mechanism_plate", "connecting_link_1"}, {"crank_mechanism_plate", "connecting_link_2"},
            {"connecting_link_1", "thumb_link"}, {"connecting_link_2", "index_link"},
-           {"camera_mount", "d405"}, {"imu", "electronics_box"},   # IMU sits in its floor pocket
+           {"main_support", "d405"}, {"imu", "electronics_box"},   # D405 back on the tab; IMU in its floor pocket
            {"thumb_link", "tip_thumb"}, {"index_link", "tip_index"},   # bolted face contact (0.03 mm sliver)
            {"tip_thumb", "tip_thumb_1"}, {"tip_index", "tip_index_1"},  # pads / socks sit on their jaws
            {"record_button", "index_link"}, {"button_cover", "index_link"}, {"record_button", "button_cover"},
@@ -272,10 +236,14 @@ if __name__ == "__main__":
     ap.add_argument("--out", default=str(ROOT / "docs/img/assembly.png"))
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--solve", action="store_true")
+    ap.add_argument("--tips", action="store_true", help="check every tip set seats on its links (no overlap)")
     ap.add_argument("--original", action="store_true", help="stock HandUMI parts instead of the redesign")
     a = ap.parse_args()
     if a.solve:
         print("best (overlap, crank_z, conn_z):", solve_heights())
+    elif a.tips:
+        for ts in TIP_SETS:
+            print(f"{ts.name:32s} deepest tip-into-link overlap (mm):", tip_seat_check(ts))
     else:
         parts = assemble(a.opening, a.camera, support=a.support, redesign=not a.original)
         print(render(parts, a.out))
@@ -286,7 +254,7 @@ if __name__ == "__main__":
 def cables(opening=0.55):
     """Render-only cables (pyvista tubes): D405 -> electronics box, servo -> box, box -> laptop (the one USB-C)."""
     import pyvista as pv
-    Rc, tc = H.camera_pose()
+    Rc, tc = DM.camera_pose()
     cam = lambda p: tc + Rc @ np.array(p, float)
     bx = lambda x, y, z: np.array([EB.BOX_CENTRE_M[0] + x, EB.BOX_CENTRE_M[1] - y, -z])   # box local -> M
     wall = -EB.BOX[0] / 2

@@ -74,18 +74,18 @@ def button_closeup(opening=0.35):
 
 def tip_gallery():
     """One render per tip set (closed and open)."""
-    from assembly import best_orientation
     from tips import TIP_SETS
     for ts in TIP_SETS:
         slug = ts.folder.lower()
-        hero(0.15, (ts, best_orientation(ts)), f"tips_{slug}.png", views=((-0.9, -1.0, -0.8),), size=(1200, 1000))
+        hero(0.15, ts, f"tips_{slug}.png", views=((-0.9, -1.0, -0.8),), size=(1200, 1000))
 
 
 def parts():
     rd = HW / "STEP/right"
     ms, ec, eb, el = (import_step(str(rd / f)) for f in
                       ("main_support.step", "end_cover.step", "electronics_box.step", "electronics_lid.step"))
-    cup = import_step(str(rd / "d405_wrist_mount.step"))
+    hood = import_step(str(rd / "d405_hood.step"))
+    import d405_mount as DM
     import electronics_box as EB
     from build123d import Box, Pos
     bz = EB.BOX[2]
@@ -94,8 +94,9 @@ def parts():
     pico = [(poly(Pos(0, 0, bz - EB.PICO_STANDOFF_H - 0.5) * Box(21.0, 51.0, 1.0)), PCB)]
     up = (0, 0, -1)
     panels = [([(poly(ms, 0.04), BLUE)], "main support", (0.8, -0.6, -0.9), up),
-              ([(poly(ms, 0.04), BLUE)], "main support: braced camera post, M4 hinge", (-0.9, -0.5, 0.6), up),
-              ([(poly(cup, 0.04), WHITE), (poly(d405_dummy(2.0), 0.04), DARK)], "D405 wrist mount", (1, -1.3, 0.9), (0, 0, 1)),
+              ([(poly(ms, 0.04), BLUE)], "main support: braced post, fixed D405 tab", (-0.9, -0.5, 0.6), up),
+              ([(poly(DM.tab_cam(), 0.04), BLUE), (poly(hood, 0.04), WHITE), (poly(d405_dummy(DM.TAB_FACE), 0.04), DARK)],
+               "D405 on the tab, with its hood", (1, -1.3, 0.9), (0, 0, 1)),
               ([(poly(eb, 0.04), WHITE)] + boards, "electronics box: USB 3 hub + IMU", (0.6, -0.9, 1.2), (0, 0, 1)),
               ([(poly(el, 0.04), BLUE)] + pico, "lid with Pico 2 underneath", (0.5, -0.8, -1.0), (0, 0, -1)),
               ([(poly(ec, 0.04), BLUE)], "end cover", (0.6, -1.0, -0.5), up)]
@@ -106,9 +107,71 @@ def parts():
     pl.screenshot(str(IMG / "parts.png"))
 
 
+def camera_closeup(opening=0.45):
+    """The D405 on its tab with the hood: from the side and from behind."""
+    import numpy as np
+    import d405_mount as DM
+    p = assemble(opening)
+    keys = ["main_support", "camera_hood", "d405", "thumb_link", "index_link", "tip_thumb", "tip_index"]
+    items = [(poly(p[k][0]), p[k][1]) for k in keys if k in p]
+    R, t = DM.camera_pose()
+    focal = tuple(t + R @ np.array([0.0, -8.0, 8.0]))
+    pl = plotter((1, 2), (1900, 950))
+    for i, v in enumerate(((0.15, -1.0, -0.35), (0.9, 0.35, -0.9))):
+        pl.subplot(0, i)
+        show(pl, items, v, (0, 0, -1), zoom=1.0)
+        pl.camera.focal_point = focal
+        pl.camera.zoom(1.9)
+    pl.screenshot(str(IMG / "camera_mount.png"))
+
+
+def flange_diagram():
+    """Hole map of both flanges (right hand), drawn from finger_interfaces.py: one colour per robot."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Circle, FancyBboxPatch, Rectangle
+    import finger_interfaces as FI
+    cols = {"piper": "#2a9d8f", "hande": "#d23b2a", "yam": "#e07020", "openarm": "#1d4f9c"}
+    fig, axes = plt.subplots(1, 2, figsize=(11, 6.2))
+    for ax, link in zip(axes, FI.LINKS):
+        x0, x1 = FI.flange_x("right", link)
+        z0, z1 = FI.flange_z("right", link)
+        ax.add_patch(FancyBboxPatch((x0, z0), x1 - x0, z1 - z0, boxstyle="round,pad=0,rounding_size=3",
+                                    fc="#f4f5f7", ec="#555", lw=1.5))
+        for f in FI.features("right", link):
+            c = cols[f[1]]
+            if f[0] in ("hole", "dowel"):
+                ax.add_patch(Circle((f[2], f[3]), f[4] / 2, fc=c if f[0] == "hole" else "white", ec=c, lw=1.5))
+            elif f[0] == "pocket":
+                xa, xb = max(f[2], x0), min(f[3], x1)
+                ax.add_patch(Rectangle((xa, f[4]), xb - xa, f[5] - f[4], fc=c, alpha=0.25, ec=c, lw=1.2, ls="--"))
+        other = "index" if link == "thumb" else "thumb"
+        side = 1 if FI.u_sign("right", link) > 0 else -1
+        ax.annotate(f"to the {other} jaw", xy=(side * 13.5, 0), ha="center", va="center", rotation=90, fontsize=9,
+                    color="#555")
+        ax.set_xlim(16, -16)                                               # seen from the tip side (+y)
+        ax.set_ylim(-21, 21)
+        ax.set_aspect("equal")
+        ax.set_title(f"right {link} link (flange face, from the tip side)", fontsize=11)
+        ax.set_xlabel("x: closing axis (mm)")
+        ax.set_ylabel("z: across (mm)")
+        ax.grid(alpha=0.25)
+    handles = [plt.Line2D([], [], marker="o", ls="", ms=9, mfc=cols[k], mec=cols[k],
+                          label=f"{FI.INTERFACES[k].name}: {len(FI.INTERFACES[k].holes)}x {FI.INTERFACES[k].screw}")
+               for k in FI.INTERFACES]
+    handles += [plt.Line2D([], [], marker="o", ls="", ms=7, mfc="white", mec=cols["hande"], label="Hand-E Ø2 dowel"),
+                Rectangle((0, 0), 1, 1, fc=cols["yam"], alpha=0.25, ec=cols["yam"], ls="--", label="YAM key slot")]
+    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=10)
+    fig.tight_layout(rect=(0, 0.1, 1, 1))
+    fig.savefig(IMG / "flange_interfaces.png", dpi=150)
+
+
 if __name__ == "__main__":
     hero()
     parts()
     button_closeup()
     tip_gallery()
+    camera_closeup()
+    flange_diagram()
     print("ok")

@@ -1,8 +1,8 @@
 part,case,von_mises_p99.5_MPa,max_disp_mm,SF_along_layers,SF_across_layers
 crank_mechanism_plate,30 N on each crank pin,0.58,0.005,51.8,25.9
 connecting_link,40 N pull between pins,0.46,0.034,64.8,32.4
-main_support,camera knock vertical (15 g),1.05,,28.7,14.3
-main_support,camera knock sideways (15 g),1.53,,19.7,9.8
-main_support,camera knock fore-aft (15 g),1.82,,16.5,8.2
 main_support,grip push on rods 2 x 30 N at the end wall only (conservative; the end cover shares it in practice),8.89,0.914,3.4,1.7
-finger_link (right thumb),30 N grip on the tip, 70 mm lever,5.50,0.071,5.5,2.7
+main_support,camera knock, vertical (15 g),0.77,0.103,39.1,19.5
+main_support,camera knock, sideways (15 g),0.98,0.217,30.6,15.3
+main_support,camera knock, fore-aft (15 g),0.94,0.124,31.9,15.9
+finger_link (right thumb),30 N grip on the tip, 70 mm lever,5.55,0.088,5.4,2.7

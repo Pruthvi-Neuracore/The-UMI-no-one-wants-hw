@@ -1,79 +1,76 @@
-"""Fit the gripper-tip sets onto the finger-link flange.
+"""Gripper-tip sets on the finger links: each is a robot's own finger, bolted on through that robot's interface
+(finger_interfaces.py).
 
-Each tip file lives in its own frame. A tip set is described by its mounting holes: the axis the screws run along
-(pointing from the mounting face into the tip body), the position of the mounting face on that axis, the hole-pattern
-centre, and which in-plane axis carries the 8 mm and the 12 mm spacing. fit() tries every rigid orientation that maps the
-pattern onto the link's (8 mm along link x, 12 mm along link z, tip growing along +y from the y = 0 face) and keeps the
-one where the two jaws face each other: smallest gap at full close without overlapping.
+A tip set names its interface and, for each finger file, where the file's hole pattern is: its centre on the mating
+face and two directions in the file's own frame, u (closing axis, toward the gripping face) and w (out of the mating
+face into the finger). That fixes the file's pattern frame, and finger_interfaces.frame() puts that frame on each link,
+so the tip lands exactly on the holes the flange was cut with. No fitting or searching.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
-AX = {"x": np.array([1.0, 0, 0]), "y": np.array([0, 1.0, 0]), "z": np.array([0, 0, 1.0]), "-y": np.array([0, -1.0, 0])}
+import finger_interfaces as FI
 
 
-@dataclass
+@dataclass(frozen=True)
+class FingerFile:
+    files: tuple            # main part first (pads / soft inserts follow)
+    centre: tuple           # hole-pattern centre on the mating face, in the file's frame (mm)
+    u: tuple                # closing axis, toward the gripping face
+    w: tuple                # out of the mating face, into the finger
+
+
+@dataclass(frozen=True)
 class TipSet:
     name: str
-    folder: str
-    right: list            # files on the thumb link (main jaw first)
-    left: list             # files on the index/middle link
-    axis: str              # screw axis, pointing from the mounting face into the tip body
-    face: float            # coordinate of the mounting face along that axis
-    centre_r: tuple        # hole-pattern centre (3D) for the right file
-    centre_l: tuple
-    u8: str                # tip axis carrying the 8 mm spacing (link x)
-    v12: str               # tip axis carrying the 12 mm spacing (link z)
-    u_offsets: tuple = (0.0,)   # for 2-hole sets: which link column (x = ±4) the pair uses
+    folder: str             # under hardware/{STEP,STL}/gripper_tips/
+    interface: str          # key in finger_interfaces.INTERFACES
+    ref: FingerFile         # the interface's reference finger (right thumb)
+    mirror: FingerFile      # its mirror image (same as ref for a "same" pair)
     robot: str = ""
-    travel: str = ""        # native axis the jaws close along (defaults to u8)
-    lr_sign: int = 1        # +1: the LEFT file sits at +travel from the RIGHT file in the source; 0: same place
-    flip_index: bool = False  # identical left/right parts: turn the index jaw 180° about the screw axis to mirror it
-    s_only: int = 0         # force the closing-axis sign (+1 / -1) when the automatic facing check picks the wrong way
 
+    @property
+    def itf(self):
+        return FI.INTERFACES[self.interface]
+
+
+_hande = FingerFile(("Hand-E-Finger.step",), (1.5, -14.2, 0.0), (-1, 0, 0), (0, 0, 1))
+_enpire = FingerFile(("ENPIRE-RIGHT-Jaw.step", "ENPIRE-RIGHT-Soft-Insert.step"), (-10.2, -7.8, 14.3), (0, 0, -1), (0, -1, 0))
 
 TIP_SETS = [
-    # AgileX Piper jaw + pad
-    TipSet("AgileX Piper", "AgileX-Piper", ["Piper-RIGHT-Gripper-Jaw.step", "Piper-RIGHT-Gripper-Pad.step"],
-           ["Piper-LEFT-Gripper-Jaw.step", "Piper-LEFT-Gripper-Pad.step"], "x", 10.8,
-           (10.8, 172.7, -56.9), (10.8, 238.5, -56.9), "y", "z", robot="piper"),
-    # Robotiq Hand-E finger on a flange plate (hande_tip.py); both jaws are the same part, one turned 180°
-    TipSet("Robotiq Hand-E", "Robotiq-Hand-E", ["Hand-E-Finger.step"], ["Hand-E-Finger.step"], "z", 2.0,
-           (5.5, 0.0, 2.0), (5.5, 0.0, 2.0), "x", "y", lr_sign=0, flip_index=True, s_only=-1),
-    # Open-ENPIRE universal compliant finger, adapted to the flange by enpire_tip.py (mirror pair)
-    TipSet("Open-ENPIRE (UCG)", "Open-ENPIRE", ["ENPIRE-RIGHT-Jaw.step", "ENPIRE-RIGHT-Soft-Insert.step"],
-           ["ENPIRE-LEFT-Jaw.step", "ENPIRE-LEFT-Soft-Insert.step"], "-y", -3.0,
-           (-8.9, -3.0, 12.0), (-8.9, -3.0, 12.0), "z", "x", lr_sign=0),
+    TipSet("AgileX Piper", "AgileX-Piper", "piper",
+           FingerFile(("Piper-RIGHT-Gripper-Jaw.step", "Piper-RIGHT-Gripper-Pad.step"), (10.77, 172.75, -56.89),
+                      (0, 1, 0), (1, 0, 0)),
+           FingerFile(("Piper-LEFT-Gripper-Jaw.step", "Piper-LEFT-Gripper-Pad.step"), (10.77, 238.45, -56.89),
+                      (0, -1, 0), (1, 0, 0)), robot="piper"),
+    # the Robotiq finger itself (hande_tip.py); both jaws are the same part, one turned 180 degrees, as on the Hand-E
+    TipSet("Robotiq Hand-E", "Robotiq-Hand-E", "hande", _hande, _hande, robot="hande"),
+    # Open-ENPIRE compliant finger for the YAM, unmodified (enpire_tip.py); LEFT is its mirror across z = 12
+    TipSet("Open-ENPIRE (I2RT YAM mount)", "Open-ENPIRE", "yam", _enpire,
+           FingerFile(("ENPIRE-LEFT-Jaw.step", "ENPIRE-LEFT-Soft-Insert.step"), (-10.2, -7.8, 9.7), (0, 0, 1), (0, -1, 0)),
+           robot="yam"),
+    # OpenArm v1 finger base under the hard-shell finger (openarm_tip.py); right is the mirror of left in y
+    TipSet("OpenArm v1 (hard-shell finger)", "OpenArm", "openarm",
+           FingerFile(("OpenArm-LEFT-Finger.step", "OpenArm-LEFT-Soft.step"), (1.4, 0.0, 45.2), (0, 0, -1), (1, 0, 0)),
+           FingerFile(("OpenArm-RIGHT-Finger.step", "OpenArm-RIGHT-Soft.step"), (1.4, 0.0, 45.2), (0, 0, -1), (1, 0, 0)),
+           robot="openarm"),
 ]
 
 
-def orientations(ts):
-    """Candidates (R, du, thumb_side). Both jaws share one rotation R (as in the source assembly): the screw axis maps
-    to the link's +y and the closing axis to ±x. The side that ends up toward the thumb link gets the thumb."""
-    a = AX[ts.axis]
-    tr = AX[ts.travel or ts.u8]
-    w = np.cross(a, tr)
-    out = []
-    for s in ((ts.s_only,) if ts.s_only else (1, -1)):
-        M_tip = np.column_stack([a, tr, w])
-        M_link = np.column_stack([AX["y"], s * AX["x"], np.cross(AX["y"], s * AX["x"])])
-        R = M_link @ np.linalg.inv(M_tip)
-        # thumb sits at -x (link) from the index; LEFT sits at lr_sign·travel from RIGHT in the source
-        thumb_side = "left" if ts.lr_sign * s < 0 else "right"
-        R_index, sign_du = R, 1.0
-        if ts.flip_index:                                       # 180° about the screw axis (tip frame), then map
-            R_index, sign_du = R @ (2 * np.outer(a, a) - np.eye(3)), -1.0
-        for du in ts.u_offsets:
-            out.append(((R, R_index), (du, sign_du * du), thumb_side))
-    return out
+def finger_file(ts, hand, link):
+    return ts.mirror if FI.uses_mirror(ts.itf, hand, link) else ts.ref
 
 
-def link_transform(R, centre, face_axis, face, du=0.0):
-    """4x4 taking tip coordinates into link coordinates (mounting face on y = 0, pattern centred, shifted du in x)."""
-    c = np.array(centre, float)
-    c[np.abs(AX[face_axis]).argmax()] = face
+def link_transform(ts, hand="right", link="thumb"):
+    """4x4 taking the finger file's coordinates into the finger link's frame (flange face y = 0)."""
+    ff = finger_file(ts, hand, link)
+    u, w = np.array(ff.u, float), np.array(ff.w, float)
+    B = np.column_stack([u, np.cross(w, u), w])                 # file's (u, v, w) axes
+    R, o = FI.frame(ts.itf, hand, link)
+    if FI.uses_mirror(ts.itf, hand, link):                      # the mirror file's own frame is right-handed again,
+        R = R @ np.diag([1.0, -1.0, 1.0])                       # so its features are at (u, -v) of the reference
     T = np.eye(4)
-    T[:3, :3] = R
-    T[:3, 3] = np.array([du, 0.0, 0.0]) - R @ c
+    T[:3, :3] = R @ B.T
+    T[:3, 3] = o - T[:3, :3] @ np.array(ff.centre, float)
     return T

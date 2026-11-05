@@ -2,6 +2,7 @@
 
     python robots.py /path/to/Neuracore_Robots        # ABB GoFa CRB 15000, FANUC CRX-5iA, UR5 duals with Robotiq Hand-E
     python robots.py --sw /path/to/handumi-sw/assets  # AgileX Piper; OpenArm with Open-ENPIRE fingers
+    python robots.py --yam /path/to/i2rt              # I2RT YAM with the Open-ENPIRE fingers (i2rt-robotics/i2rt, MIT)
 """
 import re
 import sys
@@ -165,8 +166,72 @@ def render_sw(assets, name, enpire=False):
     print(out, "joints posed:", len(cfg))
 
 
+ENPIRE_YAM = Path(__file__).resolve().parent / "source/enpire/i2rt_UCG_Hard.stl"
+ENPIRE_YAM_SOFT = Path(__file__).resolve().parent / "source/enpire/I2RT_UCG_Soft.stl"
+YAM_FACE_Z = -145.7          # stock YAM tip mesh (mm): the finger's mating face under the carriage
+YAM_MEET_Y = 46.4            # the plane the two stock fingertips meet on (tip_right is tip_left mirrored about it)
+
+
+def yam_enpire(side):
+    """Open-ENPIRE YAM finger (hard, soft) in the stock YAM tip mesh frame (mm). The finger's two 4.6 mm holes go on the
+    carriage's M4 pair, at x = 1.2 / 22.2, y = 29.3 (tip_left), its key toward the other finger (+y on tip_left)."""
+    M = np.array([[1, 0, 0, 21.9], [0, 0, -1, 43.6], [0, 1, 0, -137.8], [0, 0, 0, 1]], float)   # ENPIRE -> tip_left
+    if side == "right":
+        F = np.diag([1.0, -1.0, 1.0, 1.0])
+        F[1, 3] = 2 * YAM_MEET_Y
+        M = F @ M
+    out = []
+    for src in (ENPIRE_YAM, ENPIRE_YAM_SOFT):
+        m = trimesh.load(src)
+        m.apply_transform(M)
+        out.append(m)
+    return out
+
+
+def render_yam(i2rt):
+    """I2RT YAM (yam/v1 URDF) with the stock fingers swapped for the Open-ENPIRE YAM fingers HandUMI carries."""
+    path = Path(i2rt) / "i2rt/robot_models/arm/yam/v1/yam.urdf"
+    robot = yourdfpy.URDF.load(str(path), load_meshes=True, build_collision_scene_graph=False)
+    pose = {r"joint2$": 1.0, r"joint3$": 1.2, r"joint5$": -0.6, r"joint7$": 0.018, r"joint8$": 0.018}
+    cfg = {j: v for j in robot.actuated_joint_names for pat, v in pose.items() if re.search(pat, j)}
+    robot.update_cfg(cfg)
+    meshes = []
+    for link in robot.link_map.values():
+        for vis in link.visuals:
+            g = vis.geometry.mesh
+            if g is None:
+                continue
+            m = trimesh.load(path.parent / g.filename, force="mesh")
+            Tv = vis.origin if vis.origin is not None else np.eye(4)
+            Tw = robot.get_transform(link.name) @ Tv
+            if link.name.startswith("tip_"):
+                keep = trimesh.creation.box(extents=[1, 1, 1])
+                keep.apply_translation([0, 0, 0.5 + YAM_FACE_Z / 1000.0])        # the carriage only
+                m = trimesh.boolean.intersection([m, keep], engine="manifold") if m.is_volume else m.slice_plane(
+                    [0, 0, YAM_FACE_Z / 1000.0], [0, 0, 1])
+                for k, f in enumerate(yam_enpire(link.name.split("_")[1])):
+                    f.apply_scale(0.001)
+                    f.apply_transform(Tw)
+                    meshes.append((f, "#e07020" if k else BLUE))
+            m.apply_transform(Tw)
+            meshes.append((m, (0.72, 0.74, 0.78)))
+    pl = pv.Plotter(off_screen=True, window_size=(1100, 1000))
+    pl.enable_anti_aliasing("ssaa")
+    pl.set_background(BG)
+    for m, col in meshes:
+        pl.add_mesh(pv.wrap(m), color=col, smooth_shading=True, split_sharp_edges=True, specular=0.3)
+    pl.view_vector((1.0, -1.2, 0.6), viewup=(0, 0, 1))
+    pl.reset_camera()
+    pl.camera.zoom(1.2)
+    out = IMG / "robot_yam_enpire.png"
+    pl.screenshot(str(out))
+    print(out, "joints posed:", len(cfg))
+
+
 if __name__ == "__main__":
-    if sys.argv[1] == "--sw":
+    if sys.argv[1] == "--yam":
+        render_yam(sys.argv[2])
+    elif sys.argv[1] == "--sw":
         for n in (sys.argv[3:] or ["piper", "openarm+enpire"]):
             render_sw(Path(sys.argv[2]), n.split("+")[0], enpire=n.endswith("+enpire"))
     else:

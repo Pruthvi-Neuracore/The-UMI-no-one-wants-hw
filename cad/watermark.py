@@ -4,7 +4,7 @@ For each part, the largest flat face where an 8 mm logo fits with a margin (clea
 logo is cut 0.2 mm deep there. B-rep parts (STEP) are engraved exactly and re-exported to STEP + STL.
 Parts that already carry the mark (main_support, on its end wall) are skipped.
 
-    python watermark.py          # run after restyle.py and d405_wrist_mount.py
+    python watermark.py          # run after restyle.py and d405_mount.py
 """
 from pathlib import Path
 
@@ -22,7 +22,7 @@ PREFER = {"end_cover": (0, 1, 0), "electronics_lid": (0, 0, 1), "electronics_box
           "hand_support_base": (0, 0, 1), "right_controller_support": (1, 0, 0), "left_controller_support": (-1, 0, 0),
           "right_thumb_link": (1, 0, 0), "left_thumb_link": (-1, 0, 0),
           "right_index_middle_finger_link": (-1, 0, 0), "left_index_middle_finger_link": (1, 0, 0),
-          "d405_wrist_mount": (0, 0, -1)}
+          "d405_hood": (1, 0, 0)}
 
 
 def fits(face, plane, w, h):
