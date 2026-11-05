@@ -21,9 +21,8 @@ def main():
     import head
     shutil.rmtree(DST / "STEP", ignore_errors=True)
     (DST / "STEP").mkdir(parents=True, exist_ok=True)
-    for f in sorted(S.STEP_DIR.glob("*.step")):
-        if not f.name.startswith("_"):                  # placed HandUMI references stay in build/
-            shutil.copy(f, DST / "STEP" / f.name)
+    for n in sorted(S.PARTS):                           # only current parts (references stay in build/)
+        shutil.copy(S.STEP_DIR / f"{n}.step", DST / "STEP" / f"{n}.step")
     shutil.copy(head.PLATE_STEP, DST / "STEP" / "ur_camera_plate.step")       # the robot side: the team's plate
     import verify
     verify.gears()

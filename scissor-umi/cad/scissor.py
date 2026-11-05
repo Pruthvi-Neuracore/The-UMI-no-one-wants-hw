@@ -2,7 +2,7 @@
 Meta Quest Touch Pro controller on top. The robot twin is the real Robotiq gripper with the same D405 + Quest head on a
 flange collar, so the camera, the controller and the pads are in the same place on both.
 
-The mechanism follows FOMI (robbyant-research.github.io/FOMI): scissor handles on the operator's side, meshed sector
+The mechanism: scissor handles on the operator's side, meshed sector
 gears that keep the two jaws symmetric, and parallelogram finger links, so the operator feels the grasp directly
 through the handles. Here the finger links copy the Robotiq gripper's own four-bar (kin.py), so the handheld's pads
 move exactly like the robot's for the same q, and the jaws themselves are printed copies of the 2F-140's jaw parts
@@ -81,8 +81,12 @@ LOOP_DIST = 90.0                  # with LOOP_GAP_CLOSED: sets the handles' angl
 LOOP_GAP_CLOSED = 38.0
 # Grips, after a spring-action garden scissor (Fiskars Easy Action): handle B is a solid palm bar that swells in the
 # middle, handle A a long D-loop the four fingers go through and wrap round. Both are 26 mm tall (x), every edge
-# rounded, with a soft TPU face where the hand pushes and pulls. Hold it from below, palm up: the palm on B, the
-# fingers up through A's window and round its outer bar, the index finger on the record button under the base.
+# rounded, with a soft TPU face where the hand pushes and pulls. Hold it from below, palm up: the palm on the palm
+# bar, the fingers up through the loop's window and round its outer bar, the index finger on the record button under
+# the base. The grip is handed: the fingers point across the handheld from the palm bar to the loop, so the thumb and
+# index finger end up forward (at the button) only if the loop is on the side the fingers point to. Right hand: palm
+# bar on handle B (+y), loop on handle A (-y). Left hand: the mirror, palm bar on A, loop on B. The gears, hub, servo
+# drive and stop are the same in both (they are on handle A whatever its grip).
 GRIP_X = (-13.0, 13.0)
 GRIP_R = 5.0                      # edge rounding of the grips
 TPU_X = (-9.5, 9.5)               # the soft inserts' height
@@ -333,10 +337,18 @@ def _round_all(solid, r, only=None):
     return solid
 
 
-def grip(which):
+HANDS = {"right": "rh", "left": "lh"}
+
+
+def grip_kind(which, hand="right"):
+    """'loop' or 'palm' for handle `which` of the `hand` build (the loop goes on the side the fingers point to)."""
+    return "loop" if (which == "a") == (hand == "right") else "palm"
+
+
+def grip(which, hand="right"):
     """The grip body of a handle (without the web and the gear), full and its TPU insert, at q = 0."""
     f, _ = _handle_frame(which)
-    if which == "b":
+    if grip_kind(which, hand) == "palm":
         body = slab(_sn_face(f, PALM_OUT, PALM_TIP, PALM_IN), GRIP_X)
         body = _round_all(body, GRIP_R)
         from build123d import Line, Spline, Wire, make_face
@@ -364,10 +376,11 @@ def grip(which):
     return body, tpu
 
 
-def handle(which="a"):
+def handle(which="a", hand="right"):
     """Scissor handle: gear sector and web in its layer, a rounded loft up to the grip, and the grip (grip()), less
-    its soft insert. A (L1, -y side): the finger loop; meshes the left knuckle gear, carries the servo's hex drive
-    and the stop screw. B (L3, +y): the palm bar; meshes the right knuckle gear. Squeezing closes the jaws."""
+    its soft insert. A (L1, -y side) meshes the left knuckle gear, carries the servo's hex drive and the stop screw;
+    B (L3, +y) meshes the right knuckle gear. Right hand: A is the finger loop, B the palm bar; left hand: the other
+    way round. Squeezing closes the jaws."""
     from build123d import loft
     ph = phases()
     lay = L1 if which == "a" else L3
@@ -384,7 +397,7 @@ def handle(which="a"):
     p = slab(web, lay)
     arm = loft([_section(f((D_WEB - 6.0, 0.0)), t, sum(lay) / 2, 14.0, lay[1] - lay[0], 2.0),
                 _section(f((44.0, 1.0)), t, sum(GRIP_X) / 2, 14.0, GRIP_X[1] - GRIP_X[0] - 6.0, 4.0)])
-    body, tpu = grip(which)
+    body, tpu = grip(which, hand)
     p = p + arm + body - tpu
     p -= xcyl(H, PIN_BORE / 2 if which == "b" else 1.6, (-30, 30))
     if which == "a":
@@ -396,8 +409,8 @@ def handle(which="a"):
     return p
 
 
-def grip_tpu(which):
-    return grip(which)[1]
+def grip_tpu(which, hand="right"):
+    return grip(which, hand)[1]
 
 
 def stop_arc():
@@ -570,8 +583,6 @@ def flange_z():
 PARTS = {
     "base_bottom": base_bottom, "base_top": base_top, "tab_mast": tab_mast,
     "knuckle_gear_left": lambda: knuckle_gear("left"), "knuckle_gear_right": lambda: knuckle_gear("right"),
-    "handle_a": lambda: handle("a"), "handle_b": lambda: handle("b"),
-    "grip_tpu_a": lambda: grip_tpu("a"), "grip_tpu_b": lambda: grip_tpu("b"),
     "servo_coupler": servo_coupler,
     "ebox_cover": ebox_cover,
 }
@@ -581,6 +592,11 @@ def _head(name, *a):
     import head
     return lambda: getattr(head, name)(*a)
 
+
+for _hand, _h in HANDS.items():
+    for _w in "ab":
+        PARTS[f"handle_{_w}_{_h}"] = (lambda w, hd: lambda: handle(w, hd))(_w, _hand)
+        PARTS[f"grip_tpu_{_w}_{_h}"] = (lambda w, hd: lambda: grip_tpu(w, hd))(_w, _hand)
 
 PARTS.update({"d405_hood": _head("d405_hood"), "quest_arm_right": _head("quest_arm", "right"),
               "quest_arm_left": _head("quest_arm", "left")})

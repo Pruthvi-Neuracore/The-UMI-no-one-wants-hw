@@ -13,16 +13,19 @@ TPU 95A for the pad faces.
 | `pad_core_2f140` | 2 | PETG | The back 5.1 mm of the 2F-140 pad, with 2 × M3 heat-set inserts. |
 | `pad_skin_2f140` | 2 | TPU 95A | The 2 mm grip face, glued to the core. |
 | `knuckle_gear_left`, `knuckle_gear_right` | 1 + 1 | PETG | 20-tooth sector gears (m 1.27), half a tooth out of phase with each other. |
-| `handle_a` | 1 | PETG | Four-finger loop grip, 40-tooth sector (meshes the left gear), hub with a hex end for the servo, inserts for the axle bolt and the stop screw. |
-| `handle_b` | 1 | PETG | Palm bar grip, 40-tooth sector (meshes the right gear). |
-| `grip_tpu_a`, `grip_tpu_b` | 1 + 1 | TPU 95A | Soft inserts: the finger bar's inner face and the palm bar's outer face. Glue them in. |
+| `handle_a_rh` / `handle_a_lh` | 1 | PETG | 40-tooth sector (meshes the left gear), hub with a hex end for the servo, inserts for the axle bolt and the stop screw. Right hand: the four-finger loop; left hand: the palm bar. |
+| `handle_b_rh` / `handle_b_lh` | 1 | PETG | 40-tooth sector (meshes the right gear). Right hand: the palm bar; left hand: the four-finger loop. |
+| `grip_tpu_a_*`, `grip_tpu_b_*` | 1 + 1 | TPU 95A | Soft inserts for the same hand's handles: the finger bar's inner face and the palm bar's outer face. Glue them in. |
 | `servo_coupler` | 1 | PETG | Between handle A's hex end and the STS3215 horn (4 × M2). |
 | `base_bottom` | 1 | PETG | Five standoff columns, pivot spacers, the stop slot, the button pod. |
 | `base_top` | 1 | PETG | Pivot spacers; 4 × M3 inserts for the mast's foot. |
 | `ebox_cover` | 1 | PETG | Box under the bottom plate: the STS3215 on its floor (4 × M2), Pico 2 standoffs, the hub bay, vents. |
 | `tab_mast` | 1 | PETG / PA-CF | Copy of the camera plate's tab face, with the same six holes and pose; extends up behind the camera for the Quest arm; foot and gussets. |
 | `d405_hood` | 1 | PETG | Open frame round the D405 on the tab. |
-| `quest_arm_right` (or `_left`) | 1 | PETG | Pad on the mast's back + split collar for the Touch Pro's handle, behind the camera. |
+| `quest_arm_right` / `quest_arm_left` | 1 | PETG | Pad on the mast's back + split collar for the Touch Pro's handle, behind the camera. |
+
+Print the `_rh` handles and inserts with `quest_arm_right` for the right-hand handheld, the `_lh` ones with
+`quest_arm_left` for the left. Every other part is the same for both hands.
 
 ## Robot side
 

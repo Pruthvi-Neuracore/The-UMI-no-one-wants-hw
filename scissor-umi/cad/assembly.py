@@ -38,6 +38,14 @@ HANDHELD.update({"servo_coupler": ("servo_coupler", "white"), "tab_mast": ("tab_
                  "grip_tpu_a": ("grip_tpu_a", "blue"), "grip_tpu_b": ("grip_tpu_b", "blue")})
 
 
+HANDED = ("handle_a", "handle_b", "grip_tpu_a", "grip_tpu_b")
+
+
+def handed(step, side="right"):
+    """The STEP of a handed part for the `side` hand's build (handle_a -> handle_a_rh / handle_a_lh)."""
+    return f"{step}_{S.HANDS[side]}" if step in HANDED else step
+
+
 def _hex(c):
     c = COLOURS.get(c, c).lstrip("#")
     return [int(c[i:i + 2], 16) for i in (0, 2, 4)] + [255]
@@ -71,10 +79,11 @@ def _place(name, step, colour, T):
 
 
 def handheld(q, side="right", quest=True):
-    """{name: mesh} for the handheld at q. side: which hand's Quest controller (the mechanism is the same)."""
+    """{name: mesh} for the handheld at q. side: which hand it is built for: the grips (palm bar / finger loop swap
+    sides) and the Quest controller; the mechanism is the same."""
     out = {}
     for n, (step, col) in HANDHELD.items():
-        out[n] = _place(n, step, col, _T(S.motion(n, q)))
+        out[n] = _place(n, handed(step, side), col, _T(S.motion(n, q)))
     out["servo"] = servo_mesh()
     out.update(electronics())
     out["d405_hood"] = _place("d405_hood", "d405_hood", "blue", np.eye(4))
@@ -218,14 +227,15 @@ def check(steps=8):
     """Interference between every pair of parts of the handheld (Quest included) over the stroke, and of the robot
     build's camera and plate with the gripper."""
     bad = []
-    for q in np.linspace(0, kin.g()["q_max"], steps):
-        a = handheld(q)
-        keys = list(a)
-        for i in range(len(keys)):
-            for k in keys[i + 1:]:
-                v = _overlap(a[keys[i]], a[k])
-                if v > 1.0:
-                    bad.append((round(float(q), 3), keys[i], k, round(v, 1)))
+    for side in ("right", "left"):
+        for q in np.linspace(0, kin.g()["q_max"], steps):
+            a = handheld(q, side)
+            keys = list(a)
+            for i in range(len(keys)):
+                for k in keys[i + 1:]:
+                    v = _overlap(a[keys[i]], a[k])
+                    if v > 1.0:
+                        bad.append((side, round(float(q), 3), keys[i], k, round(v, 1)))
     for q in (0.0, kin.g()["q_max"]):
         r = robot(q)
         for e in ("d405", "ur_camera_plate"):
@@ -233,11 +243,11 @@ def check(steps=8):
                 if k != e and not (e == "ur_camera_plate" and k == "d405"):
                     v = _overlap(r[e], m)
                     if v > 1.0:
-                        bad.append((q, "robot:" + e, k, round(v, 1)))
-    real = [b for b in bad if frozenset(b[1:3]) not in CONTACT_OK]
+                        bad.append(("robot", q, "robot:" + e, k, round(v, 1)))
+    real = [b for b in bad if frozenset(b[2:4]) not in CONTACT_OK]
     for b in bad:
         print("overlap", b, "(expected contact)" if b not in real else "")
-    print(f"{len(real)} unexpected overlapping pairs over {steps} poses")
+    print(f"{len(real)} unexpected overlapping pairs over {steps} poses, right- and left-hand builds")
     gaps = {q: kin.pad_gap(q) for q in (0.0, kin.g()["q_max"])}
     print("pad gap open / closed:", {k: round(float(v), 1) for k, v in gaps.items()})
     return real

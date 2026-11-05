@@ -155,14 +155,25 @@ def electronics():
 
 
 def hand_view():
-    """The grip from the operator's side (behind and below): the palm bar, the finger loop and the button pod."""
-    p = plotter((1600, 1100))
-    place(p, A.handheld(0.35))
-    shot(p, "grip.png", (-190, -330, -330), (0, 0, -40), up=(1, 0, 0), zoom=1.25)
+    """The grips from the operator's side (behind and below): the palm bar, the finger loop and the button pod, for
+    the right-hand build (grip.png) and the left-hand build, its mirror (grip_left.png)."""
+    for side, name, sy in (("right", "grip.png", -1), ("left", "grip_left.png", 1)):
+        p = plotter((1600, 1100))
+        place(p, A.handheld(0.35, side))
+        shot(p, name, (-190, sy * 330, -330), (0, 0, -40), up=(1, 0, 0), zoom=1.25)
+
+
+def hands():
+    """The right-hand and the left-hand builds side by side, seen from behind (as you hold them)."""
+    p = plotter((1800, 1000))
+    gap = 260.0
+    place(p, A.handheld(0.2, "left"), tr([0, -gap / 2, 0]))
+    place(p, A.handheld(0.2, "right"), tr([0, gap / 2, 0]))
+    shot(p, "hands.png", (-260, 0, -620), (10, 0, -10), up=(1, 0, 0), zoom=1.05, aspect=1.8)
 
 
 ALL = dict(hero=hero, robot=robot, twins=twins, top=top, stroke=stroke, camera_views=camera_views,
-           electronics=electronics, grip=hand_view)
+           electronics=electronics, grip=hand_view, hands=hands)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

@@ -1,11 +1,11 @@
 # Scissor-UMI
 
-FOMI-style scissor grippers ([robbyant-research.github.io/FOMI](https://robbyant-research.github.io/FOMI/)) whose
+Scissor-handled grippers whose
 jaws are printed copies of a real robot gripper's jaws. The D405 sits exactly where our camera plate puts it on the
 robot, a Feetech STS3215 on the scissor axle reads the jaw angle, and a Meta Quest Touch Pro stands on top. On the robot:
 the real gripper, our camera plate and the D405.
 
-<p align="center"><img src="2f-140/img/hero.png" alt="Scissor-UMI for the Robotiq 2F-140: scissor handles, geared four-bar jaws, a D405 on a tilting hinge and a Quest Touch Pro on top" width="760"></p>
+<p align="center"><img src="2f-140/img/hero.png" alt="Scissor-UMI for the Robotiq 2F-140: scissor handles, printed 2F-140 jaws, the D405 on a copy of the robot camera tab and a Quest Touch Pro behind it" width="760"></p>
 
 ## Handheld and robot twin
 
@@ -35,9 +35,14 @@ through 40-tooth sectors (2:1). The jaws are printed copies of the 2F-140's jaw 
 they look and move exactly like the robot's. An STS3215 on the scissor axle reads the opening, and a Pico 2 streams it
 ([`firmware/`](firmware/README.md)).
 
-| Holding it | Electronics |
-|---|---|
-| <img src="2f-140/img/grip.png" alt="The grip from the operator's side" width="420"> | <img src="2f-140/img/electronics.png" alt="STS3215, Pico 2, hub and IMU under the base" width="420"> |
+<p align="center"><img src="2f-140/img/hands.png" alt="Left-hand and right-hand builds, seen from behind" width="880"></p>
+
+There is a right-hand and a left-hand build: the grips (palm bar and finger loop swap sides) and the Quest controller
+are mirrored; everything else is shared.
+
+| Right hand | Left hand | Electronics |
+|---|---|---|
+| <img src="2f-140/img/grip.png" alt="Right-hand grip from the operator's side" width="290"> | <img src="2f-140/img/grip_left.png" alt="Left-hand grip from the operator's side" width="290"> | <img src="2f-140/img/electronics.png" alt="STS3215, Pico 2, hub and IMU under the base" width="290"> |
 
 Details, BOM and wiring are in
 [`2f-140/README.md`](2f-140/README.md).

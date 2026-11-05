@@ -1,7 +1,8 @@
 """The Quest Touch Pro controller on the head: its pose in G and the cradle's bore.
 
-The controller stands upright on the gripper's centre plane (y = 0) right behind the D405, its handle along G x (up) and its
-face (thumbstick, buttons, front cameras) looking forward along +z, over the jaws. The cradle is a split collar around
+The controller stands upright on the gripper's centre plane (y = 0) right behind the D405, its handle along G x (up),
+held the way a hand holds it: the trigger and the head's ring point forward (+z, over the jaws), the thumbstick face
+looks up and back at the operator. The cradle is a split collar around
 the straight part of the handle (24 mm of it), bored to the handle's own section, clamped with one M3 screw.
 
 The handle's section is measured from Meta's model (source/quest/, not redistributed) and cached in
@@ -21,7 +22,8 @@ HANDLE_Z = -48.0                  # G z of the handle's centre: behind the camer
 HANDLE_X0 = 90.0                  # G x of the handle's bottom end (clear above the hand)
 COLLAR_DZ = (6.0, 30.0)           # the collar grips the handle from 6 to 30 mm above its bottom end
 FIT = 0.4                         # radial clearance in the bore (the clamp closes it)
-K = np.array([[0, 0, 1.0], [0, -1.0, 0], [1.0, 0, 0]])   # kit frame (X face, Y left, Z up the handle) -> G
+# kit frame (X towards the thumbstick face, Y, Z up the handle) -> G: the face looks back (-z), the trigger forward
+K = np.array([[0, 0, 1.0], [0, 1.0, 0], [-1.0, 0, 0]])
 
 
 def _kit_mesh():
@@ -79,8 +81,8 @@ def outline_g(offset=0.0):
     p = Polygon(section()["outline_kit_xy"])
     if offset:
         p = p.buffer(offset, join_style=1)
-    # kit x (face, forward) -> G z; kit y (left) -> G -y
-    return [(-y, HANDLE_Z + x) for x, y in p.exterior.coords[:-1]]
+    # kit x (towards the face) -> G -z; kit y -> G y (as K)
+    return [(y, HANDLE_Z - x) for x, y in p.exterior.coords[:-1]]
 
 
 def controller_mesh(side="right"):

@@ -10,8 +10,8 @@ a spring-action garden scissor (a palm bar and a four-finger loop). A **Feetech 
 jaw opening, a **Raspberry Pi Pico 2** streams it ([`firmware/`](../firmware/README.md)), and the **Quest Touch Pro**
 stands right behind the camera. On the robot you use the real 2F-140 with the camera plate and the D405 as they are.
 
-The design follows [FOMI](https://robbyant-research.github.io/FOMI/): scissor handles, meshed sector gears that keep
-the jaws symmetric, and force felt through the handles.
+Scissor handles drive meshed sector gears that keep the jaws symmetric, so you feel the grasp force through the
+handles.
 
 ## Handheld and robot
 
@@ -32,9 +32,14 @@ and pads are identical; only what sits behind them at the bottom edge of the ima
 
 ## Grip and electronics
 
-| Holding it | Electronics (box cover hidden) |
-|---|---|
-| <img src="img/grip.png" width="420"> | <img src="img/electronics.png" width="420"> |
+<p align="center"><img src="img/hands.png" alt="The left-hand and right-hand builds side by side, seen from behind" width="880"></p>
+
+Left-hand build (left) and right-hand build (right), seen from behind as you hold them: the grips and the Quest
+controller are mirrored, the mechanism, camera and electronics are the same.
+
+| Right hand | Left hand | Electronics (box cover hidden) |
+|---|---|---|
+| <img src="img/grip.png" width="290"> | <img src="img/grip_left.png" width="290"> | <img src="img/electronics.png" width="290"> |
 
 ## Mechanism
 
@@ -57,13 +62,19 @@ direction, y is the opening direction and x points up.
 | mast, hood, Quest arm | above | the camera tab copy, the D405, the Touch Pro |
 
 * **Handles.** These are shaped like a spring-action garden scissor (Fiskars Easy Action).
-  * Handle B is a solid palm bar that swells to 23 mm in the middle.
-  * Handle A is a long D-loop with a 70 × 24 mm window for four fingers.
+  * One handle is a solid palm bar that swells to 23 mm in the middle.
+  * The other is a long D-loop with a 70 × 24 mm window for four fingers.
   * Both are 26 mm tall and rounded on every edge: R 4 on the palm bar, R 6 on the loop, R 4 round the window.
   * Each has a soft TPU insert where the hand pushes and pulls: the palm bar's outer face, and the finger bar's
     inner face.
-  * Hold it from below, palm up: the palm on B, the fingers up through A's window and round its outer bar. The
-    index finger lands on the record button under the base.
+  * Hold it from below, palm up: the palm on the palm bar, the fingers up through the loop's window and round its
+    outer bar. The index finger lands on the record button under the base.
+  * The grip is handed. Your fingers point across the handheld from the palm bar to the loop, so the thumb and index
+    finger only end up forward, at the button, if the loop is on the side your fingers point to:
+    * **right hand** (`handle_a_rh`, `handle_b_rh`): loop on handle A (−y, your left), palm bar on handle B (+y);
+    * **left hand** (`handle_a_lh`, `handle_b_lh`): the mirror, palm bar on A, loop on B.
+  * Only the grips change. Handle A keeps the hub, the servo's hex drive and the stop screw in both builds, so the
+    gears, the encoder reading and the firmware are identical.
   * The arms leave the gears as 14 mm webs and are lofted, rounded, into the grips, so they are thickest where the
     bending load is.
 * **Jaws.** The 2F-140's parallelogram, built from replicas of its parts. The outer link (outer knuckle + outer
@@ -88,8 +99,9 @@ direction, y is the opening direction and x points up.
   tab's two outer holes.
 * **Quest.** `quest_arm` is a pad on the back of the mast, screwed from the mast's front (4 × M3). It carries a split
   collar bored to the Touch Pro's handle and clamped with one M3. The controller stands upright on the centre plane
-  right behind the camera, above your hand, its face looking forward and its cameras clear. For the left hand, use
-  `quest_arm_left`.
+  right behind the camera, above your hand, held the way a hand holds it: trigger and ring forward over the jaws,
+  thumbstick face up and back towards you, its cameras clear. The right-hand build
+  carries the right controller on `quest_arm_right`, the left-hand build the left controller on `quest_arm_left`.
 * **Robot side.** The real 2F-140 on `ur_camera_plate` (our part, unchanged; it puts the coupling 7 mm further from
   the UR flange) with the D405 on its tab. There is no Quest on the robot.
 

@@ -25,7 +25,7 @@ import scissor as S
 
 def _section(name, q, x):
     step, col = A.HANDHELD[name]
-    m = A._place(name, step, col, A._T(S.motion(name, q)))
+    m = A._place(name, A.handed(step), col, A._T(S.motion(name, q)))
     p, _ = m.section([1, 0, 0], [x, 0, 0]).to_2D(to_2D=np.array([[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, -x],
                                                                  [0, 0, 0, 1.0]]))
     return unary_union(list(p.polygons_full))

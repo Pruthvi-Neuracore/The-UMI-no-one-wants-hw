@@ -17,7 +17,7 @@ The handheld adds two parts on its tab:
                the tab as on the robot plate; the hood guards it and carries the Quest arm.
   quest_arm    a pad on the back of the mast, above the camera (4 x M3 from the mast's front into inserts in the
                pad), and a split collar bored to the Touch Pro's handle (quest.py), clamped with one M3. The
-               controller stands upright on the centre plane right behind the camera, face forward, above the hand.
+               controller stands upright on the centre plane right behind the camera, trigger forward (as held), above the hand.
 
 Frames: M = the plate's STEP frame (z from the flange, the tab along +y). G = kin.py's gripper frame
 (robotiq_arg2f_base_link). The tab frame T has u along the tab (away from the axis), v = G y and w = the tab's
