@@ -15,7 +15,7 @@ import scissor as S
 
 CACHE = S.BUILD / "cache"
 QUEST_DIR = S.SRC / "quest"
-ROBOTIQ_DIR = S.SRC / "robotiq_2f_140"
+ROBOTIQ_DIR = S.SRC / f"robotiq_2f_{kin.g()['mesh']}"
 
 COLOURS = {"blue": "#1f5fae", "white": "#f4f6f8", "tpu": "#1b1c1f", "camera": "#1d1f22", "steel": "#b9bec5",
            "quest": "#3b3f45", "robotiq": "#2a2c30", "robotiq_metal": "#9aa1a9", "record": "#2e9e44"}
@@ -28,12 +28,13 @@ HANDHELD = {
     "ebox_cover": ("ebox_cover", "white"),
 }
 # the 2F-140 jaw replicas (same colours as the robot render: metal-grey links, dark finger and pad)
+TAG = kin.GRIPPER.replace("-", "")                   # 2f140 / 2f85
 for _s in ("left", "right"):
-    HANDHELD.update({f"outer_link_{_s}": ("outer_link_2f140", "robotiq_metal"),
-                     f"inner_knuckle_{_s}": ("inner_knuckle_2f140", "robotiq_metal"),
-                     f"inner_finger_{_s}": ("inner_finger_2f140", "robotiq"),
-                     f"pad_core_{_s}": ("pad_core_2f140", "robotiq"),
-                     f"pad_skin_{_s}": ("pad_skin_2f140", "tpu")})
+    HANDHELD.update({f"outer_link_{_s}": (f"outer_link_{TAG}", "robotiq_metal"),
+                     f"inner_knuckle_{_s}": (f"inner_knuckle_{TAG}", "robotiq_metal"),
+                     f"inner_finger_{_s}": (f"inner_finger_{TAG}", "robotiq"),
+                     f"pad_core_{_s}": (f"pad_core_{TAG}", "robotiq"),
+                     f"pad_skin_{_s}": (f"pad_skin_{TAG}", "tpu")})
 HANDHELD.update({"servo_coupler": ("servo_coupler", "white"), "tab_mast": ("tab_mast", "blue"),
                  "grip_tpu_a": ("grip_tpu_a", "blue"), "grip_tpu_b": ("grip_tpu_b", "blue")})
 
@@ -152,7 +153,7 @@ def _tr(p):
 
 
 def robotiq(q):
-    """The Robotiq 2F-140 posed at q in G (meshes from source/robotiq_2f_140, in metres -> mm)."""
+    """The robot's Robotiq gripper posed at q in G (meshes from source/robotiq_2f_<140|85>, in mm)."""
     g = kin.g()
 
     def load(n):
@@ -168,19 +169,20 @@ def robotiq(q):
     out["robotiq_base"] = load("base_link")
     a = kin.link_angle(q)
     af = kin.link_angle(0.0) + g["finger_angle"]
+    M, F = g["mesh"], (np.diag([-1.0, -1.0, 1.0, 1.0]) if g["mesh_mirror"] else np.eye(4))
     for side, Rs in (("left", np.eye(4)), ("right", trimesh.transformations.rotation_matrix(math.pi, [0, 0, 1]))):
         j = kin.joints(q)
-        To = _tr([0, *g["outer_pivot"]]) @ _rx(a)
-        out[f"robotiq_outer_knuckle_{side}"] = load("140_outer_knuckle").apply_transform(Rs @ To)
-        out[f"robotiq_outer_finger_{side}"] = load("140_outer_finger").apply_transform(
-            Rs @ To @ _tr([0, *g["outer_to_finger"][0]]))
-        out[f"robotiq_inner_knuckle_{side}"] = load("140_inner_knuckle").apply_transform(
-            Rs @ _tr([0, *g["inner_pivot"]]) @ _rx(a))
-        out[f"robotiq_inner_finger_{side}"] = load("140_inner_finger").apply_transform(Rs @ _tr([0, *j["B"]]) @ _rx(af))
-        pw, pl, pt = g["pad_size"]
-        pad = trimesh.creation.box([pw, pl, pt])
-        out[f"robotiq_pad_{side}"] = pad.apply_transform(
-            Rs @ _tr([0, *j["B"]]) @ _rx(af) @ _tr([0, *g["pad_offset"]]))
+        To = _tr([0, *g["outer_pivot"]]) @ _rx(a) @ F
+        out[f"robotiq_outer_knuckle_{side}"] = load(f"{M}_outer_knuckle").apply_transform(Rs @ To)
+        out[f"robotiq_outer_finger_{side}"] = load(f"{M}_outer_finger").apply_transform(
+            Rs @ To @ _tr([0, *kin.local(g["outer_to_finger"][0])]))
+        out[f"robotiq_inner_knuckle_{side}"] = load(f"{M}_inner_knuckle").apply_transform(
+            Rs @ _tr([0, *g["inner_pivot"]]) @ _rx(a) @ F)
+        Tf = Rs @ _tr([0, *j["B"]]) @ _rx(af) @ F
+        out[f"robotiq_inner_finger_{side}"] = load(f"{M}_inner_finger").apply_transform(Tf)
+        (c, size) = g["pad_local"]
+        pad = trimesh.creation.box(size)
+        out[f"robotiq_pad_{side}"] = pad.apply_transform(Tf @ _tr(c))
     for n, m in out.items():
         m.visual.face_colors = _hex("robotiq_metal" if "knuckle" in n or "outer_finger" in n else "robotiq")
     return out

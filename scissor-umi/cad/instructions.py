@@ -108,9 +108,19 @@ def build_steps(hand="right"):
     n_tab = T[:3, 2]
     P = {k: np.array([0.0, *v]) for k, v in dict(P1L=S.P1L, P1R=S.P1R, P2L=S.P2L, P2R=S.P2R, H=S.H).items()}
     j_l, j_r = kin.joints(0.0, "left"), kin.joints(0.0, "right")
-    key_l = [np.array([0.0, -26.0, 76.4]), np.array([0.0, -20.7, 70.4])]
+    import replica
+    arm = kin.mesh_to_base() @ np.array(kin.g()["knuckle_arm"])
+    key_l = [np.array([0.0, *(S.P2L + arm * k)]) for k in kin.g()["key_at"]]
     key_r = [k * [1, -1, 1] for k in key_l]
-    pad_l = [np.array([0.0, -65.2, 151.2]), np.array([0.0, -65.2, 169.2])]
+    Tf = replica.poses()["inner_finger"]
+    if kin.g()["mesh"] == "85":                      # M2 self-tapping from the finger plate's back (local -y)
+        pad_l = [(Tf @ [0, -11.9 + 1.5, z, 1])[:3] for z in replica.PAD85_SCREWS]
+        pad_dir = Tf[:3, :3] @ [0, -1.0, 0]
+        pad_hw = ("M2 × 8 self-tapping", 2.0, 8.0)
+    else:
+        pad_l = [np.array([0.0, -65.2, 151.2]), np.array([0.0, -65.2, 169.2])]
+        pad_dir = Y
+        pad_hw = ("M3 × 10", 3.0, 10.0)
     pad_r = [k * [1, -1, 1] for k in pad_l]
     opened, _ = S.handle_angles()
     sp = S.H + S.STOP_R * np.array([math.cos(math.radians(opened + 8)), math.sin(math.radians(opened + 8))])
@@ -141,7 +151,8 @@ def build_steps(hand="right"):
     step("Pads", ["pad_skin_left", "pad_core_left", "inner_finger_left"],
          {"pad_skin_left": Y * 70, "pad_core_left": Y * 35},
          [HW("glue", "TPU skin: CA glue", 1),
-          HW("screw", "M3 × 10", 2, seats("inner_finger_left", pad_l, Y), 3, 10)],
+          HW("screw", pad_hw[0], 2, seats("inner_finger_left", pad_l, pad_dir) if kin.g()["mesh"] != "85" else
+             [(p_, pad_dir) for p_ in pad_l], pad_hw[1], pad_hw[2])],
          show=[], view=np.array([120.0, -300.0, 200.0]), times=2,
          note="Glue the TPU skin to the core. Screw the core to the inner finger. Make two.")
     # 2. gear into the inner knuckle (left and right are different)
@@ -423,10 +434,10 @@ def parts_page(meshes, path, hand):
         img.thumbnail((cw - 20, ch - 80))
         cx, cy = 40 + (i % cols) * cw, 180 + (i // cols) * ch
         page.paste(img, (cx + (cw - img.width) // 2, cy))
-        label = step_name.get(n, n.replace("_left", "").replace("outer_link", "outer_link_2f140")
-                              .replace("inner_knuckle", "inner_knuckle_2f140").replace("inner_finger",
-                                                                                        "inner_finger_2f140")
-                              .replace("pad_core", "pad_core_2f140").replace("pad_skin", "pad_skin_2f140"))
+        t = kin.GRIPPER.replace("-", "")
+        label = step_name.get(n, n.replace("_left", "").replace("outer_link", f"outer_link_{t}")
+                              .replace("inner_knuckle", f"inner_knuckle_{t}").replace("inner_finger", f"inner_finger_{t}")
+                              .replace("pad_core", f"pad_core_{t}").replace("pad_skin", f"pad_skin_{t}"))
         if n in ("knuckle_gear_left", "knuckle_gear_right"):
             label = n
         d.text((cx + cw // 2, cy + ch - 70), label, fill=INK, font=font(17), anchor="mm")
@@ -440,7 +451,7 @@ def inserts_page(path):
             ("base_top", "4 × M3", "the mast's foot"),
             ("handle_a_*", "1 × M4 + 1 × M3", "axle bolt (top of the hub), stop screw (underneath)"),
             ("knuckle_gear_left / _right", "2 × M3 each", "the key screws"),
-            ("pad_core_2f140", "2 × M3 each", "the pad screws"),
+            *([] if kin.g()["mesh"] == "85" else [("pad_core_2f140", "2 × M3 each", "the pad screws")]),
             ("quest_arm_*", "4 × M3", "the pad on the mast's back")]
     page = Image.new("RGB", (W, H_PAGE), "white")
     d = ImageDraw.Draw(page)
@@ -466,7 +477,7 @@ def inserts_page(path):
         d.text((80, y_), a, fill=INK, font=font(24))
         d.text((620, y_), b, fill=INK, font=font(24, True))
         d.text((900, y_), c, fill=(80, 80, 80), font=font(22))
-    d.text((80, yy + 60 + len(rows) * 64 + 30), "Total: 26 × M3 (M3 × 5.7) and 1 × M4. Glue the TPU grip inserts "
+    d.text((80, yy + 60 + len(rows) * 64 + 30), f"Total: {22 if kin.g()['mesh'] == '85' else 26} × M3 (M3 × 5.7) and 1 × M4. Glue the TPU grip inserts "
            "into their handles (CA glue).", fill=INK, font=font(24))
     page.save(path)
 
@@ -477,7 +488,7 @@ def robot_page(path):
     p_new = ["ur_camera_plate", "d405"]
     s = dict(title="Robot", new=p_new, explode={"ur_camera_plate": Z * -60, "d405": head.tab_frame()[:3, 2] * 60},
              hw=[HW("screw", "M6, 7 mm longer", 4, [], 6, 20)], show=None, view=ISO, focal=None, zoom=1.0,
-             note="On the robot: the Robotiq 2F-140 as it is. Put our camera plate between its coupling and the UR "
+             note=f"On the robot: the Robotiq {kin.GRIPPER.upper()} as it is. Put our camera plate between its coupling and the UR "
                   "flange (M6 screws 7 mm longer than the coupling's own) and fix the D405 to the plate's tab.",
              times=None)
     im = render_step(s, r, OUT / "_robot_drawing.png")

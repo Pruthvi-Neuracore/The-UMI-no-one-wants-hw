@@ -9,9 +9,13 @@ pivot on the base, and their far ends carry the finger (the coupler), so the pad
 parallel. q is the robot gripper's `finger_joint` (0 = open, Q_MAX = closed). The handheld's jaws use the same q, so a
 recorded q drives the robot's gripper directly and the pads are in the same place.
 
-To add another gripper (e.g. the 2F-85), add an entry to GRIPPERS with its pivots, link length, pad offset and range.
+Every gripper is written in the same form: the left jaw's offsets in the base plane, with the links' frame at
+link_angle0 - q. The 2F-85's URDF turns its link frames 180° about z instead (rpy z = pi, axis +x), which in the (y, z)
+plane is a reflection: its offsets are stored reflected (y -> -y) with link_angle0 = 0, and `mesh_mirror` tells the mesh
+code that Robotiq's part meshes sit in the reflected frame. Pick the gripper with SCISSOR_GRIPPER (default below).
 """
 import math
+import os
 
 import numpy as np
 
@@ -30,9 +34,36 @@ GRIPPERS = {
         q_max=0.7,
         coupling_to_base=8.0,               # coupling origin -> base frame origin, along z
         coupling_back=7.0,                  # coupling's back face (robot flange) behind its origin
+        mesh="140", mesh_mirror=False,      # Robotiq's part meshes: robotiq_arg2f_140_*.stl, link frames as above
+        pad_local=((0.0, 45.7554, -27.2203), (27.0, 65.0, 7.5)),   # pad box (centre, size) in the inner finger frame
+        clevis=12.2,                        # the inner knuckle's base prongs start at |x| = 12.2
+        knuckle_arm=(1.0, 0.0),             # the inner knuckle's arm direction in its own (y, z)
+        key_at=(12.0, 20.0),                # M3 keys along that arm through a prong into the knuckle gear
+        p1_hub=4.9,                         # the outer knuckle's hub half-width at the outer pivot
+    ),
+    # Robotiq 2F-85, from robotiq_arg2f_85_model (finger_joint and left_inner_knuckle_joint at rpy z = pi, axis +x;
+    # outer_finger (0, 31.5, -4.1), inner_finger (0, 6.1, 47.1); the pad mesh 20 x 35 x 5 mm at (0, -21.4, 31.0) in the
+    # inner finger frame). Same base pivots as the 2F-140; open at q = 0 (~89 mm between the pad meshes), closed at 0.8.
+    "2f-85": dict(
+        outer_pivot=(-30.6011, 54.904),
+        inner_pivot=(-12.7, 61.42),
+        link_angle0=0.0,
+        outer_to_finger=((-31.5, -4.1), (-6.1, 47.1)),              # reflected (y -> -y)
+        finger_angle=0.0,
+        pad_offset=(21.4, 31.0),                                    # reflected
+        pad_size=(20.0, 35.0, 5.0),                                 # width, along the finger, thickness
+        q_max=0.8,
+        coupling_to_base=8.0,
+        coupling_back=7.0,
+        mesh="85", mesh_mirror=True,
+        pad_local=((0.0, -21.4, 31.0), (20.0, 5.0, 35.0)),
+        clevis=12.0,
+        knuckle_arm=(0.6580, 0.7530),       # towards its far joint E (37.6, 43.0)
+        key_at=(10.0, 18.0),
+        p1_hub=5.5,
     ),
 }
-GRIPPER = "2f-140"
+GRIPPER = os.environ.get("SCISSOR_GRIPPER", "2f-85")
 
 
 def g(name=GRIPPER):
@@ -42,6 +73,17 @@ def g(name=GRIPPER):
 def rot(a):
     c, s = math.cos(a), math.sin(a)
     return np.array([[c, -s], [s, c]])
+
+
+def mesh_to_base(name=GRIPPER):
+    """2 x 2: a Robotiq part mesh's own (y, z) -> the gripper frame's, for the left jaw's links at q = 0."""
+    M = rot(g(name)["link_angle0"])
+    return M @ np.diag([-1.0, 1.0]) if g(name)["mesh_mirror"] else M
+
+
+def local(v, name=GRIPPER):
+    """A stored (reflected) offset as the Robotiq mesh frame sees it."""
+    return np.array(v) * ([-1, 1] if g(name)["mesh_mirror"] else [1, 1])
 
 
 def link_angle(q, name=GRIPPER):
@@ -88,7 +130,7 @@ def q_of_gap(w, name=GRIPPER):
 
 if __name__ == "__main__":
     print(f"link length {link_length():.2f} mm")
-    for q in (0.0, 0.35, 0.7):
+    for q in (0.0, g()["q_max"] / 2, g()["q_max"]):
         j = joints(q)
         print(f"q={q:.2f}: B={j['B'].round(2)} E={j['E'].round(2)} pad={j['pad'].round(2)} gap={pad_gap(q):.1f} mm")
     print(f"q at gap 0: {q_of_gap(0.0):.3f}")

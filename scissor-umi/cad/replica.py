@@ -1,4 +1,6 @@
-"""The handheld's jaws: printed copies of the Robotiq 2F-140's own jaw parts.
+"""The handheld's jaws: printed copies of the robot gripper's own jaw parts (Robotiq 2F-140 or 2F-85, kin.GRIPPER).
+
+The text below describes the 2F-140; the 2F-85's parts get the same treatment (see the *_85 functions).
 
 Each jaw uses the robot gripper's parts at the robot's joint positions:
 
@@ -29,14 +31,16 @@ import kin
 
 SRC = kin.__dict__.get("SRC")
 BORE = 4.2
-KEY_AT = (12.0, 20.0)            # M3 key holes along the inner knuckle's arm (local y), through its prongs
+KEY_AT = kin.g()["key_at"]       # M3 key holes along the inner knuckle's arm, through its prongs
 PAD_SKIN = 2.0                   # TPU face of the pad
 PAD_SCREWS = (20.0, 38.0)        # M3 through the inner finger into the pad core (local y)
+M = kin.g()["mesh"]              # "140" / "85": Robotiq's mesh names
+F = np.diag([-1.0, -1.0, 1.0, 1.0]) if kin.g()["mesh_mirror"] else np.eye(4)   # the mesh frame (rpy z = pi)
 
 
 def _src():
     from pathlib import Path
-    return Path(__file__).resolve().parent / "source" / "robotiq_2f_140"
+    return Path(__file__).resolve().parent / "source" / f"robotiq_2f_{M}"
 
 
 def mesh(name):
@@ -44,6 +48,21 @@ def mesh(name):
     if m.extents.max() < 1:
         m.apply_scale(1000.0)
     return m
+
+
+def closed(m):
+    """A mesh as a closed volume for manifold booleans (Robotiq's meshes can hold several shells or split seams)."""
+    if m.is_volume:
+        return m
+    import manifold3d as mf
+    m = m.copy()
+    m.merge_vertices()
+    mm = mf.Mesh(vert_properties=np.asarray(m.vertices, np.float32), tri_verts=np.asarray(m.faces, np.uint32))
+    mm.merge()
+    out = mf.Manifold(mm).to_mesh()
+    c = trimesh.Trimesh(out.vert_properties[:, :3], out.tri_verts)
+    assert c.is_volume, "mesh could not be closed"
+    return c
 
 
 def mesh_solid(m):
@@ -121,10 +140,10 @@ def poses():
     a0 = kin.link_angle(0.0)
     af = a0 + g["finger_angle"]
     return {
-        "outer_link": _tr(*g["outer_pivot"]) @ _rx(a0),
-        "inner_knuckle": _tr(*g["inner_pivot"]) @ _rx(a0),
-        "inner_finger": _tr(*j["B"]) @ _rx(af),
-        "pad": _tr(*j["B"]) @ _rx(af),
+        "outer_link": _tr(*g["outer_pivot"]) @ _rx(a0) @ F,
+        "inner_knuckle": _tr(*g["inner_pivot"]) @ _rx(a0) @ F,
+        "inner_finger": _tr(*j["B"]) @ _rx(af) @ F,
+        "pad": _tr(*j["B"]) @ _rx(af) @ F,
     }
 
 
@@ -133,12 +152,17 @@ def _local_joints():
     j = kin.joints(0.0)
     a0 = kin.link_angle(0.0)
     af = a0 + g["finger_angle"]
-    R = lambda a: np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])  # noqa: E731
-    o1, o2 = (np.array(v) for v in g["outer_to_finger"])
-    return dict(B_outer=o1 + o2, OF=o1, E_knuckle=R(-a0) @ (j["E"] - j["P2"]), E_finger=R(-af) @ (j["E"] - j["B"]))
+    D = np.diag([-1.0, 1.0]) if g["mesh_mirror"] else np.eye(2)
+    R = lambda a: np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]]) @ D  # noqa: E731  (mesh -> base)
+    o1, o2 = (kin.local(v) for v in g["outer_to_finger"])
+    inv = np.linalg.inv
+    return dict(B_outer=o1 + o2, OF=o1, E_knuckle=inv(R(a0)) @ (j["E"] - j["P2"]),
+                E_finger=inv(R(af)) @ (j["E"] - j["B"]))
 
 
 def outer_link():
+    if M == "85":
+        return outer_link_85()
     lj = _local_joints()
     ok = mesh_solid(mesh("140_outer_knuckle"))
     of = mesh_solid(mesh("140_outer_finger")).moved(Location((0, *lj["OF"])))
@@ -162,6 +186,8 @@ def outer_link():
 
 
 def inner_knuckle():
+    if M == "85":
+        return inner_knuckle_85()
     lj = _local_joints()
     k = mesh_solid(mesh("140_inner_knuckle"))
     k -= Pos(0, 11.0, 0) * Box(24.4, 34.0, 20.0)          # between the prongs at the base end (|x| < 12.2, y < 28)
@@ -174,6 +200,8 @@ def inner_knuckle():
 
 
 def inner_finger():
+    if M == "85":
+        return inner_finger_85()
     lj = _local_joints()
     f = mesh_solid(mesh("140_inner_finger"))
     f -= _faces(0.0, 0.0, 7.2) + _faces(*lj["E_finger"], 7.2)   # 0.3-0.5 mm running clearance to the prongs
@@ -185,6 +213,98 @@ def inner_finger():
     return f
 
 
+# ---- 2F-85 --------------------------------------------------------------------------------------------------------
+# Measured on Robotiq's meshes: the outer finger's prongs straddle the outer knuckle (|x| 5..12) at its foot and the
+# inner finger (|x| 7.5..12) at its head; the inner knuckle's base prongs are |x| 12..19.5 (the knuckle gear sits
+# between them) and its head prongs |x| 7.5..12; the pins Robotiq models through the heads reach |x| = 13.5.
+PAD85_SKIN = 1.5                 # the 2F-85 pad is 5 mm thick: 3.5 mm PETG core + 1.5 mm TPU face
+PAD85_SCREWS = (19.0, 37.0)      # M2 self-tapping along local -y, from the finger plate's back (y = -11.9)
+
+
+# All 2F-85 cuts are done on the meshes (manifold3d) and the result made a solid once: OCC's booleans on solids sewn
+# from triangle meshes can fail silently (a cut that changes nothing).
+_X = trimesh.transformations.rotation_matrix(math.pi / 2, [0, 1, 0])          # cylinder axis z -> x
+_Y = trimesh.transformations.rotation_matrix(math.pi / 2, [1, 0, 0])          # cylinder axis z -> y
+
+
+def _mcyl(y, z, r, h, x=0.0, axis="x"):
+    T = trimesh.transformations.translation_matrix([x, y, z]) @ (_X if axis == "x" else _Y)
+    return trimesh.creation.cylinder(radius=r, height=h, sections=64, transform=T)
+
+
+def _mbox(c, ext):
+    return trimesh.creation.box(extents=ext, transform=trimesh.transformations.translation_matrix(c))
+
+
+def _U(*ms):
+    return trimesh.boolean.union([m for m in ms if len(m.faces)], engine="manifold")
+
+
+def _D(a, *bs):
+    return trimesh.boolean.difference([a, *bs], engine="manifold")
+
+
+def _mfaces(y, z, inner, r):
+    """Mesh version of _faces: everything within r of the joint axis past |x| = inner."""
+    return _D(_mcyl(y, z, r, 60), _mbox((0, y, z), (2 * inner, 4 * r, 4 * r)))
+
+
+def _munpin(m, y, z, gap, prong, r_gap=5.5):
+    """At a fork head: cut the pin Robotiq models between the prongs (|x| < gap) and its stubs past them, fill the
+    prongs' pin holes, ready for the Ø4.2 bore."""
+    m = _D(m, _mcyl(y, z, r_gap, 2 * gap), _mfaces(y, z, prong, 3.2))
+    return _U(m, *[_mcyl(y, z, 3.2, prong - gap, x=sx * (gap + prong) / 2) for sx in (-1, 1)])
+
+
+def outer_link_85():
+    lj = _local_joints()
+    m = _U(closed(mesh("85_outer_knuckle")), closed(mesh("85_outer_finger")).apply_translation([0, *lj["OF"]]))
+    m = _D(m, _mfaces(*lj["OF"], 12.0, 3.2))        # the foot pin's stubs past the prongs (the foot is fused)
+    m = _munpin(m, *lj["B_outer"], 7.5, 12.0)      # the head pin: the inner finger turns on a dowel here
+    m = _D(m, *[_mcyl(y, z, BORE / 2, 60) for y, z in ((0.0, 0.0), tuple(lj["B_outer"]))])
+    return mesh_solid(m)
+
+
+def inner_knuckle_85():
+    lj = _local_joints()
+    m = _munpin(closed(mesh("85_inner_knuckle")), *lj["E_knuckle"], 7.5, 12.0)
+    u = np.array(kin.g()["knuckle_arm"])
+    cuts = [_mcyl(y, z, BORE / 2, 60) for y, z in ((0.0, 0.0), tuple(lj["E_knuckle"]))]
+    cuts += [_mcyl(*(u * d), 1.7, 60) for d in KEY_AT]
+    return mesh_solid(_D(m, *cuts))
+
+
+def inner_finger_85():
+    return mesh_solid(_inner_finger_85_mesh())
+
+
+def _inner_finger_85_mesh():
+    lj = _local_joints()
+    m = closed(mesh("85_inner_finger"))
+    m = _D(m, _mfaces(0.0, 0.0, 7.2, 7.2), _mfaces(*lj["E_finger"], 7.2, 7.2))   # 0.3 mm running clearance
+    cuts = [_mcyl(y, z, BORE / 2, 60) for y, z in ((0.0, 0.0), tuple(lj["E_finger"]))]
+    for z in PAD85_SCREWS:                               # M2 clearance + a counterbore on the plate's back
+        cuts += [_mcyl(-15.0, z, 1.2, 12.0, axis="y"), _mcyl(-11.9, z, 2.1, 3.0, axis="y")]
+    return _D(m, *cuts)
+
+
+def _pad85():
+    (cx, cy, cz), (sx, sy, sz) = kin.g()["pad_local"]
+    return cy + sy / 2, cy - sy / 2, cz, sx, sz           # back face (on the finger), front face, centre z, w, l
+
+
+def pad_core_85():
+    back, front, cz, w, l = _pad85()
+    c = _mbox((0, (back + front + PAD85_SKIN) / 2, cz), (w, back - front - PAD85_SKIN, l))
+    pilots = [_mcyl(back - 1.5, z, 0.8, 3.01, axis="y") for z in PAD85_SCREWS]   # Ø1.6 pilots for the M2 screws
+    return mesh_solid(_D(c, closed(mesh("85_inner_finger")), *pilots))           # clear of the finger's foot
+
+
+def pad_skin_85():
+    back, front, cz, w, l = _pad85()
+    return Pos(0, front + PAD85_SKIN / 2, cz) * Box(w, PAD85_SKIN, l)
+
+
 def _pad_box():
     g = kin.g()
     pw, pl, pt = g["pad_size"]
@@ -194,9 +314,11 @@ def _pad_box():
 
 def pad_core():
     """PETG back of the pad (the URDF box minus the TPU face), screwed to the inner finger."""
+    if M == "85":
+        return pad_core_85()
     pw, pl, pt, py, pz = _pad_box()
     top = pz + pt / 2
-    top = min(top, mesh("140_inner_finger").bounds[0, 2])         # flush with the finger's face (0.43 mm under)
+    top = min(top, mesh(f"{M}_inner_finger").bounds[0, 2])         # flush with the finger's face (0.43 mm under)
     bot = pz - pt / 2 + PAD_SKIN
     c = Pos(0, py, (top + bot) / 2) * Box(pw, pl, top - bot)
     for y in PAD_SCREWS:
@@ -205,6 +327,8 @@ def pad_core():
 
 
 def pad_skin():
+    if M == "85":
+        return pad_skin_85()
     pw, pl, pt, py, pz = _pad_box()
     z0 = pz - pt / 2
     return Pos(0, py, z0 + PAD_SKIN / 2) * Box(pw, pl, PAD_SKIN)

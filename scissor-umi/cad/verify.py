@@ -120,7 +120,7 @@ def camera():
 if __name__ == "__main__":
     print("1. gears over the stroke")
     gears()
-    print("2. jaws vs the robot's 2F-140 (Robotiq meshes)")
+    print(f"2. jaws vs the robot's {kin.GRIPPER.upper()} (Robotiq meshes)")
     jaws()
     print("3. camera on the handheld vs on the robot")
     camera()
