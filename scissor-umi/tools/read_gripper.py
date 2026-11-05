@@ -1,7 +1,7 @@
 """Read the Scissor-UMI's jaw opening from its Pico over USB serial.
 
     python read_gripper.py                     # print q (rad), width (mm) and the record flag
-    python read_gripper.py --calibrate         # guided: open stop, then pads touching
+    python read_gripper.py --calibrate         # guided: open stop, then the closed stop
     python read_gripper.py --port /dev/ttyACM0
 
 Needs pyserial. The Pico runs firmware/pico/main.py.
@@ -40,7 +40,7 @@ def main():
     ser = serial.Serial(a.port or find_port(), 115200, timeout=1)
     if a.calibrate:
         for cmd, prompt in (("open", "Open the jaws fully (handles on the open stop), then press Enter"),
-                            ("closed", "Close the jaws (pads touching), then press Enter")):
+                            ("closed", "Close the jaws fully (handles against the closed stop), then press Enter")):
             input(prompt)
             ser.write((cmd + "\n").encode())
             time.sleep(0.2)

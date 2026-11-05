@@ -1,4 +1,4 @@
-"""README renders (pyvista, off screen) to ../2f-140/img/ (or --out).
+"""README renders (pyvista, off screen) to ../<gripper>/img/ (or --out).
 
     python render.py              # all
     python render.py hero robot   # some
@@ -81,7 +81,7 @@ def hero():
 def robot():
     p = plotter()
     place(p, A.robot(0.25))                     # the real gripper, the team's camera plate and the D405
-    shot(p, "robot_2f140.png", tuple(np.array([60, 0, 60]) + VIEW * 1.4), (60, 0, 60), zoom=1.25)
+    shot(p, f"robot_{kin.GRIPPER.replace('-', '')}.png", tuple(np.array([60, 0, 60]) + VIEW * 1.4), (60, 0, 60), zoom=1.25)
 
 
 def twins():

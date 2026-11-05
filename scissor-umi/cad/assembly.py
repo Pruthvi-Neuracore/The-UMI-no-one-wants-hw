@@ -15,7 +15,7 @@ import scissor as S
 
 CACHE = S.BUILD / "cache"
 QUEST_DIR = S.SRC / "quest"
-ROBOTIQ_DIR = S.SRC / "robotiq_2f_140"
+ROBOTIQ_DIR = S.SRC / f"robotiq_2f_{kin.g()['mesh']}"
 
 COLOURS = {"blue": "#1f5fae", "white": "#f4f6f8", "tpu": "#1b1c1f", "camera": "#1d1f22", "steel": "#b9bec5",
            "quest": "#3b3f45", "robotiq": "#2a2c30", "robotiq_metal": "#9aa1a9", "record": "#2e9e44"}
@@ -28,12 +28,13 @@ HANDHELD = {
     "ebox_cover": ("ebox_cover", "white"),
 }
 # the 2F-140 jaw replicas (same colours as the robot render: metal-grey links, dark finger and pad)
+TAG = kin.GRIPPER.replace("-", "")                   # 2f140 / 2f85
 for _s in ("left", "right"):
-    HANDHELD.update({f"outer_link_{_s}": ("outer_link_2f140", "robotiq_metal"),
-                     f"inner_knuckle_{_s}": ("inner_knuckle_2f140", "robotiq_metal"),
-                     f"inner_finger_{_s}": ("inner_finger_2f140", "robotiq"),
-                     f"pad_core_{_s}": ("pad_core_2f140", "robotiq"),
-                     f"pad_skin_{_s}": ("pad_skin_2f140", "tpu")})
+    HANDHELD.update({f"outer_link_{_s}": (f"outer_link_{TAG}", "robotiq_metal"),
+                     f"inner_knuckle_{_s}": (f"inner_knuckle_{TAG}", "robotiq_metal"),
+                     f"inner_finger_{_s}": (f"inner_finger_{TAG}", "robotiq"),
+                     f"pad_core_{_s}": (f"pad_core_{TAG}", "robotiq"),
+                     f"pad_skin_{_s}": (f"pad_skin_{TAG}", "tpu")})
 HANDHELD.update({"servo_coupler": ("servo_coupler", "white"), "tab_mast": ("tab_mast", "blue"),
                  "grip_tpu_a": ("grip_tpu_a", "blue"), "grip_tpu_b": ("grip_tpu_b", "blue")})
 
@@ -60,7 +61,27 @@ def step_mesh(name):
     if not p.exists() or p.stat().st_mtime < src.stat().st_mtime:
         CACHE.mkdir(parents=True, exist_ok=True)
         export_stl(import_step(str(src)), str(p), tolerance=0.03, angular_tolerance=0.15)
-    return trimesh.load(p)
+    return _closed(trimesh.load(p))
+
+
+def _closed(m):
+    """Weld and close a tessellated part (OCC's STL can leave split seams and tiny holes) so booleans can use it."""
+    if not m.is_volume:
+        m.merge_vertices()
+        m.update_faces(m.nondegenerate_faces())
+        m.remove_unreferenced_vertices()
+        trimesh.repair.fill_holes(m)
+        trimesh.repair.fix_normals(m)
+    if not m.is_volume:                                        # close the last seams (manifold3d's vertex merge)
+        import manifold3d as mf
+        mm = mf.Mesh(vert_properties=np.asarray(m.vertices, np.float32), tri_verts=np.asarray(m.faces, np.uint32))
+        mm.merge()
+        out = mf.Manifold(mm).to_mesh()
+        c = trimesh.Trimesh(out.vert_properties[:, :3], out.tri_verts)
+        if c.is_volume:
+            c.visual = m.visual if len(m.visual.face_colors) == len(c.faces) else c.visual
+            m = c
+    return m
 
 
 def _T(loc):
@@ -137,7 +158,7 @@ def servo_mesh():
 
 def controller(side="right"):
     import quest
-    m = quest.controller_mesh(side)
+    m = _closed(quest.controller_mesh(side))
     m.visual.face_colors = _hex("quest")
     return m
 
@@ -152,7 +173,7 @@ def _tr(p):
 
 
 def robotiq(q):
-    """The Robotiq 2F-140 posed at q in G (meshes from source/robotiq_2f_140, in metres -> mm)."""
+    """The robot's Robotiq gripper posed at q in G (meshes from source/robotiq_2f_<140|85>, in mm)."""
     g = kin.g()
 
     def load(n):
@@ -168,19 +189,20 @@ def robotiq(q):
     out["robotiq_base"] = load("base_link")
     a = kin.link_angle(q)
     af = kin.link_angle(0.0) + g["finger_angle"]
+    M, F = g["mesh"], (np.diag([-1.0, -1.0, 1.0, 1.0]) if g["mesh_mirror"] else np.eye(4))
     for side, Rs in (("left", np.eye(4)), ("right", trimesh.transformations.rotation_matrix(math.pi, [0, 0, 1]))):
         j = kin.joints(q)
-        To = _tr([0, *g["outer_pivot"]]) @ _rx(a)
-        out[f"robotiq_outer_knuckle_{side}"] = load("140_outer_knuckle").apply_transform(Rs @ To)
-        out[f"robotiq_outer_finger_{side}"] = load("140_outer_finger").apply_transform(
-            Rs @ To @ _tr([0, *g["outer_to_finger"][0]]))
-        out[f"robotiq_inner_knuckle_{side}"] = load("140_inner_knuckle").apply_transform(
-            Rs @ _tr([0, *g["inner_pivot"]]) @ _rx(a))
-        out[f"robotiq_inner_finger_{side}"] = load("140_inner_finger").apply_transform(Rs @ _tr([0, *j["B"]]) @ _rx(af))
-        pw, pl, pt = g["pad_size"]
-        pad = trimesh.creation.box([pw, pl, pt])
-        out[f"robotiq_pad_{side}"] = pad.apply_transform(
-            Rs @ _tr([0, *j["B"]]) @ _rx(af) @ _tr([0, *g["pad_offset"]]))
+        To = _tr([0, *g["outer_pivot"]]) @ _rx(a) @ F
+        out[f"robotiq_outer_knuckle_{side}"] = load(f"{M}_outer_knuckle").apply_transform(Rs @ To)
+        out[f"robotiq_outer_finger_{side}"] = load(f"{M}_outer_finger").apply_transform(
+            Rs @ To @ _tr([0, *kin.local(g["outer_to_finger"][0])]))
+        out[f"robotiq_inner_knuckle_{side}"] = load(f"{M}_inner_knuckle").apply_transform(
+            Rs @ _tr([0, *g["inner_pivot"]]) @ _rx(a) @ F)
+        Tf = Rs @ _tr([0, *j["B"]]) @ _rx(af) @ F
+        out[f"robotiq_inner_finger_{side}"] = load(f"{M}_inner_finger").apply_transform(Tf)
+        (c, size) = g["pad_local"]
+        pad = trimesh.creation.box(size)
+        out[f"robotiq_pad_{side}"] = pad.apply_transform(Tf @ _tr(c))
     for n, m in out.items():
         m.visual.face_colors = _hex("robotiq_metal" if "knuckle" in n or "outer_finger" in n else "robotiq")
     return out
@@ -226,7 +248,7 @@ CONTACT_OK = {frozenset(p) for p in (("pad_skin_left", "pad_skin_right"), ("hand
 def check(steps=8):
     """Interference between every pair of parts of the handheld (Quest included) over the stroke, and of the robot
     build's camera and plate with the gripper."""
-    bad = []
+    bad, unchecked = [], set()
     for side in ("right", "left"):
         for q in np.linspace(0, kin.g()["q_max"], steps):
             a = handheld(q, side)
@@ -234,6 +256,12 @@ def check(steps=8):
             for i in range(len(keys)):
                 for k in keys[i + 1:]:
                     v = _overlap(a[keys[i]], a[k])
+                    if v != v:                                 # a mesh that is not a closed volume: say so
+                        lo = np.maximum(a[keys[i]].bounds[0], a[k].bounds[0])
+                        hi = np.minimum(a[keys[i]].bounds[1], a[k].bounds[1])
+                        if np.all(lo <= hi):
+                            unchecked.add((keys[i], k))
+                        continue
                     if v > 1.0:
                         bad.append((side, round(float(q), 3), keys[i], k, round(v, 1)))
     for q in (0.0, kin.g()["q_max"]):
@@ -244,6 +272,8 @@ def check(steps=8):
                     v = _overlap(r[e], m)
                     if v > 1.0:
                         bad.append(("robot", q, "robot:" + e, k, round(v, 1)))
+    if unchecked:
+        print("NOT CHECKED (a mesh is not a closed volume):", sorted(unchecked))
     real = [b for b in bad if frozenset(b[2:4]) not in CONTACT_OK]
     for b in bad:
         print("overlap", b, "(expected contact)" if b not in real else "")

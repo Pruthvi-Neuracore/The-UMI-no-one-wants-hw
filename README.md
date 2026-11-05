@@ -60,6 +60,7 @@ materials, wiring and renders.
 | Para-UMI · D405 | D405 + Quest Touch Pro | HandUMI as-is | [`pg-chopstick/d405/para-umi/`](pg-chopstick/d405/para-umi/) |
 | Hand · D405 | D405 + Quest Touch Pro | Your hand (wrist mount, palm button) | [`pg-chopstick/d405/hand/`](pg-chopstick/d405/hand/) |
 | Scissor-UMI · 2F-140 | D405 + Quest Touch Pro | Scissor handles, printed Robotiq 2F-140 jaws (left- and right-hand builds); robot twin = the real 2F-140 | [`scissor-umi/2f-140/`](scissor-umi/2f-140/) |
+| Scissor-UMI · 2F-85 | D405 + Quest Touch Pro | The same, with printed Robotiq 2F-85 jaws; robot twin = the real 2F-85 | [`scissor-umi/2f-85/`](scissor-umi/2f-85/) |
 
 Each folder has a README with renders and build steps, a bill of materials (`bom.md`), the wiring
 (`electronics.md`), every part as STEP (and STL for HandUMI and PG Chopstick), and the URDFs.
@@ -74,6 +75,7 @@ hardware for it, to scale.
 | HandUMI | [`handumi/docs/assembly_guide/`](handumi/docs/assembly_guide/ASSEMBLY.md) ([PDF](handumi/docs/assembly_guide/assembly.pdf)) |
 | Chop-UMI · D405 + Quest | [`pg-chopstick/d405/chop-umi/assembly_guide/`](pg-chopstick/d405/chop-umi/assembly_guide/ASSEMBLY.md) ([PDF](pg-chopstick/d405/chop-umi/assembly_guide/assembly.pdf)) |
 | Scissor-UMI · 2F-140 | [`scissor-umi/2f-140/assembly/`](scissor-umi/2f-140/assembly/ASSEMBLY.md) ([PDF](scissor-umi/2f-140/assembly/assembly.pdf)) |
+| Scissor-UMI · 2F-85 | [`scissor-umi/2f-85/assembly/`](scissor-umi/2f-85/assembly/ASSEMBLY.md) ([PDF](scissor-umi/2f-85/assembly/assembly.pdf)) |
 
 <p align="center"><img src="pg-chopstick/d405/chop-umi/assembly_guide/step_04.png" alt="Chop-UMI assembly, step 4: joining the jaws to the base" width="420"> <img src="handumi/docs/assembly_guide/step_03.png" alt="HandUMI assembly, step 3: the encoder and linkage" width="420"></p>
 
@@ -98,7 +100,8 @@ scissor-umi/          Scissor-UMI: 2f-140/ (STEP, img, urdf, BOM, wiring, NOTICE
 | `main` | Everything above: the files you print and build from |
 | [`cad`](../../tree/cad) | The build code (Python, build123d) for both projects |
 | [`pg-chopstick-x5`](../../tree/pg-chopstick-x5), [`pg-chopstick-d405`](../../tree/pg-chopstick-d405) | One PG Chopstick camera kit each, with its code |
-| [`2f-140`](../../tree/2f-140) | Everything on `main` plus Scissor-UMI for the Robotiq 2F-140, with its code and firmware (2F-85 next) |
+| [`2f-140`](../../tree/2f-140) | Everything on `main` plus Scissor-UMI for the Robotiq 2F-140, with its code and firmware |
+| [`2f-85`](../../tree/2f-85) | `2f-140` plus Scissor-UMI for the Robotiq 2F-85 (same code, `SCISSOR_GRIPPER=2f-85`) |
 
 ## Licences
 

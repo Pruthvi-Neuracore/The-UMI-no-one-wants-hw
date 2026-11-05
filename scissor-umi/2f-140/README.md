@@ -120,7 +120,7 @@ direction, y is the opening direction and x points up.
 | Gear meshes over the whole stroke (sync, handle A, handle B), from sections of the real parts | engaged throughout, 0 tooth interference, backlash 1.8° (sync) and 0.9° (handles) |
 | Handheld jaws vs Robotiq's 2F-140 meshes on the robot at q = 0, 0.35, 0.7 | median surface distance 0.00 mm for every part; pads within 0.43 mm |
 | Camera: handheld tab (`tab_mast` STEP) vs the robot's camera plate tab (`ur_camera_plate` STEP) | faces 0.000° and 0.000 mm apart, all six holes within 0.000 mm, so the same D405 pose |
-| Interference between every pair of parts over the stroke (handles, grips, gears, jaws, servo, Pico, hub, IMU, box, mast, hood, D405, Quest arm and controller), and the robot's plate and D405 vs the gripper | none; the pads meet at q = 0.7 |
+| Interference between every pair of parts over the stroke (handles, grips, gears, jaws, servo, Pico, hub, IMU, box, mast, hood, D405, Quest arm and controller), and the robot's plate and D405 vs the gripper | none, with every part checked as a closed volume; the pads meet at q = 0.7 |
 
 The 2F-140's pad faces are 128.6 mm apart at q = 0 in Robotiq's URDF (the 140 mm on the datasheet is measured
 elsewhere on the finger). Both builds match the URDF.

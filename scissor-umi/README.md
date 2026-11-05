@@ -58,7 +58,11 @@ Details, BOM and wiring are in
 | Robot gripper | Folder | Status |
 |---|---|---|
 | Robotiq 2F-140 | [`2f-140/`](2f-140/README.md) | first version, for review |
-| Robotiq 2F-85 | (next) | add its entry to `GRIPPERS` in `cad/kin.py` |
+| Robotiq 2F-85 | [`2f-85/`](2f-85/README.md) | first version, for review (branch `2f-85`) |
+
+Build one or the other with `SCISSOR_GRIPPER=2f-85` or `SCISSOR_GRIPPER=2f-140` before `python cad/package.py`.
+
+<p align="center"><img src="2f-85/img/hero.png" alt="Scissor-UMI for the Robotiq 2F-85" width="420"> <img src="2f-85/img/robot_2f85.png" alt="Robotiq 2F-85 with the UR camera plate and the D405" width="420"></p>
 
 ## Build
 

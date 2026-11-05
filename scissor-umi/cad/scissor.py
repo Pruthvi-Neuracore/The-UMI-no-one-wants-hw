@@ -49,12 +49,12 @@ L1 = (-11.5, -4.2)
 L2 = (-3.7, 3.7)
 L3 = (4.2, 11.5)
 TOP = (20.5, 25.5)
-CLEVIS = 12.2                     # the inner knuckle's prongs start at |x| = 12.2 (its base end)
+CLEVIS = kin.g()["clevis"]          # the inner knuckle's base prongs start at |x| = CLEVIS
 CLR = 0.5                         # radial clearance around moving parts
 
 PIN_D = 4.0                       # Ø4 x 50 mm steel dowels at the base pivots
 PIN_BORE = 4.2                    # running fit in the moving parts
-P1_SPACER = 5.2                   # the plates' bosses on the outer pivot reach in to the outer knuckle's hub (±4.9)
+P1_SPACER = kin.g()["p1_hub"] + 0.3   # the plates' bosses on the outer pivot reach in to the outer knuckle's hub
 
 # ---- gears ---------------------------------------------------------------------------------------------------------
 MODULE = 1.27
@@ -105,7 +105,8 @@ HUB_H_R = 5.0                     # handle A's lower hub: bearing in the bottom 
 HEX_AF = 7.5
 
 # ---- plates, electronics, servo ------------------------------------------------------------------------------------
-STANDOFFS = [(0.0, 77.0), (-44.0, 40.0), (44.0, 40.0), (-35.0, 2.0), (35.0, 2.0)]
+_ZR = kin.g()["rear_standoff_z"]
+STANDOFFS = [(0.0, 77.0), (-44.0, 40.0), (44.0, 40.0), (-35.0, _ZR), (35.0, _ZR)]
 STANDOFF_R = 5.0
 EBOX = dict(x=(BOT[0] - 45.5, BOT[0]), y=34.5, z=(4.0, 72.0), wall=2.4)   # under the bottom plate
 # Feetech STS3215 as the jaw encoder (torque off), coaxial with the scissor axle under the bottom plate: its horn is
@@ -267,8 +268,7 @@ def knuckle_gear(side="left"):
     sync = (full & arc(to_other)) + C(P2, HUB_R)
     drive = (full & arc(to_handle)) + C(P2, HUB_R)
     # lobe along the knuckle's arm (inside the clevis, up to where its web starts), carrying the key inserts
-    a0 = kin.link_angle(0.0)
-    arm = np.array([math.cos(a0), math.sin(a0)]) * np.array([s, 1])        # local +y of the knuckle, in (y, z)
+    arm = kin.mesh_to_base() @ np.array(kin.g()["knuckle_arm"]) * np.array([s, 1])   # the knuckle's arm, in (y, z)
     lobe = bar(P2, P2 + arm * (replica.KEY_AT[1] + 2.0), 11.0)   # ends 1.3 mm short of the knuckle's web
     lay_drive = L1 if side == "left" else L3
     xr = (-CLEVIS + 0.25, L2[1]) if side == "left" else (L2[0], CLEVIS - 0.25)
@@ -282,11 +282,12 @@ def knuckle_gear(side="left"):
 
 
 def handle_angles():
-    """World angles (deg) of handle A's tail at q = 0 (open) and q_max (closed); handle B is its mirror."""
+    """World angles (deg) of handle A's tail at q = 0 (open) and q_max (closed); handle B is its mirror. The open
+    angle is the 2F-140's (where the grips clear the standoffs and the box); a longer stroke closes further."""
     half = LOOP_GAP_CLOSED / 2
-    closed = -180 + math.degrees(math.acos(half / LOOP_DIST))      # loop on the -y side, behind the axle
-    opened = closed - math.degrees(kin.g()["q_max"]) * R_K / R_H
-    return opened, closed
+    closed140 = -180 + math.degrees(math.acos(half / LOOP_DIST))   # loop on the -y side, behind the axle
+    opened = closed140 - math.degrees(kin.g("2f-140")["q_max"]) * R_K / R_H - kin.g()["open_extra"]
+    return opened, opened + math.degrees(kin.g()["q_max"]) * R_K / R_H
 
 
 def _unit(deg):
@@ -608,7 +609,7 @@ def _replica(name):
 
 
 for _n in ("outer_link", "inner_knuckle", "inner_finger", "pad_core", "pad_skin"):
-    PARTS[f"{_n}_2f140"] = _replica(_n)
+    PARTS[f"{_n}_{kin.GRIPPER.replace('-', '')}"] = _replica(_n)
 
 
 def build_all(names=None):
