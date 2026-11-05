@@ -54,8 +54,10 @@ def steps():
              note="Lay the switch's wire in the index link's channel, press the switch in and push the TPU cover "
                   "over it.", view=(-0.6, -0.9, -0.9), zoom=1.3),
         Step("Tips", ["tip_index", "tip_thumb"], {"tip_index": -X * 60, "tip_thumb": -X * 60},
-             [HW("screw", "M2 screws + nuts", 4, dia=2, length=8)],
-             note="Screw the tip set for your robot (here: Robotiq Hand-E) onto the two links."),
+             [HW("screw", "M3 × 10", 4, length=10), HW("pin", "Ø2 × 6 dowel (optional)", 2, dia=2, length=6)],
+             note="Screw your robot's fingers onto the two links with the robot's own screws (here: Robotiq Hand-E, "
+                  "2 × M3 × 10 each, into the Hand-E holes at opposite ends of the two flanges). Piper: 4 × M2 × 10; "
+                  "YAM: 2 × M4 × 10; OpenArm: 4 × M2.5 × 8. Real Robotiq fingers go on over Hand-E-Rack-Shim."),
         Step("Electronics", ["pico2", "imu", "usb3_hub"], {"pico2": Y * 50, "imu": Y * 40, "usb3_hub": Y * 30},
              [HW("screw", "M2 screws (Pico)", 4, dia=2, length=6)], show=["electronics_box"], view=(0.5, 1.0, -0.6),
              note="Fit the Pico 2, the IMU and the USB 3 hub in the electronics box and wire them as in "
@@ -66,11 +68,11 @@ def steps():
              [HW("screw", "M3 × 8", 4, length=8), HW("screw", "M3 × 6 (lid)", 4, length=6),
               HW("insert", "M3 heat-set insert", 8, dia=4, length=5)], view=BACK,
              note="Screw the box to the support's arm (4 × M3 × 8), then close the lid (4 × M3 × 6 into inserts)."),
-        Step("Camera", ["camera_mount", "d405"], {"camera_mount": Y * 50, "d405": Y * 50 - X * 50},
-             [HW("screw", "M3 × 5", 2, length=5), HW("screw", "M4 × 30 + nyloc nut", 1, dia=4, length=30,
-                                                     head="socket")],
-             note="Screw the D405 into its cup (2 × M3 × 5 into its rear holes). Hang the cup on the hinge with the M4 "
-                  "× 30 bolt and nyloc nut, set the tilt and tighten."),
+        Step("Camera", ["d405", "camera_hood"], {"d405": -X * 21 - Y * 45, "camera_hood": -X * 42 - Y * 90},
+             [HW("screw", "M3 × 6", 2, length=6), HW("screw", "M3 × 8", 2, length=8)],
+             note="Set the D405's back on the tab at the end of the camera post and screw it on from behind "
+                  "(2 × M3 × 6 into its rear holes; no longer, the threads are 4 mm deep). Slide the hood over it and "
+                  "screw it to the tab through its two ears (2 × M3 × 8). Run the cable out of the top window."),
         Step("Controller support", ["controller_support"], {"controller_support": X * 70}, view=BACK,
              note="Bolt the controller support to the back of the main support and push the Quest controller "
                   "into its ring."),
@@ -81,7 +83,7 @@ PARTS = [("main_support", "main_support", 1), ("main_support_cover_plate", "main
          ("hand_support_base", "hand_support_base", 1), ("index_link", "index_link", 1),
          ("thumb_link", "thumb_link", 1), ("crank_mechanism_plate", "crank_mechanism_plate", 1),
          ("connecting_link_1", "connecting_link_1", 1), ("connecting_link_2", "connecting_link_2", 1),
-         ("camera_mount", "camera_mount", 1), ("electronics_box", "electronics_box", 1),
+         ("camera_hood", "d405_hood", 1), ("electronics_box", "electronics_box", 1),
          ("electronics_lid", "electronics_lid", 1), ("controller_support", "controller_support", 1),
          ("tip_index", "tip_index (your tip set)", 1), ("tip_thumb", "tip_thumb (your tip set)", 1),
          ("button_cover", "button_cover_tpu", 1)]

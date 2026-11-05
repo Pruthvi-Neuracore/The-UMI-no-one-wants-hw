@@ -16,7 +16,7 @@ materials, wiring and renders.
 
 <table>
 <tr>
-<td align="center" width="33%"><a href="handumi/README.md"><img src="handumi/docs/img/hero.png" alt="HandUMI: hand-worn parallel gripper with a RealSense D405 on a tilting wrist hinge" width="300"></a><br><b><a href="handumi/README.md">HandUMI</a></b><br>The original: a hand-worn parallel gripper with a D405 on a tilting hinge, a record button under your index finger and one USB cable.</td>
+<td align="center" width="33%"><a href="handumi/README.md"><img src="handumi/docs/img/hero.png" alt="HandUMI: hand-worn parallel gripper with a RealSense D405 fixed on its camera post" width="300"></a><br><b><a href="handumi/README.md">HandUMI</a></b><br>The original: a hand-worn parallel gripper with a fixed D405, finger flanges that take the real fingers of the Piper, Hand-E, YAM and OpenArm, a record button and one USB cable.</td>
 <td align="center" width="33%"><a href="pg-chopstick/insta360_x5/chop-umi/README.md"><img src="pg-chopstick/insta360_x5/chop-umi/img/hero.png" alt="Chop-UMI: geared chopstick jaws with an Insta360 X5" width="300"></a><br><b><a href="pg-chopstick/insta360_x5/chop-umi/README.md">Chop-UMI</a></b><br>Geared chopstick jaws you pinch, with an elastic finger sleeve and a record button. Robot twins for OpenArm and any ISO 50 flange.</td>
 <td align="center" width="33%"><a href="pg-chopstick/insta360_x5/para-umi/README.md"><img src="pg-chopstick/insta360_x5/para-umi/img/parallel.png" alt="Para-UMI: the HandUMI T-plate gripper with an Insta360 X5 on its camera post" width="300"></a><br><b><a href="pg-chopstick/insta360_x5/para-umi/README.md">Para-UMI</a></b><br>HandUMI's parallel gripper with the camera of your choice, swappable tips, and a camera post for each robot.</td>
 </tr>
@@ -52,7 +52,7 @@ materials, wiring and renders.
 
 | Device | Camera | Gripper | Folder |
 |---|---|---|---|
-| HandUMI | RealSense D405 | Parallel, T-plate | [`handumi/`](handumi/) |
+| HandUMI | RealSense D405, fixed | Parallel, T-plate; bolts on Piper, Hand-E, YAM or OpenArm fingers | [`handumi/`](handumi/) |
 | Chop-UMI · X5 | Insta360 X5 | Geared chopsticks | [`pg-chopstick/insta360_x5/chop-umi/`](pg-chopstick/insta360_x5/chop-umi/) |
 | Para-UMI · X5 | Insta360 X5 | HandUMI, X5 cradle on its hinge | [`pg-chopstick/insta360_x5/para-umi/`](pg-chopstick/insta360_x5/para-umi/) |
 | Hand · X5 | Insta360 X5 | Your hand (wrist mount, palm button) | [`pg-chopstick/insta360_x5/hand/`](pg-chopstick/insta360_x5/hand/) |
