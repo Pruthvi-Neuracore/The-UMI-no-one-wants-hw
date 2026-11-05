@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 HERE = Path(__file__).resolve().parent
 MEDIA = HERE.parent / "docs" / "media"
 W, H, FPS = 1280, 720, 24
-BG = (27, 35, 40)
+BG = (232, 237, 242)
 ORDER = [("insta360_x5", "x5_chopstick"), ("insta360_x5", "x5_parallel"), ("insta360_x5", "x5_docking"),
          ("insta360_x5", "x5_hand"), ("d405", "d405_chopstick"), ("d405", "d405_parallel"), ("d405", "d405_hand")]
 FADE = 0.5
@@ -35,9 +35,9 @@ def font(size, bold=False):
 def card(path, title, lines, seconds):
     im = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(im)
-    d.text((W / 2, H / 2 - 60), title, fill="white", font=font(64, True), anchor="mm")
+    d.text((W / 2, H / 2 - 60), title, fill=(27, 35, 40), font=font(64, True), anchor="mm")
     for i, line in enumerate(lines):
-        d.text((W / 2, H / 2 + 20 + i * 40), line, fill=(159, 179, 200), font=font(26), anchor="mm")
+        d.text((W / 2, H / 2 + 20 + i * 40), line, fill=(79, 98, 114), font=font(26), anchor="mm")
     png = path.with_suffix(".png")
     im.save(png)
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-loop", "1", "-i", str(png), "-t", str(seconds), "-r", str(FPS),

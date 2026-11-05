@@ -145,8 +145,11 @@ QUEST_PLATE = dict(x=(-44.0, -38.0), y=24.0, z=(-24.0, 22.0))  # quest_arm's pla
 QUEST_UNDER = 12.0                 # the handle's end hangs this far below the ring
 # The ring's oval opening is set at an angle to HandUMI's arm. The Touch Pro's handle fits it best turned 55° to the
 # arm (0.4 mm all round, no overlap; searched over yaw and depth), so the support is turned 55° about the ring's axis
-# and the controller's face still looks straight forward.
+# and the controller sits as held: trigger forward, face back.
 SUPPORT_YAW = 55.0
+# held the right way round (trigger forward) the handle's section is the other way round in the oval ring: turned a
+# further 5.5° about the ring's axis it clears the ring again (searched: 6.8 mm3 of overlap at 0°, none at -6°)
+QUEST_TWIST = -5.5
 
 
 def _matrix(m):
@@ -247,7 +250,8 @@ QUEST_STL = Path(__file__).resolve().parent / "source" / "quest" / "MetaQuestTou
 
 def controller_envelope(side="right"):
     """The Meta Quest Touch Pro controller standing in HandUMI's ring: handle upright through the ring, centred in it,
-    head above, turned so its face (thumbstick, buttons) looks forward over the gripper. The left hand's is the mirror
+    head above, turned the way a hand holds it: trigger and ring forward over the gripper, the face (thumbstick,
+    buttons) back towards the operator. The left hand's is the mirror
     image (the left controller). Uses Meta's model in source/quest/ (not redistributed, see source/quest/README.md);
     without it, a capsule-and-block stand-in of the same size."""
     import numpy as np
@@ -258,11 +262,12 @@ def controller_envelope(side="right"):
         h = v[v[:, 1] > 15.0] - v[v[:, 1] > 15.0].mean(0)      # the handle (the head disc sits at -y)
         a = np.linalg.eigh(h.T @ h)[1][:, -1]
         a = a if a[2] > 0 else -a                              # handle axis, towards the head
-        fwd = np.array([0.0, 1.0, 0.0])                        # the face (buttons) looks towards +y: forward
+        fwd = np.array([0.0, 1.0, 0.0])                        # the model's face (buttons) looks towards its +y
         fwd = fwd - fwd.dot(a) * a
         fwd /= np.linalg.norm(fwd)
         R = np.eye(4)
-        R[:3, :3] = np.column_stack([fwd, np.cross(a, fwd), a]).T
+        # as held: the face looks back (-X, up at the operator), the trigger and the ring forward (+X) over the jaws
+        R[:3, :3] = np.column_stack([-fwd, -np.cross(a, fwd), a]).T
         m.apply_transform(R)
         # stand the handle's straight part (20-50 mm up from its end) exactly upright, so it passes straight through
         # the ring
@@ -279,9 +284,12 @@ def controller_envelope(side="right"):
     cx, cy = (_matrix(t_support()) @ [*RING_C, 0, 1])[:2]
     z_lo, z_hi = _ring_mesh().bounds[:, 2]
     m.apply_translation([0, 0, z_lo - QUEST_UNDER - m.vertices[:, 2].min()])
-    for _ in range(3):                                         # centre the handle's section inside the ring
+    import trimesh
+    for k in range(3):                                         # centre the handle's section inside the ring
         b = m.vertices[(m.vertices[:, 2] > z_lo) & (m.vertices[:, 2] < z_hi)]
         m.apply_translation([cx - (b[:, 0].min() + b[:, 0].max()) / 2, cy - (b[:, 1].min() + b[:, 1].max()) / 2, 0])
+        if k == 0:
+            m.apply_transform(trimesh.transformations.rotation_matrix(math.radians(QUEST_TWIST), [0, 0, 1], [cx, cy, 0]))
     if side == "left":
         m.apply_transform(np.diag([1.0, -1.0, 1.0, 1.0]))
         m.invert()
@@ -289,7 +297,8 @@ def controller_envelope(side="right"):
 
 
 def _controller_standin():
-    """A stand-in for the controller when Meta's model isn't in source/quest/ (handle along z, head leaning to +x)."""
+    """A stand-in for the controller when Meta's model isn't in source/quest/ (handle along z, head leaning to +x, the
+    trigger side, forward)."""
     import trimesh
     from shapely.geometry import box as rect
     handle = trimesh.creation.capsule(height=70.0, radius=17.0, count=[32, 32])

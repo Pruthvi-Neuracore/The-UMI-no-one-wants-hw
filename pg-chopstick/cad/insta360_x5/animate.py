@@ -1,4 +1,4 @@
-"""Animated overview video segments for the README (dark background, 1280 x 720, 24 fps).
+"""Animated overview video segments for the README (light background, 1280 x 720, 24 fps).
 
     python animate.py /path/to/Neuracore_Robots OUT_DIR [segment ...]
 
@@ -21,7 +21,7 @@ from parts import BUILDS, HERE, load_parts, motion, q_display, side_of
 
 KIT = HERE.name
 W, H, FPS = 1280, 720, 24
-BG = "#1b2328"
+BG = "#e8edf2"
 SIDE = (0.0, 1.0, 0.0)               # look from +Y: the jaws point left, the robot docks from the right
 
 
@@ -58,8 +58,8 @@ class Scene:
         self.actors[name].SetVisibility(bool(on))
 
     def label(self, text, sub=""):
-        self.p.add_text(text, position=(36, H - 64), font_size=20, color="white", name="label")
-        self.p.add_text(sub, position=(36, H - 92), font_size=11, color="#9fb3c8", name="sub")
+        self.p.add_text(text, position=(36, H - 64), font_size=20, color="#1b2328", name="label")
+        self.p.add_text(sub, position=(36, H - 92), font_size=11, color="#4f6272", name="sub")
 
     def camera(self, focal, direction, dist, up=(0, 0, 1)):
         d = np.asarray(direction, float)
@@ -234,24 +234,23 @@ def docking(out, root, family_name, parts, robots=(("ur5", "iso50", "UR5e"), ("a
 
 
 def hand(out, parts, seconds=4.5):
-    """The X5 on the wrist, with a stand-in forearm and hand, turning slowly."""
+    """The X5 on the wrist, on the posed human hand and forearm of the README renders, turning slowly."""
     import hand as Hd
     import pod as PD
     with tempfile.TemporaryDirectory() as tmp:
         sc = Scene(tmp)
         meshes = add_build(sc, "hand", parts)
-        xc = (PD.X0 + PD.X1) / 2
-        a = math.radians(Hd.PITCH)
-        arm = trimesh.creation.capsule(height=230, radius=Hd.R_ARM - 1.0, count=[48, 48])
-        arm.apply_transform(trimesh.transformations.rotation_matrix(math.pi / 2 - a, [0, 1, 0]))
-        z_top = PD.Z_BOT - PD.LID - Hd.MIN_T
-        x1 = xc + Hd.LENGTH / 2
-        arm.apply_translation([x1 - 10 * math.cos(a), 0, z_top - Hd.R_ARM - 10 * math.sin(a) + 1.0])
-        sc.add("arm", arm, "#d8b59a")
+        import render_docs as RD
+        import wrist_scene as W
+        T, k = RD.wrist(parts)
+        wire_to = (PD.X1, -PD.CABLE["y"], PD.CABLE["z"])
+        for j, (m, c) in enumerate(W.human(T, r_saddle=Hd.R_ARM, wire_to=wire_to, **k)):  # the real hand and forearm
+            sc.add(f"human{j}", m, c)
         lo = np.min([m.bounds[0] for m in meshes.values()], axis=0)
         hi = np.max([m.bounds[1] for m in meshes.values()], axis=0)
         c = (lo + hi) / 2
-        dist = 1.9 * np.linalg.norm(hi - lo)
+        c = c + np.array([25.0, 0, -25.0])                     # towards the hand
+        dist = 2.6 * np.linalg.norm(hi - lo)
         sc.label("Hand", "the camera rides on your wrist")
         nf = int(seconds * FPS)
         for i in range(nf):
