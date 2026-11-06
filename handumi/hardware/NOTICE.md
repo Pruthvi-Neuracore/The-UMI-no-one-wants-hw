@@ -33,15 +33,16 @@ Changes in this repository:
 
 - Renamed the part folders to `right/` and `left/` (STEP and STL).
 - `main_support`: restyled `fisheye_camera_main_support` (blended outline, lightening slots, rounded edges), with a new
-  braced camera post ending in a fixed tab for the D405, and two M3 holes for the electronics box. Source:
-  `cad/restyle.py`, `cad/d405_mount.py`.
+  camera arch over the encoder ending in the D405 tab, and two M3 holes for the electronics box. Source:
+  `cad/restyle.py`, `cad/camera.py`.
 - `end_cover`: `main_support_cover_plate` restyled to match.
 - `electronics_box` and `electronics_lid`: a new enclosure for a Raspberry Pi Pico 2, an IMU and a USB 3 hub, replacing
   the servo controller support and cover. Source: `cad/electronics_box.py`.
 - Finger links (`*_thumb_link`, `*_index_middle_finger_link`): finger sleeves, a flange carrying the AgileX Piper,
   Robotiq Hand-E, I2RT YAM and OpenArm v1 finger mounts, and a record-button pocket with a TPU cover
   (`button_cover_tpu`). Source: `cad/finger_link.py`, `cad/finger_interfaces.py`.
-- `d405_hood`: an open frame round the D405 on the main support's tab, replacing `camera_mount`. Source:
-  `cad/d405_mount.py`.
+- `d405_hood` and the 6x M3 tab pattern: Scissor-UMI's (`scissor-umi/cad/head.py`), replacing `camera_mount`.
+- `hardware/{STEP,STL}/robot/hande_camera_plate`: new. Its ring is the team's `ur_camera_plate` (from Scissor-UMI,
+  `cad/source/camera_mount/`), used unchanged; the lobe, the blade and the tab are new. Source: `cad/camera.py`.
 - Every printed part carries a small engraved PG logo (`cad/watermark.py`); the gripper tips do not.
 - The original bill of materials, hardware README and the gripper tips for other robots were removed; `docs/bom.md` is new.

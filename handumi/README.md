@@ -8,11 +8,11 @@ A hand-worn gripper for collecting bimanual manipulation data without a robot in
 **Intel RealSense D405** depth camera on the wrist, an on-board **IMU and Raspberry Pi Pico 2**, a **record button** under
 your index finger, and a single USB cable to your laptop.
 
-- **Fixed depth wrist camera:** the D405 screws straight onto a tab at the end of a braced camera post, with its own
-  2× M3 rear threads, the way it sits on a robot's camera plate (as on Scissor-UMI). A light hood guards it. Nothing
-  turns, so the view can't drift between sessions. It looks forward and down at the fingers (65° below horizontal, about
-  9–10 cm away; the D405's minimum range is 7 cm). The cable leaves through the hood's top window and runs back into the
-  electronics box.
+- **Fixed depth wrist camera, matched to the robot:** as on Scissor-UMI, the D405 sits on a tab, and the robot gets a
+  plate between its flange and the gripper's coupling that carries an identical tab at the same pose relative to the
+  fingers. Here the pair is designed for the Robotiq Hand-E (`hande_camera_plate` on the robot, an arch over the encoder
+  on HandUMI), so the camera sees the jaws the same way on both. Nothing turns, so the view can't drift. It looks down
+  at the fingers from 96 mm (61° below the plate; the D405's minimum range is 7 cm). See [Camera mount](#camera-mount).
 - **Robot finger mounts:** each finger link ends in a flange that carries the real finger mounts of four robots at once:
   AgileX Piper, Robotiq Hand-E, I2RT YAM and OpenArm v1. Each robot's own fingers, or printed copies of them, bolt
   straight on with that robot's screws, and the two jaws meet on the device's centre plane. See
@@ -104,15 +104,40 @@ Robot renders are made from the robots' published descriptions (sources in
 ## Camera mount
 
 <p align="center">
-  <img src="docs/img/camera_mount.png" alt="The D405 on the main support's tab, with the hood, seen from the side and from behind" width="760">
+  <img src="docs/img/twins.png" alt="HandUMI with Hand-E fingers beside the real Robotiq Hand-E on hande_camera_plate: the same D405 on the same tab at the same pose over the fingers" width="900">
+  <br><em>HandUMI and the robot's Hand-E on <code>hande_camera_plate</code>: the same tab, D405 and hood, at the same pose over the fingers.</em>
 </p>
 
-The camera post ends in a 4 mm tab, square to the camera's view. The D405's back sits flat on it, and two M3 × 6 screws
-go up through counterbored holes into the camera's rear threads (2× M3, 20 mm apart). A 10 mm spine under the tab ties it
-into the post. The hood is an open frame round the camera's sides, with no floor so the camera sits on the tab itself. Its
-walls stop 4 mm short of the glass. It is screwed to the tab with 2× M3 × 8 through two ears at its top corners, and its
-top wall has the cable window. The tilt (65°) and the camera's pose are parameters in `cad/d405_mount.py` on the `cad` branch; the camera
-sits exactly where the old hinge held it at 65°, so recorded data and calibrations still apply.
+The D405 mount is a matched pair, made the way Scissor-UMI's is: a tab that carries the camera on the robot, and an
+identical tab on the handheld at the same pose relative to the fingers, so a policy trained on HandUMI data sees the
+jaws where the robot's camera sees them.
+
+- **The tab** is Scissor-UMI's: the D405's back flat on it, its 6× M3 pattern (a 20 mm diamond for the camera, an outer
+  pair at ±22.5 mm for the hood), counterbored from behind. The camera goes on with 2× M3 × 6 from behind (3 mm into its
+  4 mm threads); the hood is Scissor-UMI's own, on 2× M3 × 8 from behind.
+- **The pose** is chosen so the camera sees the jaws on HandUMI too. Copying the team's `ur_camera_plate` pose straight
+  over doesn't work here: from there HandUMI's encoder fills the view. The D405 sits over the encoder instead, 96 mm from
+  the middle of the fingers, looking 61° down; both jaws stay in view from closed to fully open:
+
+<p align="center"><img src="docs/img/camera_view.png" alt="What the D405 sees on HandUMI: the Hand-E fingers closed, at the Hand-E's 50 mm and fully open" width="900"></p>
+
+- **On HandUMI** the tab is part of the main support: its lower edge runs on as a crossbar, carried by two legs that
+  straddle the encoder and land on the T-plate's solid strip behind its lightening slots. The camera sits over the middle
+  of the device, close to the wrist.
+- **On the robot** `hande_camera_plate` (`hardware/STEP/robot/`, `hardware/STL/robot/`) keeps the team plate's ring as
+  it is: the recess over the UR flange, the ISO 9409-1-50-4-M6 holes and dowel, the pilot for the Robotiq coupling
+  (Robotiq uses the same coupling on the Hand-E). A flat lobe takes it out under the coupling, and a ribbed blade (two
+  legs and a web) runs down beside the Hand-E, 13 mm off its side, to the same tab. Mount the Hand-E with its closing
+  axis square to the blade (either way round: the Hand-E is symmetric) and use M6 flange screws 6 mm longer than the
+  Hand-E's own. Print it in PETG-CF or PA-CF.
+
+<p align="center">
+  <img src="docs/img/robot_camera_plate.png" alt="hande_camera_plate alone, and on the Hand-E with the D405 and hood" width="760">
+  <img src="docs/img/camera_mount.png" alt="The arch over the encoder on HandUMI, with the D405 and hood" width="760">
+</p>
+
+The whole pair is one parametric file, `cad/camera.py` on the `cad` branch: the pose (where the glass is, what it
+looks at), the tab, the arch and the robot plate are all derived from it.
 
 ## Record button
 
@@ -147,7 +172,7 @@ The left hand is the mirror image.
 ## Parts
 
 <p align="center">
-  <img src="docs/img/parts.png" alt="Main support, D405 on its tab with the hood, electronics box and lid, end cover" width="900">
+  <img src="docs/img/parts.png" alt="Main support with the camera arch, D405 on its tab with the hood, electronics box and lid, end cover" width="900">
 </p>
 
 Print everything in `hardware/STL/right/` for a right hand or `hardware/STL/left/` for a left hand, plus a pair of
@@ -155,9 +180,10 @@ tips from `hardware/STL/gripper_tips/`. STEP files for every part are in `hardwa
 
 | Part | File |
 |---|---|
-| Main support (T-plate with the camera post and the D405 tab) | `main_support.stl` |
+| Main support (T-plate with the camera arch and the D405 tab) | `main_support.stl` |
 | End cover | `end_cover.stl` |
-| D405 hood | `d405_hood.stl` |
+| D405 hood (Scissor-UMI's) | `d405_hood.stl` |
+| Robot side: `hande_camera_plate` (UR flange to Hand-E coupling, with the same tab) | `hardware/STL/robot/hande_camera_plate.stl` |
 | Record-button cover (TPU) | `button_cover_tpu.stl` |
 | Electronics box + lid | `electronics_box.stl`, `electronics_lid.stl` |
 | Thumb and index/middle finger links (finger sleeve, robot finger flange; record button in the index sleeve) | `*_thumb_link.stl`, `*_index_middle_finger_link.stl` |
@@ -171,8 +197,10 @@ opposite ends, the YAM key slot on the side facing the other jaw).
 
 Everything to buy is in [docs/bom.md](docs/bom.md). Notes:
 
-- **Camera:** Intel RealSense D405, fixed to the tab with 2× M3 × 6 into its rear holes (2× M3×0.5, 20 mm apart, 4 mm
-  max thread depth: don't go longer). The hood takes 2× M3 × 8, threaded into the tab.
+- **Camera:** Intel RealSense D405, fixed to the tab from behind with 2× M3 × 6 into its rear holes (2× M3×0.5, 20 mm
+  apart, 4 mm max thread depth: don't go longer). The hood takes 2× M3 × 8 from behind, self-tapping into the hood.
+- **Robot:** `hande_camera_plate` between the UR flange and the Hand-E's coupling, with 4× M6 flange screws 6 mm longer
+  than the Hand-E's own, and the same D405, hood and screws as on HandUMI.
 - **Tips:** the robot's own finger screws: Piper 4× M2 × 10, Hand-E 2× M3 × 10 (+ Ø2 × 6 dowel, optional on the printed
   finger), YAM 2× M4 × 10, OpenArm 4× M2.5 × 8.
 - **Record button:** 1× 6 × 6 mm tactile switch (stiff, ~250–320 gf), ~30 cm of thin, flexible 2-core wire, and the
@@ -198,16 +226,13 @@ grip with the tip's 70 mm lever, a 40 N finger press, and hand and VR-controller
 
 | Part | Load case | Safety factor (along / across layers) |
 |---|---|---|
-| Main support with the D405 tab | camera knock, 15 g (vertical / sideways / fore-aft) | 39 / 20, 31 / 15, 32 / 16 |
 | Main support | grip push on the rods, 2 × 30 N, end wall only (conservative) | 3.4 / 1.7 |
 | Finger link (new flange) | 30 N grip on the tip, 70 mm lever | 5.4 / 2.7 |
 | Crank plate | 30 N on each crank pin | 52 / 26 |
 | Connecting link | 40 N pull | 65 / 32 |
 
-The fixed tab is stiffer than the old hinge: the camera knocks went from 29 / 14, 20 / 10 and 17 / 8 to the values above.
-The parts are meshed without their 0.2 mm engraved logo.
-
-The D405 hood carries no load (the camera is held by its own screws). The end cover, electronics box and lid, hand
+The parts are meshed without their 0.2 mm engraved logo. The camera arch and `hande_camera_plate` are new and haven't
+been analysed yet; the D405 hood carries no load (the camera is held by its own screws). The end cover, electronics box and lid, hand
 support base and controller support haven't been analysed yet.
 
 ## Grip force

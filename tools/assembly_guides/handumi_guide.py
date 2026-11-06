@@ -68,11 +68,12 @@ def steps():
              [HW("screw", "M3 × 8", 4, length=8), HW("screw", "M3 × 6 (lid)", 4, length=6),
               HW("insert", "M3 heat-set insert", 8, dia=4, length=5)], view=BACK,
              note="Screw the box to the support's arm (4 × M3 × 8), then close the lid (4 × M3 × 6 into inserts)."),
-        Step("Camera", ["d405", "camera_hood"], {"d405": -X * 21 - Y * 45, "camera_hood": -X * 42 - Y * 90},
+        Step("Camera", ["d405", "camera_hood"], {"d405": -X * 24 - Y * 44, "camera_hood": -X * 48 - Y * 88},
              [HW("screw", "M3 × 6", 2, length=6), HW("screw", "M3 × 8", 2, length=8)],
-             note="Set the D405's back on the tab at the end of the camera post and screw it on from behind "
-                  "(2 × M3 × 6 into its rear holes; no longer, the threads are 4 mm deep). Slide the hood over it and "
-                  "screw it to the tab through its two ears (2 × M3 × 8). Run the cable out of the top window."),
+             note="Set the D405's back on the tab at the top of the arch and screw it on from behind (2 × M3 × 6 into "
+                  "its rear holes; no longer, the threads are 4 mm deep). Slide the hood over it and fix it from behind "
+                  "through the tab's outer holes (2 × M3 × 8). The robot's hande_camera_plate takes the same camera, "
+                  "hood and screws."),
         Step("Controller support", ["controller_support"], {"controller_support": X * 70}, view=BACK,
              note="Bolt the controller support to the back of the main support and push the Quest controller "
                   "into its ring."),
