@@ -3,7 +3,9 @@ import numpy as np
 import pyvista as pv
 from build123d import import_step
 
-from assembly import BLUE, DARK, HW, PCB, ROOT, WHITE, assemble, cables, d405_dummy
+from pathlib import Path
+
+from assembly import BLUE, DARK, HW, METAL, PCB, ROOT, WHITE, assemble, cables
 from occ import place
 
 pv.OFF_SCREEN = True
@@ -85,7 +87,7 @@ def parts():
     ms, ec, eb, el = (import_step(str(rd / f)) for f in
                       ("main_support.step", "end_cover.step", "electronics_box.step", "electronics_lid.step"))
     hood = import_step(str(rd / "d405_hood.step"))
-    import d405_mount as DM
+    import camera as CAM
     import electronics_box as EB
     from build123d import Box, Pos
     bz = EB.BOX[2]
@@ -94,9 +96,9 @@ def parts():
     pico = [(poly(Pos(0, 0, bz - EB.PICO_STANDOFF_H - 0.5) * Box(21.0, 51.0, 1.0)), PCB)]
     up = (0, 0, -1)
     panels = [([(poly(ms, 0.04), BLUE)], "main support", (0.8, -0.6, -0.9), up),
-              ([(poly(ms, 0.04), BLUE)], "main support: braced post, fixed D405 tab", (-0.9, -0.5, 0.6), up),
-              ([(poly(DM.tab_cam(), 0.04), BLUE), (poly(hood, 0.04), WHITE), (poly(d405_dummy(DM.TAB_FACE), 0.04), DARK)],
-               "D405 on the tab, with its hood", (1, -1.3, 0.9), (0, 0, 1)),
+              ([(poly(ms, 0.04), BLUE)], "main support: the arch over the encoder, robot-matched tab", (0.9, 0.6, -0.8), up),
+              ([(poly(ms, 0.04), BLUE), (poly(hood, 0.04), WHITE), (poly(CAM.in_tab(CAM.d405_local()), 0.04), DARK)],
+               "D405 + Scissor-UMI hood on the arch", (-0.9, -0.9, -0.6), up),
               ([(poly(eb, 0.04), WHITE)] + boards, "electronics box: USB 3 hub + IMU", (0.6, -0.9, 1.2), (0, 0, 1)),
               ([(poly(el, 0.04), BLUE)] + pico, "lid with Pico 2 underneath", (0.5, -0.8, -1.0), (0, 0, -1)),
               ([(poly(ec, 0.04), BLUE)], "end cover", (0.6, -1.0, -0.5), up)]
@@ -110,12 +112,13 @@ def parts():
 def camera_closeup(opening=0.45):
     """The D405 on its tab with the hood: from the side and from behind."""
     import numpy as np
-    import d405_mount as DM
-    p = assemble(opening)
-    keys = ["main_support", "camera_hood", "d405", "thumb_link", "index_link", "tip_thumb", "tip_index"]
+    import camera as CAM
+    from tips import TIP_SETS
+    p = assemble(opening, tipset=next(t for t in TIP_SETS if t.interface == "hande"))
+    keys = ["main_support", "camera_hood", "d405", "thumb_link", "index_link", "tip_thumb", "tip_index",
+            "servo_sts3215", "electronics_box", "electronics_lid"]
     items = [(poly(p[k][0]), p[k][1]) for k in keys if k in p]
-    R, t = DM.camera_pose()
-    focal = tuple(t + R @ np.array([0.0, -8.0, 8.0]))
+    focal = tuple(CAM.to_m((-20.0, 0.0, -5.0)))
     pl = plotter((1, 2), (1900, 950))
     for i, v in enumerate(((0.15, -1.0, -0.35), (0.9, 0.35, -0.9))):
         pl.subplot(0, i)
@@ -123,6 +126,92 @@ def camera_closeup(opening=0.45):
         pl.camera.focal_point = focal
         pl.camera.zoom(1.9)
     pl.screenshot(str(IMG / "camera_mount.png"))
+
+
+def camera_view(openings=(0.0, 0.35, 1.0)):
+    """What the D405 sees (pinhole at its 87 x 58 deg colour field of view) with the Hand-E fingers, at three openings."""
+    import camera as CAM
+    from PIL import Image
+    from tips import TIP_SETS
+    ts = next(t for t in TIP_SETS if t.interface == "hande")
+    F = CAM.optical_pose()
+    tiles = []
+    for op in openings:
+        p = assemble(op, tipset=ts)
+        pl = plotter((1, 1), (960, 640))
+        pl.set_background(BG)
+        for k, (sh, col) in p.items():
+            if k in ("d405", "camera_hood"):
+                continue
+            pl.add_mesh(poly(sh), color=col, specular=0.3, smooth_shading=True, split_sharp_edges=True)
+        o = F[:3, 3]
+        pl.camera.position = tuple(o)
+        pl.camera.focal_point = tuple(o + F[:3, 2] * 100)
+        pl.camera.up = tuple(-F[:3, 1])
+        pl.camera.view_angle = 58.0
+        pl.camera.clipping_range = (1, 2000)
+        pl.add_text(f"opening {op:.2f}", font_size=12, color="black")
+        f = IMG / f"_view_{op}.png"
+        pl.screenshot(str(f))
+        tiles.append(Image.open(f))
+        f.unlink()
+    out = Image.new("RGB", (960 * len(tiles), 640))
+    for i, t in enumerate(tiles):
+        out.paste(t, (960 * i, 0))
+    out.save(IMG / "camera_view.png")
+
+
+def robot_twin(neuracore_robots, gap=240.0):
+    """HandUMI with Hand-E fingers beside the real Hand-E on hande_camera_plate, both in the same pose: the jaws and the
+    D405 line up between them."""
+    import camera as CAM
+    from build123d import import_step
+    from occ import place
+    from tips import TIP_SETS
+    ts = next(t for t in TIP_SETS if t.interface == "hande")
+    p = assemble(0.3, tipset=ts)
+    items = [(poly(sh), col) for k, (sh, col) in p.items()]
+    tool_to_m = np.linalg.inv(CAM.m_to_tool())
+    view, up = np.array([-0.75, -0.55, -0.6]), np.array([0, 0, -1.0])
+    right = np.cross(up, view)
+    shift = np.eye(4)
+    shift[:3, 3] = gap * right / np.linalg.norm(right)                   # side by side across the screen
+    T = shift @ tool_to_m
+    plate = import_step(str(HW / "STEP/robot/hande_camera_plate.step"))
+    items.append((poly(place(plate, T)), BLUE))
+    Tt = shift @ CAM.tab_frame()
+    items.append((poly(place(CAM.d405_local(), Tt)), DARK))
+    items.append((poly(place(CAM.hood_local(), Tt)), WHITE))
+    for name, m in CAM.hande_meshes_tool(neuracore_robots):
+        m = m.copy()
+        m.apply_transform(T)
+        items.append((pv.wrap(m), METAL if "coupler" in name else ("#2b2d31" if "finger" in name else "#8d9199")))
+    flange = pv.Cylinder(center=(0, 0, -15.0), direction=(0, 0, 1), radius=37.0, height=30.0)
+    flange = flange.transform(T, inplace=False)
+    items.append((flange, "#c9ccd1"))
+    pl = plotter((1, 1), (2400, 1100))
+    show(pl, items, tuple(view), tuple(up), zoom=1.9)
+    pl.screenshot(str(IMG / "twins.png"))
+
+
+def robot_plate_view(neuracore_robots):
+    """The robot plate on its own and on the Hand-E (tool frame, flange up)."""
+    import camera as CAM
+    from build123d import import_step
+    plate = import_step(str(HW / "STEP/robot/hande_camera_plate.step"))
+    Tt = CAM.tab_frame_tool()
+    from occ import place
+    cam = [(poly(place(CAM.d405_local(), Tt)), DARK), (poly(place(CAM.hood_local(), Tt)), WHITE)]
+    he = []
+    for name, m in CAM.hande_meshes_tool(neuracore_robots):
+        he.append((pv.wrap(m), METAL if "coupler" in name else ("#2b2d31" if "finger" in name else "#8d9199")))
+    pl = plotter((1, 2), (2200, 1000))
+    pl.subplot(0, 0)
+    show(pl, [(poly(plate, 0.04), BLUE)], (0.9, 0.9, -0.6), (0, 0, -1), "hande_camera_plate", zoom=1.2)
+    pl.subplot(0, 1)
+    show(pl, [(poly(plate, 0.04), BLUE)] + cam + he, (1.0, 0.6, -0.3), (0, 0, -1), "on the Hand-E, with the D405 and hood",
+         zoom=1.1)
+    pl.screenshot(str(IMG / "robot_camera_plate.png"))
 
 
 def flange_diagram():
@@ -173,5 +262,11 @@ if __name__ == "__main__":
     button_closeup()
     tip_gallery()
     camera_closeup()
+    camera_view()
     flange_diagram()
+    import os
+    nr = Path(os.environ.get("NEURACORE_ROBOTS", Path.home() / "Neuracore_Robots"))
+    if nr.exists():
+        robot_twin(nr)
+        robot_plate_view(nr)
     print("ok")

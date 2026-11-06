@@ -52,9 +52,9 @@ def plane(axis, v, tol=0.15, **box):
 
 
 def in_cam(f):
-    """Apply a selector written in the D405 camera frame (d405_mount.py) to main-support points."""
-    import d405_mount as DM
-    R, t = DM.camera_pose()
+    """Apply a selector written in the D405 body frame (camera.camera_pose) to main-support points."""
+    import camera as CAM
+    R, t = CAM.camera_pose()
     return lambda p: f(R.T @ (p - t[:, None]))
 
 
@@ -198,7 +198,7 @@ def render(mesh, vm_el, title, out):
 # ---------------------------------------------------------------- parts and load cases
 G = 9.81
 ARM_HOLES = any_of(cyl("z", (69.0, 64.5), 1.6, -1, 9), cyl("z", (69.0, 80.5), 1.6, -1, 9))
-CAM_SCREWS = in_cam(any_of(cyl("z", (-10.0, 0.0), 1.7, -2.5, 2.5), cyl("z", (10.0, 0.0), 1.7, -2.5, 2.5)))   # D405 on the tab
+CAM_SCREWS = in_cam(any_of(cyl("z", (-10.0, 0.0), 1.7, -9.0, 0.5), cyl("z", (10.0, 0.0), 1.7, -9.0, 0.5)))   # D405 on the tab
 CAM_SHOCK = 0.07 * 15 * G      # D405 + hood at 15 g
 
 

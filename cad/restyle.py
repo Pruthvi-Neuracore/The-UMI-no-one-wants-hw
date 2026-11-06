@@ -10,7 +10,7 @@ servo boss, hinge tab, arm end); only non-functional geometry changes.
       * smooth blends where the bar meets the round servo boss
       * 45° chamfers on the top corners of the rod end wall and on the outer corners of both bar ends
       * PG logo engraved (0.2 mm) on the outside of the end wall
-      * a braced camera post blended into the plate, ending in a fixed tab the D405 screws onto (d405_mount.py)
+      * the D405 mast (camera.py): the robot-matched tab on an arch whose legs straddle the encoder
       * two counterbored M3 holes in the arm for the electronics box
   main_support_cover_plate -> end_cover: matching 45° top and corner chamfers
   electronics_box / electronics_lid: Pico 2 + IMU + USB 3 hub enclosure (electronics_box.py)
@@ -24,7 +24,7 @@ from build123d import (Axis, Box, GeomType, Circle, Cylinder, Face, Location, Pl
                        SlotCenterToCenter, export_step, export_stl, extrude, fillet, import_step, loft)
 
 import electronics_box as EB
-import d405_mount as DM
+import camera as CAM
 from finger_link import finger_link
 from logo import logo_face
 
@@ -54,19 +54,8 @@ def plate_prism(face2d, z0=PLATE_Z[0], z1=PLATE_Z[1]):
 
 
 def camera_post():
-    """Braced post from the plate underside to the camera tab: a racetrack root (60 x 5.6 mm, on the flat part of the
-    underside, flush with the servo pocket wall at x = -28.2) lofted into a racetrack just above the post's anchor,
-    a web down to the anchor, and the fixed D405 tab (d405_mount.tab_m). main_support() blends the root into the plate."""
-    ax, az = DM.ANCHOR_M
-    yc, w = DM.Y_CENTRE, DM.RIB_W
-    zt = az + 7.0                                                        # top of the web
-    root = Plane.XY.offset(0.0) * Pos(-31.0, yc) * Rot(0, 0, 90) * SlotCenterToCenter(KEEL_LEN - 5.6, 5.6)
-    tip = Plane.XY.offset(zt) * Pos(-31.95, yc) * Rot(0, 0, 90) * SlotCenterToCenter(w - 7.5 if w > 7.5 else 0.5, 7.5)
-    fin = loft([root, tip])
-    web = box(ax - 6.0, ax + 6.0, yc - w / 2, yc + w / 2, az, zt + 0.5)
-    hood = DM._box(-DM.HALF, DM.HALF, -DM.HALF - 0.5, DM.TAB_Y1, DM.TAB_FACE, DM.TAB_FACE + 30)   # camera + hood space
-    post = fin + web - DM.to_m(hood)
-    return post + DM.tab_m()
+    """The D405 mast (camera.post_m): the robot-matched tab on an arch whose two legs straddle the encoder."""
+    return CAM.post_m()
 
 
 def end_wall(z0=8.0, z1=34.0, depth=10.0):
@@ -191,9 +180,12 @@ def main_support(logo=True):
 
     # 3) camera post, blended into the underside
     s = (s + camera_post()).clean()
-    root = [e for e in s.edges() if abs(e.center().Z - z0) < 0.05 and e.bounding_box().size.Z < 0.05
-            and -34.0 < e.center().X < -29.0 and 40 < e.center().Y < 105]          # outer side and ends of the root
-    s, _ = soften(s, root, (3.0, 2.0, 1.2), "post-to-plate blend")
+    feet = CAM.leg_feet()
+    r = CAM.LEG_ROOT
+    for fx, fy in feet:                                                   # blend each foot into the plate
+        root = [e for e in s.edges() if abs(e.center().Z - z0) < 0.05 and e.bounding_box().size.Z < 0.05
+                and abs(e.center().X - fx) < r["len"] / 2 + 0.6 and abs(e.center().Y - fy) < r["width"] / 2 + 0.6]
+        s, _ = soften(s, root, (2.5, 1.5, 1.0), "leg-to-plate blend")
 
     for lx, ly in EB.ARM_SCREWS:                                      # electronics box: M3 up through the arm
         x, y = EB.to_m(lx, ly)

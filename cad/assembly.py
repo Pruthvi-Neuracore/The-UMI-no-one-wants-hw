@@ -23,7 +23,7 @@ import electronics_box as EB  # noqa: E402
 from tips import TIP_SETS, link_transform  # noqa: E402
 import finger_link as FL  # noqa: E402
 import finger_interfaces as FI  # noqa: E402
-import d405_mount as DM  # noqa: E402
+import camera as CAM  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 HW = ROOT / "hardware"
@@ -134,11 +134,10 @@ def assemble(opening=0.6, camera="wrist", tipset=None, support=None, crank_z=CRA
     for nm, b in boards.items():
         add(nm, b, T(RB, [cxy[0], cxy[1], 0.0]), PCB)
 
-    # D405 fixed on the tab at the end of the main support's camera post (d405_mount.py), with its hood
+    # D405 on the mast's tab (camera.py: the same tab and pose as on the robot's hande_camera_plate), Scissor-UMI's hood
     if camera == "wrist":
-        Rc, tc = DM.camera_pose()
-        add("camera_hood", step(R / "d405_hood.step"), T(Rc, tc), WHITE)
-        add("d405", d405_dummy(DM.TAB_FACE), T(Rc, tc), DARK)
+        add("camera_hood", step(R / "d405_hood.step"), np.eye(4), WHITE)
+        add("d405", CAM.in_tab(CAM.d405_local()), np.eye(4), DARK)
 
     # gripper tips on the finger-link flange (link y = 0 face), each through its robot's interface (tips.py)
     ts = tipset if tipset is not None else TIP_SETS[0]
@@ -172,7 +171,7 @@ ALLOWED = [{"rod", "lm4uu"}, {"lm4uu", "thumb_link"}, {"lm4uu", "index_link"}, {
            # pin joints: Ø3 pins run through MR63 bearings in the connecting links (bearings not modelled)
            {"crank_mechanism_plate", "connecting_link_1"}, {"crank_mechanism_plate", "connecting_link_2"},
            {"connecting_link_1", "thumb_link"}, {"connecting_link_2", "index_link"},
-           {"main_support", "d405"}, {"imu", "electronics_box"},   # D405 back on the tab; IMU in its floor pocket
+           {"main_support", "d405"}, {"main_support", "camera_hood"}, {"imu", "electronics_box"},   # on the tab; IMU pocket
            {"thumb_link", "tip_thumb"}, {"index_link", "tip_index"},   # bolted face contact (0.03 mm sliver)
            {"tip_thumb", "tip_thumb_1"}, {"tip_index", "tip_index_1"},  # pads / socks sit on their jaws
            {"record_button", "index_link"}, {"button_cover", "index_link"}, {"record_button", "button_cover"},
@@ -254,7 +253,7 @@ if __name__ == "__main__":
 def cables(opening=0.55):
     """Render-only cables (pyvista tubes): D405 -> electronics box, servo -> box, box -> laptop (the one USB-C)."""
     import pyvista as pv
-    Rc, tc = DM.camera_pose()
+    Rc, tc = CAM.camera_pose()
     cam = lambda p: tc + Rc @ np.array(p, float)
     bx = lambda x, y, z: np.array([EB.BOX_CENTRE_M[0] + x, EB.BOX_CENTRE_M[1] - y, -z])   # box local -> M
     wall = -EB.BOX[0] / 2

@@ -10,6 +10,7 @@ Quantities are for a **pair** (one right-hand and one left-hand device).
 | `button_cover_tpu.stl` | TPU 95A | 2 |
 | Tips from `hardware/STL/gripper_tips/` (Piper, Hand-E, Open-ENPIRE or OpenArm), or the robot's own fingers | PLA / PETG (ENPIRE and OpenArm soft parts in TPU 95A) | 2 pairs |
 | `Hand-E-Rack-Shim.stl`, only to mount real Robotiq Hand-E fingers | PLA / PETG | 4 |
+| Robot side: `hardware/STL/robot/hande_camera_plate.stl`, one per Hand-E arm, with a D405, `d405_hood.stl`, 2× M3×6, 2× M3×8 and 4× M6 flange screws 6 mm longer than the Hand-E's own | PETG-CF / PA-CF | 1 per arm |
 
 ## Mechanics
 
@@ -19,8 +20,8 @@ Quantities are for a **pair** (one right-hand and one left-hand device).
 | LM4UU linear bearing, 4 × 8 × 12 mm | 8 |
 | Ø4 mm × 135 mm stainless rod | 4 |
 | Feetech STS3215 servo (used as the jaw-width encoder, torque off) | 2 |
-| M3×6 screws (D405 to the main support's tab) | 4 |
-| M3×8 screws (D405 hood to the tab) | 4 |
+| M3×6 screws (D405 to the main support's tab, from behind) | 4 |
+| M3×8 screws (D405 hood, from behind the tab) | 4 |
 | M3 screws: 4× M3×20, 8× M3×12, 8× M3×15 (mechanism); 4× M3×8 (box to arm); 8× M3×6 (lid) | 32 |
 | M3 heat-set inserts, Ø4.0 × 5 (box, lid) | ~16 |
 | M2 screws + nuts (mechanism, Pico) | ~24 |
